@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo - Planificador Docente</title>
+    <style>
+        /* Estilos Generales */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f7f9;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1100px; 
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 15px 20px;
+            font-size: 1.2em;
+            text-align: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header button {
+            background: #34495e;
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            width: auto;
+        }
+        
+        .header button:hover {
+            background: #4a6583;
+        }
+
+        .content {
+            padding: 20px;
+        }
+
+        /* Sistema de Pantallas */
+        .screen {
+            display: none;
+        }
+        .screen.active {
+            display: block;
+        }
+
+        /* Estilos para Formularios y Botones */
+        h2 {
+            color: #2c3e50;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-family: inherit;
+            font-size: 1em;
+        }
+        
+        .form-group input[readonly] {
+            background-color: #eee;
+        }
+
+        button {
+            display: inline-block;
+            width: 100%;
+            padding: 12px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1em;
+            cursor: pointer;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        button.secondary {
+            background-color: #e74c3c;
+        }
+        
+        button.demo {
+            background-color: #1abc9c;
+            margin-top: 20px;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        /* Estilos del Dashboard Principal */
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .card {
+            background-color: #ecf0f1;
+            padding: 30px 20px;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            color: #2c3e50;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+        }
+        
+        /* Estilos para Tablas (Horario/Semanal) */
+        .schedule-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+        .schedule-table th, .schedule-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+            height: 50px;
+            font-size: 0.9em;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .schedule-table th {
+            background-color: #f2f2f2;
+        }
+        .time-slot {
+            font-weight: bold;
+            font-size: 0.8em;
+            color: #777;
+        }
+        .subject-math { background-color: rgba(52, 152, 219, 0.2); }
+        .subject-tech { background-color: rgba(26, 188, 156, 0.2); }
+        
+        /* Estilos Calendario Mensual */
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+        }
+        .calendar-day, .calendar-header {
+            border: 1px solid #eee;
+            background: #fafafa;
+            padding: 5px;
+            min-height: 80px;
+            font-size: 0.8em;
+        }
+        .calendar-header {
+            min-height: auto;
+            text-align: center;
+            font-weight: bold;
+        }
+        .calendar-day.weekend { background-color: #f9f9f9; }
+        .calendar-day .event {
+            background-color: #e74c3c;
+            color: white;
+            font-size: 0.8em;
+            padding: 2px 4px;
+            border-radius: 3px;
+            margin-top: 3px;
+            display: block;
+        }
+        .calendar-week { cursor: pointer; }
+        .calendar-week:hover .calendar-day {
+            background-color: #e8f4fd;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <div id="header-bar" class="header" style="display: none;">
+            <button id="back-to-main"> &lt; Principal</button>
+            <span id="header-title">Planificador Docente</span>
+            <span></span>
+        </div>
+
+        <div class="content">
+
+            <div id="pantalla-registro" class="screen active">
+                <div class="header">Planificador Docente</div>
+                <div style="padding: 20px;">
+                    <h2>Bienvenida/o</h2>
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" value="sofia.profe@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Contraseña</label>
+                        <input type="password" id="password" value="123456">
+                    </div>
+                    <button id="register-button">Registrarse</button>
+                    <button id="login-button">Iniciar Sesión</button>
+                    <button class="demo" id="demo-button">Acceder como Sofía (Demo)</button>
+                </div>
+            </div>
+
+            <div id="pantalla-perfil" class="screen">
+                <h2>Crea tu perfil de docente</h2>
+                <div class="form-group">
+                    <label>Nombre y apellidos</label>
+                    <input type="text" value="Sofía García" id="nombre-usuario">
+                </div>
+                <div class="form-group">
+                    <label>Nombre del Centro Educativo</label>
+                    <input type="text" value="IES El Prado">
+                </div>
+                <div class="form-group">
+                    <label>Provincia</label>
+                    <select id="provincia" onchange="actualizarComunidad()">
+                        <option>Selecciona una...</option>
+                        <option value="Andalucía">Sevilla</option>
+                        <option value="Madrid">Madrid</option>
+                        <option value="Cataluña">Barcelona</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Comunidad Autónoma</label>
+                    <input type="text" id="comunidad" readonly>
+                </div>
+                <button id="save-profile-button">Guardar y continuar</button>
+            </div>
+
+            <div id="pantalla-principal" class="screen">
+                <h2 id="dashboard-title">Mi Planificador</h2>
+                <div class="dashboard">
+                    <div class="card" data-screen="pantalla-horarios">Horarios</div>
+                    <div class="card" data-screen="pantalla-mensual">Planificación Mensual</div>
+                    <div class="card" data-screen="pantalla-semanal">Planificación Semanal</div>
+                    <div class="card" data-screen="pantalla-actas">Reuniones (Actas)</div>
+                    <div class="card" onclick="alert('Función no implementada en la demo')">Páginas Personalizadas</div>
+                    <div class="card" data-screen="pantalla-exportar">Exportar</div>
+                </div>
+                <button class="secondary" style="margin-top: 30px;" id="logout-button">Cerrar Sesión</button>
+            </div>
+
+            <div id="pantalla-horarios" class="screen">
+                <h2>Gestor de Horarios</h2>
+                <p>Horario de Sofía - 1er Trimestre</p>
+                <table class="schedule-table">
+                    <tr><th>Hora</th><th>Lunes</th><th>Martes</th><th>Miércoles</th><th>Jueves</th><th>Viernes</th></tr>
+                    <tr><td class="time-slot">8:30-9:25</td> <td class="subject-math">Matemáticas 3ºA</td> <td></td> <td class="subject-math">Matemáticas 3ºA</td> <td></td> <td class="subject-tech">Tecnología 3ºA</td></tr>
+                    <tr><td class="time-slot">9:25-10:20</td><td class="subject-math">Matemáticas 3ºB</td> <td class="subject-tech">Tecnología 3ºA</td> <td class="subject-math">Matemáticas 3ºB</td> <td class="subject-tech">Tecnología 3ºB</td> <td></td></tr>
+                    <tr><td class="time-slot">10:20-11:15</td><td></td> <td></td> <td></td> <td></td><td></td></tr>
+                    <tr><td class="time-slot">11:15-12:10</td><td colspan="5" style="background: #eee; font-style: italic;">RECREO</td></tr>
+                    <tr><td class="time-slot">12:10-13:05</td><td></td> <td class="subject-math">Matemáticas 3ºA</td> <td></td> <td></td> <td class="subject-math">Matemáticas 3ºA</td></tr>
+                    <tr><td class="time-slot">13:05-14:00</td><td class="subject-tech">Tecnología 3ºB</td> <td></td> <td class="subject-tech">Tecnología 3ºB</td><td></td><td></td></tr>
+                </table>
+                <button class="secondary" onclick="alert('Plantilla guardada: Horario 1er Trimestre')">Guardar como plantilla</button>
+            </div>
+            
+            <div id="pantalla-mensual" class="screen">
+                <h2>Planificación Mensual - Septiembre 2025</h2>
+                <div class="calendar">
+                    <div class="calendar-header">L</div> <div class="calendar-header">M</div> <div class="calendar-header">X</div> <div class="calendar-header">J</div> <div class="calendar-header">V</div> <div class="calendar-header">S</div> <div class="calendar-header">D</div>
+                    <div class="calendar-day">1</div> <div class="calendar-day">2</div> <div class="calendar-day">3</div> <div class="calendar-day">4</div> <div class="calendar-day">5</div> <div class="calendar-day weekend">6</div> <div class="calendar-day weekend">7</div>
+                    <div class="calendar-week" onclick="mostrarPantalla('pantalla-semanal')">
+                        <div class="calendar-day">8</div> <div class="calendar-day">9</div> <div class="calendar-day">10<span class="event">Inicio Tema 1</span></div> <div class="calendar-day">11</div> <div class="calendar-day">12</div>
+                    </div>
+                     <div class="calendar-day weekend">13</div> <div class="calendar-day weekend">14</div>
+                    <div class="calendar-day">15</div> <div class="calendar-day">16</div> <div class="calendar-day">17</div> <div class="calendar-day">18</div> <div class="calendar-day">19<span class="event">Reunión Dept.</span></div> <div class="calendar-day weekend">20</div> <div class="calendar-day weekend">21</div>
+                    <div class="calendar-day">22</div> <div class="calendar-day">23</div> <div class="calendar-day">24</div> <div class="calendar-day">25</div> <div class="calendar-day">26<span class="event">Examen Tema 1</span></div> <div class="calendar-day weekend">27</div> <div class="calendar-day weekend">28</div>
+                    <div class="calendar-day">29</div> <div class="calendar-day">30</div>
+                </div>
+            </div>
+            
+            <div id="pantalla-semanal" class="screen">
+                <h2>Planificación Semanal (8 - 12 de Septiembre)</h2>
+                 <table class="schedule-table">
+                    <tr><th>Hora</th><th>Lunes 8</th><th>Martes 9</th><th>Miércoles 10</th><th>Jueves 11</th><th>Viernes 12</th></tr>
+                    <tr><td class="time-slot">8:30-9:25</td> <td class="subject-math"><b>Matemáticas 3ºA</b><br><small>Repaso ecuaciones</small></td> <td></td> <td class="subject-math"><b>Matemáticas 3ºA</b><br><small>Ejercicios p.23</small></td> <td></td> <td class="subject-tech"><b>Tecnología 3ºA</b><br><small>Intro a bloques</small></td></tr>
+                    <tr><td class="time-slot">9:25-10:20</td><td class="subject-math"><b>Matemáticas 3ºB</b></td> <td class="subject-tech"><b>Tecnología 3ºA</b><br><small>Práctica guiada</small></td> <td class="subject-math"><b>Matemáticas 3ºB</b></td> <td class="subject-tech"><b>Tecnología 3ºB</b></td> <td></td></tr>
+                 </table>
+                 <div class="form-group" style="margin-top: 20px;">
+                     <label>Observaciones / Notas de la semana</label>
+                     <textarea rows="3" style="width: 100%;">Preparar material para la reunión de departamento del viernes.</textarea>
+                 </div>
+            </div>
+
+            <div id="pantalla-actas" class="screen">
+                <h2>Nueva Acta de Reunión</h2>
+                <div class="form-group"><label>Título/Motivo</label><input type="text" value="Reunión Departamento de Ciencias"></div>
+                <div class="form-group"><label>Fecha</label><input type="date" value="2025-09-19"></div>
+                <div class="form-group"><label>Asistentes</label><input type="text" value="Sofía García, Carlos Pérez, Laura Sanz"></div>
+                <div class="form-group"><label>Asuntos Tratados</label><textarea rows="8">- Revisión de la programación de 3º ESO.&#10;- Propuesta de actividades interdisciplinares.&#10;- Organización del laboratorio.</textarea></div>
+                <div class="form-group"><label>Acuerdos</label><textarea rows="6">- Se aprueba la propuesta de actividades.&#10;- Carlos se encarga del inventario del laboratorio.</textarea></div>
+                <button onclick="mostrarPantalla('pantalla-exportar')">Guardar y Exportar Acta</button>
+            </div>
+            
+             <div id="pantalla-exportar" class="screen">
+                <h2>Exportar Planificación</h2>
+                <p>Selecciona el formato de exportación que prefieras.</p>
+                <button onclick="alert('Generando PDF profesional...')">Exportar a PDF</button>
+                <button class="demo" onclick="alert('Generando fichero actividades.csv compatible con Séneca...')">Exportar para Séneca (CSV)</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // MODIFICACIÓN: Lógica de JavaScript mejorada y centralizada
+        const screens = document.querySelectorAll('.screen');
+        const headerBar = document.getElementById('header-bar');
+        const backButton = document.getElementById('back-to-main');
+        const headerTitle = document.getElementById('header-title');
+        
+        // Variable para guardar el nombre del usuario
+        let userName = "Docente";
+
+        function updateTitles(screenId) {
+            if (screenId === 'pantalla-principal') {
+                 backButton.style.visibility = 'hidden';
+                 // Actualizar título del dashboard
+                 document.getElementById('dashboard-title').textContent = `Planificador Docente de ${userName}`;
+                 headerTitle.textContent = 'Planificador Docente';
+            } else {
+                 backButton.style.visibility = 'visible';
+                 try {
+                     const screenTitle = document.querySelector(`#${screenId} h2`).textContent;
+                     headerTitle.textContent = screenTitle;
+                 } catch (e) {
+                     headerTitle.textContent = 'Planificador Docente';
+                 }
+            }
+        }
+
+        function mostrarPantalla(screenId) {
+            screens.forEach(screen => screen.classList.remove('active'));
+            const activeScreen = document.getElementById(screenId);
+            if (activeScreen) activeScreen.classList.add('active');
+            
+            headerBar.style.display = (screenId === 'pantalla-registro' || screenId === 'pantalla-perfil') ? 'none' : 'flex';
+            updateTitles(screenId);
+        }
+        
+        function actualizarComunidad() {
+            const provinciaSelect = document.getElementById('provincia');
+            const comunidadInput = document.getElementById('comunidad');
+            comunidadInput.value = provinciaSelect.options[provinciaSelect.selectedIndex].value;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- NAVEGACIÓN ---
+            backButton.addEventListener('click', () => mostrarPantalla('pantalla-principal'));
+            
+            document.querySelectorAll('.card[data-screen]').forEach(card => {
+                card.addEventListener('click', () => mostrarPantalla(card.dataset.screen));
+            });
+            
+            // --- LÓGICA DE LOGIN/REGISTRO ---
+            document.getElementById('register-button').addEventListener('click', () => mostrarPantalla('pantalla-perfil'));
+            
+            document.getElementById('save-profile-button').addEventListener('click', () => {
+                const nombreInput = document.getElementById('nombre-usuario');
+                userName = nombreInput.value || "Docente"; // Guardar nombre
+                mostrarPantalla('pantalla-principal');
+            });
+            
+            const loginDemo = () => {
+                const nombreInput = document.getElementById('nombre-usuario');
+                // Si el usuario es el de la demo, usamos ese nombre, si no, el del perfil
+                userName = (document.getElementById('email').value === 'sofia.profe@email.com') ? nombreInput.value : "Usuario";
+                mostrarPantalla('pantalla-principal');
+            };
+
+            const loginDemoShortcut = () => {
+                userName = "Sofía García"; // Nombre para el acceso directo
+                mostrarPantalla('pantalla-principal');
+            };
+
+            document.getElementById('login-button').addEventListener('click', loginDemo);
+            document.getElementById('demo-button').addEventListener('click', loginDemoShortcut);
+            document.getElementById('logout-button').addEventListener('click', () => mostrarPantalla('pantalla-registro'));
+
+            // --- INICIALIZACIÓN ---
+            mostrarPantalla('pantalla-registro');
+            actualizarComunidad();
+        });
+    </script>
+</body>
+</html>
