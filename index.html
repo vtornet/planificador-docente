@@ -61,20 +61,39 @@
             padding: 20px;
         }
 
-        /* MODIFICACIÓN: Estilos para el logotipo */
+        /* Estilos para el logotipo */
         .logo-container {
             text-align: center;
             margin-bottom: 20px;
         }
-        .logo-container svg {
-            height: 80px;
+        .logo-container img {
+            height: 100px;
             width: auto;
-            fill: #2c3e50;
         }
-        .header .logo-container-small svg {
-            height: 30px;
+
+        .header .logo-container-small {
+            background-color: white;
+            border-radius: 50%;
+            padding: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 35px;
+            height: 35px;
+        }
+        .header .logo-container-small img {
+            height: 25px;
             width: auto;
-            fill: #ffffff;
+        }
+        
+        /* MODIFICACIÓN: Estilos para el pie de página */
+        footer {
+            text-align: center;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+            color: #6c757d;
+            font-size: 0.9em;
         }
 
         .screen { display: none; }
@@ -88,12 +107,7 @@
         }
 
         .form-group { margin-bottom: 15px; }
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #555;
-        }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
         .form-group input, .form-group select, .form-group textarea {
             width: 100%;
             padding: 10px;
@@ -122,11 +136,7 @@
         button.demo { background-color: #1abc9c; margin-top: 20px; }
         button:hover { opacity: 0.9; }
 
-        .dashboard {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-        }
+        .dashboard { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
         .card {
             background-color: #ecf0f1;
             padding: 30px 20px;
@@ -163,7 +173,7 @@
         <div id="header-bar" class="header" style="display: none;">
             <div class="header-title-container">
                 <div class="logo-container-small">
-                    <img src="logo-planificador.png" alt="Logotipo de Planificador Docente" style="height: 80px;">
+                    <img src="logo-planificador.png" alt="Logotipo">
                 </div>
                 <span id="header-title">Planificador Docente</span>
             </div>
@@ -175,7 +185,7 @@
             <div id="pantalla-registro" class="screen active">
                 <div style="padding: 20px;">
                     <div class="logo-container">
-                       <img src="logo-planificador.png" alt="Logotipo de Planificador Docente" style="height: 30px;">
+                        <img src="logo-planificador.png" alt="Logotipo de Planificador Docente">
                     </div>
                     <h2>Bienvenida/o</h2>
                     <div class="form-group">
@@ -219,7 +229,10 @@
             </div>
 
             <div id="pantalla-principal" class="screen">
-                <h2 id="dashboard-title">Mi Planificador</h2>
+                <div class="logo-container">
+                     <img src="logo-planificador.png" alt="Logotipo de Planificador Docente">
+                </div>
+                <h2 id="dashboard-title" style="text-align:center;">Mi Planificador</h2>
                 <div class="dashboard">
                     <div class="card" data-screen="pantalla-horarios">Horarios</div>
                     <div class="card" data-screen="pantalla-mensual">Planificación Mensual</div>
@@ -233,64 +246,28 @@
 
             <div id="pantalla-horarios" class="screen">
                 <h2>Gestor de Horarios</h2>
-                <p>Horario de Sofía - 1er Trimestre</p>
-                <table class="schedule-table">
-                    <tr><th>Hora</th><th>Lunes</th><th>Martes</th><th>Miércoles</th><th>Jueves</th><th>Viernes</th></tr>
-                    <tr><td class="time-slot">8:30-9:25</td> <td class="subject-math">Matemáticas 3ºA</td> <td></td> <td class="subject-math">Matemáticas 3ºA</td> <td></td> <td class="subject-tech">Tecnología 3ºA</td></tr>
-                    <tr><td class="time-slot">9:25-10:20</td><td class="subject-math">Matemáticas 3ºB</td> <td class="subject-tech">Tecnología 3ºA</td> <td class="subject-math">Matemáticas 3ºB</td> <td class="subject-tech">Tecnología 3ºB</td> <td></td></tr>
-                    <tr><td class="time-slot">10:20-11:15</td><td></td> <td></td> <td></td> <td></td><td></td></tr>
-                    <tr><td class="time-slot">11:15-12:10</td><td colspan="5" style="background: #eee; font-style: italic;">RECREO</td></tr>
-                    <tr><td class="time-slot">12:10-13:05</td><td></td> <td class="subject-math">Matemáticas 3ºA</td> <td></td> <td></td> <td class="subject-math">Matemáticas 3ºA</td></tr>
-                    <tr><td class="time-slot">13:05-14:00</td><td class="subject-tech">Tecnología 3ºB</td> <td></td> <td class="subject-tech">Tecnología 3ºB</td><td></td><td></td></tr>
-                </table>
-                <button class="secondary" onclick="alert('Plantilla guardada: Horario 1er Trimestre')">Guardar como plantilla</button>
-            </div>
+                </div>
             
             <div id="pantalla-mensual" class="screen">
                 <h2>Planificación Mensual - Septiembre 2025</h2>
-                <div class="calendar">
-                    <div class="calendar-header">L</div> <div class="calendar-header">M</div> <div class="calendar-header">X</div> <div class="calendar-header">J</div> <div class="calendar-header">V</div> <div class="calendar-header">S</div> <div class="calendar-header">D</div>
-                    <div class="calendar-day">1</div> <div class="calendar-day">2</div> <div class="calendar-day">3</div> <div class="calendar-day">4</div> <div class="calendar-day">5</div> <div class="calendar-day weekend">6</div> <div class="calendar-day weekend">7</div>
-                    <div class="calendar-week" onclick="mostrarPantalla('pantalla-semanal')">
-                        <div class="calendar-day">8</div> <div class="calendar-day">9</div> <div class="calendar-day">10<span class="event">Inicio Tema 1</span></div> <div class="calendar-day">11</div> <div class="calendar-day">12</div>
-                    </div>
-                     <div class="calendar-day weekend">13</div> <div class="calendar-day weekend">14</div>
-                    <div class="calendar-day">15</div> <div class="calendar-day">16</div> <div class="calendar-day">17</div> <div class="calendar-day">18</div> <div class="calendar-day">19<span class="event">Reunión Dept.</span></div> <div class="calendar-day weekend">20</div> <div class="calendar-day weekend">21</div>
-                    <div class="calendar-day">22</div> <div class="calendar-day">23</div> <div class="calendar-day">24</div> <div class="calendar-day">25</div> <div class="calendar-day">26<span class="event">Examen Tema 1</span></div> <div class="calendar-day weekend">27</div> <div class="calendar-day weekend">28</div>
-                    <div class="calendar-day">29</div> <div class="calendar-day">30</div>
                 </div>
-            </div>
             
             <div id="pantalla-semanal" class="screen">
                 <h2>Planificación Semanal (8 - 12 de Septiembre)</h2>
-                 <table class="schedule-table">
-                    <tr><th>Hora</th><th>Lunes 8</th><th>Martes 9</th><th>Miércoles 10</th><th>Jueves 11</th><th>Viernes 12</th></tr>
-                    <tr><td class="time-slot">8:30-9:25</td> <td class="subject-math"><b>Matemáticas 3ºA</b><br><small>Repaso ecuaciones</small></td> <td></td> <td class="subject-math"><b>Matemáticas 3ºA</b><br><small>Ejercicios p.23</small></td> <td></td> <td class="subject-tech"><b>Tecnología 3ºA</b><br><small>Intro a bloques</small></td></tr>
-                    <tr><td class="time-slot">9:25-10:20</td><td class="subject-math"><b>Matemáticas 3ºB</b></td> <td class="subject-tech"><b>Tecnología 3ºA</b><br><small>Práctica guiada</small></td> <td class="subject-math"><b>Matemáticas 3ºB</b></td> <td class="subject-tech"><b>Tecnología 3ºB</b></td> <td></td></tr>
-                 </table>
-                 <div class="form-group" style="margin-top: 20px;">
-                     <label>Observaciones / Notas de la semana</label>
-                     <textarea rows="3" style="width: 100%;">Preparar material para la reunión de departamento del viernes.</textarea>
                  </div>
-            </div>
 
             <div id="pantalla-actas" class="screen">
                 <h2>Nueva Acta de Reunión</h2>
-                <div class="form-group"><label>Título/Motivo</label><input type="text" value="Reunión Departamento de Ciencias"></div>
-                <div class="form-group"><label>Fecha</label><input type="date" value="2025-09-19"></div>
-                <div class="form-group"><label>Asistentes</label><input type="text" value="Sofía García, Carlos Pérez, Laura Sanz"></div>
-                <div class="form-group"><label>Asuntos Tratados</label><textarea rows="8">- Revisión de la programación de 3º ESO.&#10;- Propuesta de actividades interdisciplinares.&#10;- Organización del laboratorio.</textarea></div>
-                <div class="form-group"><label>Acuerdos</label><textarea rows="6">- Se aprueba la propuesta de actividades.&#10;- Carlos se encarga del inventario del laboratorio.</textarea></div>
-                <button onclick="mostrarPantalla('pantalla-exportar')">Guardar y Exportar Acta</button>
-            </div>
+                </div>
             
-             <div id="pantalla-exportar" class="screen">
+            <div id="pantalla-exportar" class="screen">
                 <h2>Exportar Planificación</h2>
-                <p>Selecciona el formato de exportación que prefieras.</p>
-                <button onclick="alert('Generando PDF profesional...')">Exportar a PDF</button>
-                <button class="demo" onclick="alert('Generando fichero actividades.csv compatible con Séneca...')">Exportar para Séneca (CSV)</button>
-            </div>
+                </div>
         </div>
+
+        <footer>
+            © Dissentis-ai 2025
+        </footer>
     </div>
 
     <script>
@@ -322,7 +299,7 @@
             const activeScreen = document.getElementById(screenId);
             if (activeScreen) activeScreen.classList.add('active');
             
-            headerBar.style.display = (screenId === 'pantalla-registro') ? 'none' : 'flex';
+            headerBar.style.display = (screenId === 'pantalla-registro' || screenId === 'pantalla-perfil') ? 'none' : 'flex';
             updateTitles(screenId);
         }
         
