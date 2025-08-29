@@ -82,11 +82,10 @@
             height: 50px;
         }
         .header .logo-container-small img {
-            height: 75px;
+            height: 35px;
             width: auto;
         }
         
-        /* Estilos para el pie de página */
         footer {
             text-align: center;
             padding: 15px;
@@ -132,7 +131,8 @@
             text-align: center;
             margin-top: 10px;
         }
-        button.secondary { background-color: #e74c3c; }
+        button.secondary { background-color: #7f8c8d; }
+        button.danger { background-color: #e74c3c; }
         button.demo { background-color: #1abc9c; margin-top: 20px; }
         button:hover { opacity: 0.9; }
 
@@ -156,6 +156,8 @@
         .time-slot { font-weight: bold; font-size: 0.8em; color: #777; }
         .subject-math { background-color: rgba(52, 152, 219, 0.2); }
         .subject-tech { background-color: rgba(26, 188, 156, 0.2); }
+        .editable-cell { cursor: pointer; }
+        .editable-cell:hover { background-color: rgba(255, 235, 59, 0.3); }
         
         .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
         .calendar-day, .calendar-header { border: 1px solid #eee; background: #fafafa; padding: 5px; min-height: 80px; font-size: 0.8em; }
@@ -164,6 +166,36 @@
         .calendar-day .event { background-color: #e74c3c; color: white; font-size: 0.8em; padding: 2px 4px; border-radius: 3px; margin-top: 3px; display: block; }
         .calendar-week { cursor: pointer; }
         .calendar-week:hover .calendar-day { background-color: #e8f4fd; }
+        
+        .button-group { display: flex; gap: 10px; margin-top: 20px; }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        .modal-overlay.visible {
+            visibility: visible;
+            opacity: 1;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 20px 30px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
     </style>
 </head>
 <body>
@@ -241,30 +273,34 @@
                     <div class="card" onclick="alert('Función no implementada en la demo')">Páginas Personalizadas</div>
                     <div class="card" data-screen="pantalla-exportar">Exportar</div>
                 </div>
-                <button class="secondary" style="margin-top: 30px;" id="logout-button">Cerrar Sesión</button>
+                <button class="danger" style="margin-top: 30px;" id="logout-button">Cerrar Sesión</button>
             </div>
             
             <div id="pantalla-horarios" class="screen">
                 <h2>Gestor de Horarios</h2>
-                <p>Horario de Sofía - 1er Trimestre</p>
+                <p>Horario de Sofía - 1er Trimestre. <i>(Haz clic en una asignatura para editarla)</i></p>
                 <table class="schedule-table">
                     <tr><th>Hora</th><th>Lunes</th><th>Martes</th><th>Miércoles</th><th>Jueves</th><th>Viernes</th></tr>
-                    <tr><td class="time-slot">8:30-9:25</td> <td class="subject-math">Matemáticas 3ºA</td> <td></td> <td class="subject-math">Matemáticas 3ºA</td> <td></td> <td class="subject-tech">Tecnología 3ºA</td></tr>
-                    <tr><td class="time-slot">9:25-10:20</td><td class="subject-math">Matemáticas 3ºB</td> <td class="subject-tech">Tecnología 3ºA</td> <td class="subject-math">Matemáticas 3ºB</td> <td class="subject-tech">Tecnología 3ºB</td> <td></td></tr>
+                    <tr><td class="time-slot">8:30-9:25</td> <td class="subject-math editable-cell">Matemáticas 3ºA</td> <td></td> <td class="subject-math editable-cell">Matemáticas 3ºA</td> <td></td> <td class="subject-tech editable-cell">Tecnología 3ºA</td></tr>
+                    <tr><td class="time-slot">9:25-10:20</td><td class="subject-math editable-cell">Matemáticas 3ºB</td> <td class="subject-tech editable-cell">Tecnología 3ºA</td> <td class="subject-math editable-cell">Matemáticas 3ºB</td> <td class="subject-tech editable-cell">Tecnología 3ºB</td> <td></td></tr>
                     <tr><td class="time-slot">10:20-11:15</td><td></td> <td></td> <td></td> <td></td><td></td></tr>
                     <tr><td class="time-slot">11:15-12:10</td><td colspan="5" style="background: #eee; font-style: italic;">RECREO</td></tr>
-                    <tr><td class="time-slot">12:10-13:05</td><td></td> <td class="subject-math">Matemáticas 3ºA</td> <td></td> <td></td> <td class="subject-math">Matemáticas 3ºA</td></tr>
-                    <tr><td class="time-slot">13:05-14:00</td><td class="subject-tech">Tecnología 3ºB</td> <td></td> <td class="subject-tech">Tecnología 3ºB</td><td></td><td></td></tr>
+                    <tr><td class="time-slot">12:10-13:05</td><td></td> <td class="subject-math editable-cell">Matemáticas 3ºA</td> <td></td> <td></td> <td class="subject-math editable-cell">Matemáticas 3ºA</td></tr>
+                    <tr><td class="time-slot">13:05-14:00</td><td class="subject-tech editable-cell">Tecnología 3ºB</td> <td></td> <td class="subject-tech editable-cell">Tecnología 3ºB</td><td></td><td></td></tr>
                 </table>
-                <button class="secondary" onclick="alert('Plantilla guardada: Horario 1er Trimestre')">Guardar como plantilla</button>
+                <div class="button-group">
+                    <button id="create-schedule-btn">Crear Nuevo Horario</button>
+                    <button class="secondary" onclick="alert('Plantilla guardada: Horario 1er Trimestre')">Guardar como plantilla</button>
+                </div>
             </div>
             
             <div id="pantalla-mensual" class="screen">
-                <h2>Planificación Mensual - Septiembre 2025</h2>
+                <h2 id="monthly-plan-title">Planificación Mensual - Septiembre 2025</h2>
+                <p><i>(Haz clic en una semana para verla en detalle)</i></p>
                 <div class="calendar">
                     <div class="calendar-header">L</div> <div class="calendar-header">M</div> <div class="calendar-header">X</div> <div class="calendar-header">J</div> <div class="calendar-header">V</div> <div class="calendar-header">S</div> <div class="calendar-header">D</div>
                     <div class="calendar-day">1</div> <div class="calendar-day">2</div> <div class="calendar-day">3</div> <div class="calendar-day">4</div> <div class="calendar-day">5</div> <div class="calendar-day weekend">6</div> <div class="calendar-day weekend">7</div>
-                    <div class="calendar-week" onclick="mostrarPantalla('pantalla-semanal')">
+                    <div class="calendar-week">
                         <div class="calendar-day">8</div> <div class="calendar-day">9</div> <div class="calendar-day">10<span class="event">Inicio Tema 1</span></div> <div class="calendar-day">11</div> <div class="calendar-day">12</div>
                     </div>
                      <div class="calendar-day weekend">13</div> <div class="calendar-day weekend">14</div>
@@ -272,29 +308,39 @@
                     <div class="calendar-day">22</div> <div class="calendar-day">23</div> <div class="calendar-day">24</div> <div class="calendar-day">25</div> <div class="calendar-day">26<span class="event">Examen Tema 1</span></div> <div class="calendar-day weekend">27</div> <div class="calendar-day weekend">28</div>
                     <div class="calendar-day">29</div> <div class="calendar-day">30</div>
                 </div>
+                <button id="create-monthly-plan-btn" style="margin-top: 20px;">Crear Planificación para otro Mes</button>
             </div>
             
             <div id="pantalla-semanal" class="screen">
-                <h2>Planificación Semanal (8 - 12 de Septiembre)</h2>
+                <h2 id="weekly-plan-title">Planificación Semanal (8 - 12 de Septiembre)</h2>
+                <p><i>(Haz clic en una actividad para editarla)</i></p>
                  <table class="schedule-table">
                     <tr><th>Hora</th><th>Lunes 8</th><th>Martes 9</th><th>Miércoles 10</th><th>Jueves 11</th><th>Viernes 12</th></tr>
-                    <tr><td class="time-slot">8:30-9:25</td> <td class="subject-math"><b>Matemáticas 3ºA</b><br><small>Repaso ecuaciones</small></td> <td></td> <td class="subject-math"><b>Matemáticas 3ºA</b><br><small>Ejercicios p.23</small></td> <td></td> <td class="subject-tech"><b>Tecnología 3ºA</b><br><small>Intro a bloques</small></td></tr>
-                    <tr><td class="time-slot">9:25-10:20</td><td class="subject-math"><b>Matemáticas 3ºB</b></td> <td class="subject-tech"><b>Tecnología 3ºA</b><br><small>Práctica guiada</small></td> <td class="subject-math"><b>Matemáticas 3ºB</b></td> <td class="subject-tech"><b>Tecnología 3ºB</b></td> <td></td></tr>
+                    <tr><td class="time-slot">8:30-9:25</td> <td class="subject-math editable-cell"><b>Matemáticas 3ºA</b><br><small>Repaso ecuaciones</small></td> <td></td> <td class="subject-math editable-cell"><b>Matemáticas 3ºA</b><br><small>Ejercicios p.23</small></td> <td></td> <td class="subject-tech editable-cell"><b>Tecnología 3ºA</b><br><small>Intro a bloques</small></td></tr>
+                    <tr><td class="time-slot">9:25-10:20</td><td class="subject-math editable-cell"><b>Matemáticas 3ºB</b></td> <td class="subject-tech editable-cell"><b>Tecnología 3ºA</b><br><small>Práctica guiada</small></td> <td class="subject-math editable-cell"><b>Matemáticas 3ºB</b></td> <td class="subject-tech editable-cell"><b>Tecnología 3ºB</b></td> <td></td></tr>
                  </table>
                  <div class="form-group" style="margin-top: 20px;">
                      <label>Observaciones / Notas de la semana</label>
                      <textarea rows="3" style="width: 100%;">Preparar material para la reunión de departamento del viernes.</textarea>
                  </div>
+                 <div class="button-group">
+                    <button id="add-activity-btn">Añadir Actividad</button>
+                    <button id="select-week-btn" class="secondary">Seleccionar Otra Semana</button>
+                 </div>
             </div>
 
             <div id="pantalla-actas" class="screen">
-                <h2>Nueva Acta de Reunión</h2>
-                <div class="form-group"><label>Título/Motivo</label><input type="text" value="Reunión Departamento de Ciencias"></div>
-                <div class="form-group"><label>Fecha</label><input type="date" value="2025-09-19"></div>
-                <div class="form-group"><label>Asistentes</label><input type="text" value="Sofía García, Carlos Pérez, Laura Sanz"></div>
-                <div class="form-group"><label>Asuntos Tratados</label><textarea rows="8">- Revisión de la programación de 3º ESO.&#10;- Propuesta de actividades interdisciplinares.&#10;- Organización del laboratorio.</textarea></div>
-                <div class="form-group"><label>Acuerdos</label><textarea rows="6">- Se aprueba la propuesta de actividades.&#10;- Carlos se encarga del inventario del laboratorio.</textarea></div>
-                <button onclick="mostrarPantalla('pantalla-exportar')">Guardar y Exportar Acta</button>
+                <h2 id="actas-title">Mis Actas</h2>
+                <button id="create-meeting-btn" style="margin-bottom: 20px;">Crear Nueva Acta</button>
+                <p><i>Mostrando acta de ejemplo. Pulsa "Crear Nueva Acta" para limpiar el formulario.</i></p>
+                <form id="acta-form">
+                    <div class="form-group"><label>Título/Motivo</label><input type="text" value="Reunión Departamento de Ciencias"></div>
+                    <div class="form-group"><label>Fecha</label><input type="date" value="2025-09-19"></div>
+                    <div class="form-group"><label>Asistentes</label><input type="text" value="Sofía García, Carlos Pérez, Laura Sanz"></div>
+                    <div class="form-group"><label>Asuntos Tratados</label><textarea rows="8">- Revisión de la programación de 3º ESO.&#10;- Propuesta de actividades interdisciplinares.&#10;- Organización del laboratorio.</textarea></div>
+                    <div class="form-group"><label>Acuerdos</label><textarea rows="6">- Se aprueba la propuesta de actividades.&#10;- Carlos se encarga del inventario del laboratorio.</textarea></div>
+                    <button type="button" onclick="mostrarPantalla('pantalla-exportar')">Guardar y Exportar Acta</button>
+                </form>
             </div>
             
             <div id="pantalla-exportar" class="screen">
@@ -303,81 +349,215 @@
                 <button onclick="alert('Generando PDF profesional...')">Exportar a PDF</button>
                 <button class="demo" onclick="alert('Generando fichero actividades.csv compatible con Séneca...')">Exportar para Séneca (CSV)</button>
             </div>
-            </div>
+        </div>
 
         <footer>
             © Dissentis-ai 2025
         </footer>
     </div>
 
+    <div id="month-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3>Seleccionar Mes</h3>
+            <div class="form-group">
+                <label for="month-select">Mes del curso escolar:</label>
+                <select id="month-select">
+                    <option>Septiembre</option>
+                    <option>Octubre</option>
+                    <option>Noviembre</option>
+                    <option>Diciembre</option>
+                    <option>Enero</option>
+                    <option>Febrero</option>
+                    <option>Marzo</option>
+                    <option>Abril</option>
+                    <option>Mayo</option>
+                    <option>Junio</option>
+                </select>
+            </div>
+            <div class="button-group">
+                <button id="month-confirm-btn">Confirmar</button>
+                <button id="month-cancel-btn" class="secondary">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="week-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3>Seleccionar Semana</h3>
+            <div class="form-group">
+                <label for="week-select" id="week-select-label">Semanas de Septiembre:</label>
+                <select id="week-select">
+                    </select>
+            </div>
+            <div class="button-group">
+                <button id="week-confirm-btn">Confirmar</button>
+                <button id="week-cancel-btn" class="secondary">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        const screens = document.querySelectorAll('.screen');
-        const headerBar = document.getElementById('header-bar');
-        const backButton = document.getElementById('back-to-main');
-        const headerTitle = document.getElementById('header-title');
-        
-        let userName = "Docente";
-
-        function updateTitles(screenId) {
-            if (screenId === 'pantalla-principal') {
-                 backButton.style.visibility = 'hidden';
-                 document.getElementById('dashboard-title').textContent = `Planificador Docente de ${userName}`;
-                 headerTitle.textContent = 'Planificador Docente';
-            } else {
-                 backButton.style.visibility = 'visible';
-                 try {
-                     const screenTitle = document.querySelector(`#${screenId} h2`).textContent;
-                     headerTitle.textContent = screenTitle;
-                 } catch (e) {
-                     headerTitle.textContent = 'Planificador Docente';
-                 }
-            }
-        }
-
-        function mostrarPantalla(screenId) {
-            screens.forEach(screen => screen.classList.remove('active'));
-            const activeScreen = document.getElementById(screenId);
-            if (activeScreen) activeScreen.classList.add('active');
-            
-            headerBar.style.display = (screenId === 'pantalla-registro' || screenId === 'pantalla-perfil') ? 'none' : 'flex';
-            updateTitles(screenId);
-        }
-        
-        function actualizarComunidad() {
-            const provinciaSelect = document.getElementById('provincia');
-            const comunidadInput = document.getElementById('comunidad');
-            comunidadInput.value = provinciaSelect.options[provinciaSelect.selectedIndex].value;
-        }
-
         document.addEventListener('DOMContentLoaded', () => {
+            const screens = document.querySelectorAll('.screen');
+            const headerBar = document.getElementById('header-bar');
+            const backButton = document.getElementById('back-to-main');
+            const headerTitle = document.getElementById('header-title');
+            
+            const monthModal = document.getElementById('month-modal');
+            const weekModal = document.getElementById('week-modal');
+            
+            let userName = "Docente";
+
+            const weeksByMonth = {
+                'Septiembre': ['Semana 1 (1 - 5)', 'Semana 2 (8 - 12)', 'Semana 3 (15 - 19)', 'Semana 4 (22 - 26)'],
+                'Octubre': ['Semana 1 (1 - 3)', 'Semana 2 (6 - 10)', 'Semana 3 (13 - 17)', 'Semana 4 (20 - 24)', 'Semana 5 (27 - 31)'],
+                'Noviembre': ['Semana 1 (3 - 7)', 'Semana 2 (10 - 14)', 'Semana 3 (17 - 21)', 'Semana 4 (24 - 28)'],
+                'Diciembre': ['Semana 1 (1 - 5)', 'Semana 2 (8 - 12)', 'Semana 3 (15 - 19)'],
+                'Enero': ['Semana 1 (5 - 9)', 'Semana 2 (12 - 16)', 'Semana 3 (19 - 23)', 'Semana 4 (26 - 30)'],
+                'Febrero': ['Semana 1 (2 - 6)', 'Semana 2 (9 - 13)', 'Semana 3 (16 - 20)', 'Semana 4 (23 - 27)'],
+                'Marzo': ['Semana 1 (2 - 6)', 'Semana 2 (9 - 13)', 'Semana 3 (16 - 20)', 'Semana 4 (23 - 27)'],
+                'Abril': ['Semana 1 (1 - 3)', 'Semana 2 (6 - 10)', 'Semana 3 (13 - 17)', 'Semana 4 (20 - 24)', 'Semana 5 (27 - 30)'],
+                'Mayo': ['Semana 1 (4 - 8)', 'Semana 2 (11 - 15)', 'Semana 3 (18 - 22)', 'Semana 4 (25 - 29)'],
+                'Junio': ['Semana 1 (1 - 5)', 'Semana 2 (8 - 12)', 'Semana 3 (15 - 19)']
+            };
+
+            function updateTitles(screenId) {
+                if (screenId === 'pantalla-principal') {
+                    backButton.style.visibility = 'hidden';
+                    document.getElementById('dashboard-title').textContent = `Planificador Docente de ${userName}`;
+                    headerTitle.textContent = 'Planificador Docente';
+                } else {
+                    backButton.style.visibility = 'visible';
+                    try {
+                        const screenTitle = document.querySelector(`#${screenId} h2`).textContent;
+                        headerTitle.textContent = screenTitle;
+                    } catch (e) {
+                        headerTitle.textContent = 'Planificador Docente';
+                    }
+                }
+            }
+
+            function mostrarPantalla(screenId) {
+                screens.forEach(screen => screen.classList.remove('active'));
+                const activeScreen = document.getElementById(screenId);
+                if (activeScreen) activeScreen.classList.add('active');
+                
+                headerBar.style.display = (screenId === 'pantalla-registro' || screenId === 'pantalla-perfil') ? 'none' : 'flex';
+                updateTitles(screenId);
+            }
+            
+            function actualizarComunidad() {
+                const provinciaSelect = document.getElementById('provincia');
+                const comunidadInput = document.getElementById('comunidad');
+                comunidadInput.value = provinciaSelect.options[provinciaSelect.selectedIndex].value;
+            }
+
+            // --- NAVEGACIÓN ---
             backButton.addEventListener('click', () => mostrarPantalla('pantalla-principal'));
             
             document.querySelectorAll('.card[data-screen]').forEach(card => {
                 card.addEventListener('click', () => mostrarPantalla(card.dataset.screen));
             });
             
-            document.getElementById('register-button').addEventListener('click', () => mostrarPantalla('pantalla-perfil'));
+            // MODIFICACIÓN: Evento de clic para el calendario restaurado
+            document.querySelectorAll('.calendar-week').forEach(week => {
+                week.addEventListener('click', () => mostrarPantalla('pantalla-semanal'));
+            });
             
+            // --- LÓGICA DE LOGIN/REGISTRO ---
+            document.getElementById('register-button').addEventListener('click', () => mostrarPantalla('pantalla-perfil'));
             document.getElementById('save-profile-button').addEventListener('click', () => {
                 const nombreInput = document.getElementById('nombre-usuario');
                 userName = nombreInput.value || "Docente";
                 mostrarPantalla('pantalla-principal');
             });
-            
             const loginDemoShortcut = () => {
                 userName = "Sofía García";
                 mostrarPantalla('pantalla-principal');
             };
-
             document.getElementById('login-button').addEventListener('click', loginDemoShortcut);
             document.getElementById('demo-button').addEventListener('click', loginDemoShortcut);
             document.getElementById('logout-button').addEventListener('click', () => mostrarPantalla('pantalla-registro'));
 
+            // --- LÓGICA DE SIMULACIÓN DE EDICIÓN Y CREACIÓN ---
+            document.getElementById('create-schedule-btn').addEventListener('click', () => {
+                alert('Simulando la creación de un nuevo horario en blanco...');
+            });
+            document.getElementById('add-activity-btn').addEventListener('click', () => {
+                alert('Simulando la adición de una nueva actividad...');
+            });
+
+            document.querySelectorAll('.editable-cell').forEach(cell => {
+                cell.addEventListener('click', () => {
+                    const currentHTML = cell.innerHTML.replace(/<br\s*[\/]?>/gi, " ").replace(/<[^>]+>/g, ' ');
+                    const newValue = prompt('Simulación de edición:\nIntroduce el nuevo contenido para esta celda:', currentHTML.trim());
+                    if (newValue !== null && newValue !== "") {
+                        cell.innerHTML = newValue;
+                    }
+                });
+            });
+
+            document.getElementById('create-meeting-btn').addEventListener('click', () => {
+                document.getElementById('acta-form').reset();
+                document.getElementById('actas-title').textContent = "Creando Nueva Acta";
+                alert('Formulario de acta limpiado para crear una nueva.');
+            });
+
+            // --- LÓGICA DE LOS MODALES ---
+            const monthConfirmButton = document.getElementById('month-confirm-btn');
+            monthConfirmButton.addEventListener('click', () => {
+                const monthSelect = document.getElementById('month-select');
+                const selectedMonth = monthSelect.value;
+                
+                if (monthModal.dataset.nextAction === 'selectWeek') {
+                    const weekSelect = document.getElementById('week-select');
+                    const weekSelectLabel = document.getElementById('week-select-label');
+                    weekSelect.innerHTML = ''; 
+                    const weeks = weeksByMonth[selectedMonth] || [];
+                    weeks.forEach(week => {
+                        const option = document.createElement('option');
+                        option.textContent = week;
+                        weekSelect.appendChild(option);
+                    });
+                    weekSelectLabel.textContent = `Semanas de ${selectedMonth}:`;
+                    monthModal.classList.remove('visible');
+                    weekModal.classList.add('visible');
+                    delete monthModal.dataset.nextAction; 
+                } else {
+                    document.getElementById('monthly-plan-title').textContent = `Planificación Mensual - ${selectedMonth} 2025`;
+                    monthModal.classList.remove('visible');
+                }
+            });
+
+            document.getElementById('month-cancel-btn').addEventListener('click', () => {
+                monthModal.classList.remove('visible');
+            });
+            
+            document.getElementById('create-monthly-plan-btn').addEventListener('click', () => {
+                delete monthModal.dataset.nextAction;
+                monthModal.classList.add('visible');
+            });
+
+            document.getElementById('select-week-btn').addEventListener('click', () => {
+                monthModal.dataset.nextAction = 'selectWeek';
+                monthModal.classList.add('visible');
+            });
+            
+            document.getElementById('week-cancel-btn').addEventListener('click', () => {
+                weekModal.classList.remove('visible');
+            });
+
+            document.getElementById('week-confirm-btn').addEventListener('click', () => {
+                const select = document.getElementById('week-select');
+                const weekText = select.options[select.selectedIndex].text;
+                document.getElementById('weekly-plan-title').textContent = `Planificación Semanal (${weekText})`;
+                weekModal.classList.remove('visible');
+            });
+
+            // --- INICIALIZACIÓN ---
             mostrarPantalla('pantalla-registro');
             actualizarComunidad();
         });
     </script>
 </body>
 </html>
-
-
