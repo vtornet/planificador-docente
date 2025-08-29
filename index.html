@@ -37,6 +37,12 @@
             align-items: center;
         }
         
+        .header-title-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
         .header button {
             background: #34495e;
             border: none;
@@ -55,15 +61,25 @@
             padding: 20px;
         }
 
-        /* Sistema de Pantallas */
-        .screen {
-            display: none;
+        /* MODIFICACIÓN: Estilos para el logotipo */
+        .logo-container {
+            text-align: center;
+            margin-bottom: 20px;
         }
-        .screen.active {
-            display: block;
+        .logo-container svg {
+            height: 80px;
+            width: auto;
+            fill: #2c3e50;
+        }
+        .header .logo-container-small svg {
+            height: 30px;
+            width: auto;
+            fill: #ffffff;
         }
 
-        /* Estilos para Formularios y Botones */
+        .screen { display: none; }
+        .screen.active { display: block; }
+
         h2 {
             color: #2c3e50;
             border-bottom: 2px solid #e0e0e0;
@@ -71,17 +87,13 @@
             margin-top: 0;
         }
 
-        .form-group {
-            margin-bottom: 15px;
-        }
-
+        .form-group { margin-bottom: 15px; }
         .form-group label {
             display: block;
             margin-bottom: 5px;
             font-weight: bold;
             color: #555;
         }
-
         .form-group input, .form-group select, .form-group textarea {
             width: 100%;
             padding: 10px;
@@ -91,10 +103,7 @@
             font-family: inherit;
             font-size: 1em;
         }
-        
-        .form-group input[readonly] {
-            background-color: #eee;
-        }
+        .form-group input[readonly] { background-color: #eee; }
 
         button {
             display: inline-block;
@@ -109,27 +118,15 @@
             text-align: center;
             margin-top: 10px;
         }
+        button.secondary { background-color: #e74c3c; }
+        button.demo { background-color: #1abc9c; margin-top: 20px; }
+        button:hover { opacity: 0.9; }
 
-        button.secondary {
-            background-color: #e74c3c;
-        }
-        
-        button.demo {
-            background-color: #1abc9c;
-            margin-top: 20px;
-        }
-
-        button:hover {
-            opacity: 0.9;
-        }
-
-        /* Estilos del Dashboard Principal */
         .dashboard {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 20px;
         }
-
         .card {
             background-color: #ecf0f1;
             padding: 30px 20px;
@@ -141,70 +138,22 @@
             transition: transform 0.2s, box-shadow 0.2s;
             color: #2c3e50;
         }
-
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-        }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
         
-        /* Estilos para Tablas (Horario/Semanal) */
-        .schedule-table {
-            width: 100%;
-            border-collapse: collapse;
-            table-layout: fixed;
-        }
-        .schedule-table th, .schedule-table td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: center;
-            height: 50px;
-            font-size: 0.9em;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .schedule-table th {
-            background-color: #f2f2f2;
-        }
-        .time-slot {
-            font-weight: bold;
-            font-size: 0.8em;
-            color: #777;
-        }
+        .schedule-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        .schedule-table th, .schedule-table td { border: 1px solid #ddd; padding: 8px; text-align: center; height: 50px; font-size: 0.9em; overflow: hidden; text-overflow: ellipsis; }
+        .schedule-table th { background-color: #f2f2f2; }
+        .time-slot { font-weight: bold; font-size: 0.8em; color: #777; }
         .subject-math { background-color: rgba(52, 152, 219, 0.2); }
         .subject-tech { background-color: rgba(26, 188, 156, 0.2); }
         
-        /* Estilos Calendario Mensual */
-        .calendar {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 5px;
-        }
-        .calendar-day, .calendar-header {
-            border: 1px solid #eee;
-            background: #fafafa;
-            padding: 5px;
-            min-height: 80px;
-            font-size: 0.8em;
-        }
-        .calendar-header {
-            min-height: auto;
-            text-align: center;
-            font-weight: bold;
-        }
+        .calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+        .calendar-day, .calendar-header { border: 1px solid #eee; background: #fafafa; padding: 5px; min-height: 80px; font-size: 0.8em; }
+        .calendar-header { min-height: auto; text-align: center; font-weight: bold; }
         .calendar-day.weekend { background-color: #f9f9f9; }
-        .calendar-day .event {
-            background-color: #e74c3c;
-            color: white;
-            font-size: 0.8em;
-            padding: 2px 4px;
-            border-radius: 3px;
-            margin-top: 3px;
-            display: block;
-        }
+        .calendar-day .event { background-color: #e74c3c; color: white; font-size: 0.8em; padding: 2px 4px; border-radius: 3px; margin-top: 3px; display: block; }
         .calendar-week { cursor: pointer; }
-        .calendar-week:hover .calendar-day {
-            background-color: #e8f4fd;
-        }
+        .calendar-week:hover .calendar-day { background-color: #e8f4fd; }
     </style>
 </head>
 <body>
@@ -212,16 +161,22 @@
     <div class="container">
         
         <div id="header-bar" class="header" style="display: none;">
+            <div class="header-title-container">
+                <div class="logo-container-small">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19,4H18V2H16V4H8V2H6V4H5A2,2 0 0,0 3,6V20A2,2 0 0,0 5,22H19A2,2 0 0,0 21,20V6A2,2 0 0,0 19,4M19,20H5V10H19V20M19,8H5V6H19V8M7,12H12V17H7V12Z"/></svg>
+                </div>
+                <span id="header-title">Planificador Docente</span>
+            </div>
             <button id="back-to-main"> &lt; Principal</button>
-            <span id="header-title">Planificador Docente</span>
-            <span></span>
         </div>
 
         <div class="content">
 
             <div id="pantalla-registro" class="screen active">
-                <div class="header">Planificador Docente</div>
                 <div style="padding: 20px;">
+                    <div class="logo-container">
+                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19,4H18V2H16V4H8V2H6V4H5A2,2 0 0,0 3,6V20A2,2 0 0,0 5,22H19A2,2 0 0,0 21,20V6A2,2 0 0,0 19,4M19,20H5V10H19V20M19,8H5V6H19V8M7,12H12V17H7V12Z"/></svg>
+                    </div>
                     <h2>Bienvenida/o</h2>
                     <div class="form-group">
                         <label for="email">Email</label>
@@ -339,19 +294,16 @@
     </div>
 
     <script>
-        // MODIFICACIÓN: Lógica de JavaScript mejorada y centralizada
         const screens = document.querySelectorAll('.screen');
         const headerBar = document.getElementById('header-bar');
         const backButton = document.getElementById('back-to-main');
         const headerTitle = document.getElementById('header-title');
         
-        // Variable para guardar el nombre del usuario
         let userName = "Docente";
 
         function updateTitles(screenId) {
             if (screenId === 'pantalla-principal') {
                  backButton.style.visibility = 'hidden';
-                 // Actualizar título del dashboard
                  document.getElementById('dashboard-title').textContent = `Planificador Docente de ${userName}`;
                  headerTitle.textContent = 'Planificador Docente';
             } else {
@@ -370,7 +322,7 @@
             const activeScreen = document.getElementById(screenId);
             if (activeScreen) activeScreen.classList.add('active');
             
-            headerBar.style.display = (screenId === 'pantalla-registro' || screenId === 'pantalla-perfil') ? 'none' : 'flex';
+            headerBar.style.display = (screenId === 'pantalla-registro') ? 'none' : 'flex';
             updateTitles(screenId);
         }
         
@@ -381,43 +333,32 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            // --- NAVEGACIÓN ---
             backButton.addEventListener('click', () => mostrarPantalla('pantalla-principal'));
             
             document.querySelectorAll('.card[data-screen]').forEach(card => {
                 card.addEventListener('click', () => mostrarPantalla(card.dataset.screen));
             });
             
-            // --- LÓGICA DE LOGIN/REGISTRO ---
             document.getElementById('register-button').addEventListener('click', () => mostrarPantalla('pantalla-perfil'));
             
             document.getElementById('save-profile-button').addEventListener('click', () => {
                 const nombreInput = document.getElementById('nombre-usuario');
-                userName = nombreInput.value || "Docente"; // Guardar nombre
+                userName = nombreInput.value || "Docente";
                 mostrarPantalla('pantalla-principal');
             });
             
-            const loginDemo = () => {
-                const nombreInput = document.getElementById('nombre-usuario');
-                // Si el usuario es el de la demo, usamos ese nombre, si no, el del perfil
-                userName = (document.getElementById('email').value === 'sofia.profe@email.com') ? nombreInput.value : "Usuario";
-                mostrarPantalla('pantalla-principal');
-            };
-
             const loginDemoShortcut = () => {
-                userName = "Sofía García"; // Nombre para el acceso directo
+                userName = "Sofía García";
                 mostrarPantalla('pantalla-principal');
             };
 
-            document.getElementById('login-button').addEventListener('click', loginDemo);
+            document.getElementById('login-button').addEventListener('click', loginDemoShortcut);
             document.getElementById('demo-button').addEventListener('click', loginDemoShortcut);
             document.getElementById('logout-button').addEventListener('click', () => mostrarPantalla('pantalla-registro'));
 
-            // --- INICIALIZACIÓN ---
             mostrarPantalla('pantalla-registro');
             actualizarComunidad();
         });
     </script>
 </body>
-
 </html>
