@@ -179,6 +179,10 @@ export function CalendarioMensual() {
             weekdayFormat: (date: Date) => format(date, 'EEEEEE', { locale: es }),
           }}
           messages={{
+            date: 'Fecha',
+            time: 'Hora',
+            event: 'Evento',
+            allDay: 'Todo el día',
             month: 'Mes',
             week: 'Semana',
             day: 'Día',
@@ -186,6 +190,8 @@ export function CalendarioMensual() {
             today: 'Hoy',
             previous: '◀',
             next: '▶',
+            noEventsInRange: 'No hay eventos en este rango',
+            showMore: (count: number) => `+${count} más`,
           }}
         />
       </div>

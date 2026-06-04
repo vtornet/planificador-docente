@@ -2,6 +2,7 @@ import { Layout } from './components/layout/Layout'
 import { useCuadernoStore } from './stores/useCuadernoStore'
 import { HorarioManager } from './components/horario/HorarioManager'
 import { CalendarioMensual } from './components/calendario/CalendarioMensual'
+import { ReunionList } from './components/reuniones/ReunionList'
 
 function HorariosView() {
   return <HorarioManager />
@@ -12,12 +13,7 @@ function CalendarioView() {
 }
 
 function ReunionesView() {
-  return (
-    <div className="text-center py-12">
-      <h2 className="text-2xl font-bold text-slate-900 mb-4">👥 Reuniones</h2>
-      <p className="text-slate-600">Próximamente...</p>
-    </div>
-  )
+  return <ReunionList />
 }
 
 function NotasView() {
