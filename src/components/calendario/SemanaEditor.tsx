@@ -197,8 +197,17 @@ export function SemanaEditor({
                   <tr key={periodoIndex}>
                     <td className="border border-slate-300 p-2 text-sm text-slate-600 font-medium bg-slate-50">
                       <div className="text-center">
-                        <div>{periodo.inicio}</div>
-                        <div className="text-xs text-slate-400">- {periodo.fin}</div>
+                        {periodo.esRecreo ? (
+                          <>
+                            <div className="text-2xl">☕</div>
+                            <div className="text-xs text-slate-500">Recreo</div>
+                          </>
+                        ) : (
+                          <>
+                            <div>{periodo.inicio}</div>
+                            <div className="text-xs text-slate-400">- {periodo.fin}</div>
+                          </>
+                        )}
                       </div>
                     </td>
                     {DIAS_SEMANA.map((_, diaIndex) => (
@@ -282,7 +291,7 @@ export function SemanaEditor({
 }
 
 function generarPeriodos(config: typeof CONFIG_HORARIOS_PREDEFINIDOS.secundaria) {
-  const periodos: { inicio: string; fin: string }[] = []
+  const periodos: { inicio: string; fin: string; esRecreo?: boolean }[] = []
   let [hora, minuto] = config.horaInicio.split(':').map(Number)
 
   for (let i = 0; i < config.numPeriodos; i++) {
@@ -300,15 +309,22 @@ function generarPeriodos(config: typeof CONFIG_HORARIOS_PREDEFINIDOS.secundaria)
       '0'
     )}`
 
+    periodos.push({ inicio, fin })
+
+    // Insertar recreo DESPUÉS del periodo especificado
     if (config.recreo && config.recreo.periodo === i + 1) {
-      periodos.push({ inicio: '☕', fin: 'Recreo' })
+      const inicioRecreo = fin
       minuto += config.recreo.duracion
       if (minuto >= 60) {
         hora += Math.floor(minuto / 60)
         minuto = minuto % 60
       }
-    } else {
-      periodos.push({ inicio, fin })
+      const finRecreo = `${String(hora).padStart(2, '0')}:${String(minuto).padStart(
+        2,
+        '0'
+      )}`
+
+      periodos.push({ inicio: inicioRecreo, fin: finRecreo, esRecreo: true })
     }
   }
 

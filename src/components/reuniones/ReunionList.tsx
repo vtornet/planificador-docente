@@ -7,6 +7,7 @@ import { Input } from '../ui/input'
 import { Card, CardContent } from '../ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog'
 import { ReunionForm } from './ReunionForm'
+import { Users, Calendar, FileText, Edit, Trash2, Pencil } from 'lucide-react'
 
 const TIPOS_FILTRO = [
   { value: 'todos', label: 'Todas' },
@@ -87,7 +88,9 @@ export function ReunionList() {
   if (reuniones.length === 0 && !showCrear) {
     return (
       <div className="text-center py-12">
-        <div className="text-6xl mb-4">👥</div>
+        <div className="text-6xl mb-4 text-blue-200">
+          <Users className="w-16 h-16 mx-auto text-blue-400" />
+        </div>
         <h3 className="text-xl font-semibold text-slate-900 mb-2">
           No hay reuniones registradas
         </h3>
@@ -227,17 +230,20 @@ export function ReunionList() {
                         {getTipoLabel(reunion.tipo)}
                       </span>
                     </div>
-                    <div className="text-sm text-slate-600 mb-2">
-                      📅 {format(new Date(reunion.fecha), 'EEEE, dd MMMM yyyy', {
+                    <div className="text-sm text-slate-600 mb-2 flex items-center gap-2">
+                      <Calendar className="w-4 h-4" />
+                      {format(new Date(reunion.fecha), 'EEEE, dd MMMM yyyy', {
                         locale: es,
                       })}
                     </div>
-                    <div className="text-sm text-slate-600 mb-3">
-                      👥 {reunion.asistentes.join(', ') || 'Sin asistentes'}
+                    <div className="text-sm text-slate-600 mb-3 flex items-center gap-2">
+                      <Users className="w-4 h-4" />
+                      {reunion.asistentes.join(', ') || 'Sin asistentes'}
                     </div>
                     {reunion.asuntosTratados && (
-                      <div className="text-sm text-slate-600 line-clamp-2">
-                        📝 {reunion.asuntosTratados}
+                      <div className="text-sm text-slate-600 line-clamp-2 flex items-start gap-2">
+                        <FileText className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                        {reunion.asuntosTratados}
                       </div>
                     )}
                   </div>
@@ -250,7 +256,7 @@ export function ReunionList() {
                         setEditingReunion(reunion.id)
                       }}
                     >
-                      Editar
+                      <Pencil size={16} />
                     </Button>
                     <Button
                       size="sm"
@@ -261,7 +267,7 @@ export function ReunionList() {
                         handleEliminar(reunion.id, reunion.titulo)
                       }}
                     >
-                      Eliminar
+                      <Trash2 size={16} />
                     </Button>
                   </div>
                 </div>

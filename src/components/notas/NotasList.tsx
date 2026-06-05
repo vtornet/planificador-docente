@@ -6,7 +6,7 @@ import { Input } from '../ui/input'
 import { Card, CardContent } from '../ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog'
 import { NotaEditor } from './NotaEditor'
-import { Search, Grid, List, Trash2, Edit } from 'lucide-react'
+import { Search, Grid, List, Trash2, Edit, FileText } from 'lucide-react'
 
 const VISTAS = ['grid', 'list'] as const
 
@@ -98,7 +98,9 @@ export function NotasList() {
   if (notas.length === 0 && !showCrear) {
     return (
       <div className="text-center py-12">
-        <div className="text-6xl mb-4">📝</div>
+        <div className="text-6xl mb-4 text-blue-200">
+          <FileText className="w-16 h-16 mx-auto text-blue-400" />
+        </div>
         <h3 className="text-xl font-semibold text-slate-900 mb-2">
           No hay notas creadas
         </h3>

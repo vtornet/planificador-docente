@@ -9,7 +9,7 @@ interface FirmaCanvasProps {
 
 export function FirmaCanvas({ onGuardar, onCancel }: FirmaCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const [isDrawing, setIsDrawing] = useState(false)
+  const isDrawingRef = useRef(false)
   const [nombre, setNombre] = useState('')
   const [isEmpty, setIsEmpty] = useState(true)
 
@@ -45,7 +45,7 @@ export function FirmaCanvas({ onGuardar, onCancel }: FirmaCanvasProps) {
     // Eventos de dibujo
     const startDrawing = (e: MouseEvent | TouchEvent) => {
       e.preventDefault()
-      setIsDrawing(true)
+      isDrawingRef.current = true
       setIsEmpty(false)
       const coords = getCoords(e)
       ctx.beginPath()
@@ -53,7 +53,7 @@ export function FirmaCanvas({ onGuardar, onCancel }: FirmaCanvasProps) {
     }
 
     const draw = (e: MouseEvent | TouchEvent) => {
-      if (!isDrawing) return
+      if (!isDrawingRef.current) return
       e.preventDefault()
       const coords = getCoords(e)
       ctx.lineTo(coords.x, coords.y)
@@ -61,7 +61,7 @@ export function FirmaCanvas({ onGuardar, onCancel }: FirmaCanvasProps) {
     }
 
     const stopDrawing = () => {
-      setIsDrawing(false)
+      isDrawingRef.current = false
     }
 
     // Eventos de mouse
@@ -71,8 +71,8 @@ export function FirmaCanvas({ onGuardar, onCancel }: FirmaCanvasProps) {
     canvas.addEventListener('mouseleave', stopDrawing)
 
     // Eventos táctiles
-    canvas.addEventListener('touchstart', startDrawing)
-    canvas.addEventListener('touchmove', draw)
+    canvas.addEventListener('touchstart', startDrawing, { passive: false })
+    canvas.addEventListener('touchmove', draw, { passive: false })
     canvas.addEventListener('touchend', stopDrawing)
 
     return () => {
@@ -84,7 +84,7 @@ export function FirmaCanvas({ onGuardar, onCancel }: FirmaCanvasProps) {
       canvas.removeEventListener('touchmove', draw)
       canvas.removeEventListener('touchend', stopDrawing)
     }
-  }, [isDrawing])
+  }, [])
 
   const handleLimpiar = () => {
     const canvas = canvasRef.current
@@ -112,7 +112,7 @@ export function FirmaCanvas({ onGuardar, onCancel }: FirmaCanvasProps) {
     const imagen = canvas.toDataURL('image/png')
     onGuardar(nombre.trim(), imagen)
     setNombre('')
-    handleLimpiar()
+    // No limpiar el canvas aquí para evitar problemas
   }
 
   return (

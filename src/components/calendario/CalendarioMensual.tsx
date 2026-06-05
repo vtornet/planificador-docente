@@ -8,6 +8,7 @@ import { useCuadernoStore } from '../../stores/useCuadernoStore'
 import { Dialog, DialogContent } from '../ui/dialog'
 import { VistaSemanal } from './VistaSemanal'
 import { SemanaEditor } from './SemanaEditor'
+import { Lightbulb } from 'lucide-react'
 
 const locales = {
   'es': es,
@@ -212,7 +213,10 @@ export function CalendarioMensual() {
       </Dialog>
 
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h4 className="font-medium text-blue-900 mb-2">💡 Consejos</h4>
+        <h4 className="font-medium text-blue-900 mb-2 flex items-center gap-2">
+          <Lightbulb className="w-4 h-4" />
+          Consejos
+        </h4>
         <ul className="text-sm text-blue-800 space-y-1">
           <li>• Click en un día para crear o editar una semana</li>
           <li>• Usa las flechas para navegar entre meses</li>

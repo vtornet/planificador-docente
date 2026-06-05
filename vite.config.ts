@@ -1,10 +1,21 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import { nodePolyfills } from 'vite-plugin-node-polyfills'
 
 export default defineConfig({
   plugins: [
     react(),
+    nodePolyfills({
+      // Whether to polyfill specific globals.
+      globals: {
+        Buffer: true, // can also be 'build', 'dev', or false
+        global: true,
+        process: true,
+      },
+      // Whether to polyfill `process` on legacy browsers (~0.1% browsers)
+      // process: true,
+    }),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'icons/*.png', 'icons/*.svg'],

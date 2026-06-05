@@ -2,14 +2,16 @@ import { useState } from 'react'
 import { DIAS_SEMANA } from '../../types/constants'
 import type { Horario } from '../../types'
 import { cn } from '../../utils/cn'
+import { UserCircle, GraduationCap } from 'lucide-react'
 
 interface HorarioTableProps {
   horario: Horario
   onUpdate: (horario: Horario) => void
+  onDuplicate?: (horario: Omit<Horario, 'id'>) => void
   className?: string
 }
 
-export function HorarioTable({ horario, onUpdate, className }: HorarioTableProps) {
+export function HorarioTable({ horario, onUpdate, onDuplicate, className }: HorarioTableProps) {
   const [celdaEditando, setCeldaEditando] = useState<{ fila: number; columna: number } | null>(null)
 
   const periodos = generarPeriodos(horario.configHorarios)
@@ -34,8 +36,16 @@ export function HorarioTable({ horario, onUpdate, className }: HorarioTableProps
     <div className={cn('w-full', className)}>
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-lg font-semibold text-slate-900">{horario.nombre}</h3>
-        <span className="text-sm text-slate-500">
-          {horario.tipo === 'docente' ? '👨‍🏫 Docente' : '👨‍🎓 Alumnado'}
+        <span className="text-sm text-slate-500 flex items-center gap-1">
+          {horario.tipo === 'docente' ? (
+            <>
+              <UserCircle className="w-4 h-4" /> Docente
+            </>
+          ) : (
+            <>
+              <GraduationCap className="w-4 h-4" /> Alumnado
+            </>
+          )}
         </span>
       </div>
 
@@ -61,8 +71,17 @@ export function HorarioTable({ horario, onUpdate, className }: HorarioTableProps
               <tr key={fila}>
                 <td className="border border-slate-300 p-2 text-sm text-slate-600 font-medium bg-slate-50">
                   <div className="text-center">
-                    <div>{periodo.inicio}</div>
-                    <div className="text-xs text-slate-400">- {periodo.fin}</div>
+                    {periodo.esRecreo ? (
+                      <>
+                        <div className="text-2xl">☕</div>
+                        <div className="text-xs text-slate-500">Recreo</div>
+                      </>
+                    ) : (
+                      <>
+                        <div>{periodo.inicio}</div>
+                        <div className="text-xs text-slate-400">- {periodo.fin}</div>
+                      </>
+                    )}
                   </div>
                 </td>
                 {DIAS_SEMANA.map((_, columna) => {
@@ -111,23 +130,25 @@ export function HorarioTable({ horario, onUpdate, className }: HorarioTableProps
       </div>
 
       <div className="mt-4 flex items-center gap-4">
-        <button
-          onClick={() => {
-            if (confirm('¿Duplicar este horario como horario de alumnado?')) {
-              const duplicado: Horario = {
-                ...horario,
-                id: `${horario.id}-copia-${Date.now()}`,
-                tipo: horario.tipo === 'docente' ? 'alumnado' : 'docente',
-                nombre: `${horario.nombre} (copia)`,
-                datos: horario.datos.map((fila) => fila.map((celda) => ({ ...celda }))),
+        {onDuplicate && (
+          <button
+            onClick={() => {
+              const nuevoTipo = horario.tipo === 'docente' ? 'alumnado' : 'docente'
+              if (confirm(`¿Duplicar este horario como horario de ${nuevoTipo}?`)) {
+                const duplicado: Omit<Horario, 'id'> = {
+                  tipo: nuevoTipo,
+                  nombre: `${horario.nombre} (${nuevoTipo})`,
+                  datos: horario.datos.map((fila) => fila.map((celda) => ({ ...celda }))),
+                  configHorarios: horario.configHorarios,
+                }
+                onDuplicate(duplicado)
               }
-              onUpdate(duplicado)
-            }
-          }}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-        >
-          Duplicar horario
-        </button>
+            }}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+          >
+            Duplicar horario
+          </button>
+        )}
         <span className="text-sm text-slate-500">
           Tip: Click en celda para editar, Enter para guardar, Esc para cancelar
         </span>
@@ -137,7 +158,7 @@ export function HorarioTable({ horario, onUpdate, className }: HorarioTableProps
 }
 
 function generarPeriodos(config: Horario['configHorarios']) {
-  const periodos: { inicio: string; fin: string }[] = []
+  const periodos: { inicio: string; fin: string; esRecreo?: boolean }[] = []
   let [hora, minuto] = config.horaInicio.split(':').map(Number)
 
   for (let i = 0; i < config.numPeriodos; i++) {
@@ -149,16 +170,19 @@ function generarPeriodos(config: Horario['configHorarios']) {
     }
     const fin = `${String(hora).padStart(2, '0')}:${String(minuto).padStart(2, '0')}`
 
-    // Comprobar si es recreo
+    periodos.push({ inicio, fin })
+
+    // Insertar recreo DESPUÉS del periodo especificado
     if (config.recreo && config.recreo.periodo === i + 1) {
-      periodos.push({ inicio: '☕', fin: 'Recreo' })
+      const inicioRecreo = fin
       minuto += config.recreo.duracion
       if (minuto >= 60) {
         hora += Math.floor(minuto / 60)
         minuto = minuto % 60
       }
-    } else {
-      periodos.push({ inicio, fin })
+      const finRecreo = `${String(hora).padStart(2, '0')}:${String(minuto).padStart(2, '0')}`
+
+      periodos.push({ inicio: inicioRecreo, fin: finRecreo, esRecreo: true })
     }
   }
 
