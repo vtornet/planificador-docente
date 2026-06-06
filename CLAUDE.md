@@ -25,6 +25,7 @@ Aplicación web progresiva (PWA) que permite a los docentes gestionar su planifi
 - ⏳ **FASE 6:** Exportación e Impresión (PDF)
 - ⏳ **FASE 7:** PWA y Offline
 - ⏳ **FASE 8:** Testing y Polish
+- ⏳ **FASE 9:** Asistente con IA Gratuita
 
 ### Tareas Pendientes Importantes 📌
 - **MEJORA VISUAL (PENDIENTE):** La funcionalidad está completa pero la apariencia requiere un rediseño para ser más moderna y profesional. Esto se abordará en la próxima sesión.
@@ -62,6 +63,11 @@ Aplicación web progresiva (PWA) que permite a los docentes gestionar su planifi
 ### Editor Rico
 - **Tiptap** - Editor de texto rico basado en ProseMirror
   - Soporte para tablas, imágenes, listas, etc.
+
+### Inteligencia Artificial
+- **API de IA gratuita** - Por determinar (Hugging Face, Groq, OpenRouter, etc.)
+  - Asistente para ayuda con documentos
+  - Prompts especializados por módulo
 
 ---
 
@@ -344,6 +350,40 @@ Base de datos: PlafinicadorDB
 
 ---
 
+### FASE 9: Asistente con IA Gratuita (Semana 12)
+**Objetivo:** Integrar una API de IA gratuita para ayudar al docente en la creación y mejora de documentos.
+
+**Tareas:**
+- [ ] Investigar y seleccionar API de IA gratuita (Hugging Face, Groq, OpenRouter, etc.)
+- [ ] Diseñar interfaz de asistente (chat flotante o panel lateral)
+- [ ] Implementar integración con API seleccionada
+- [ ] Crear prompts especializados para cada módulo:
+  - [ ] **Horarios:** Sugerencias de distribución de asignaturas
+  - [ ] **Planificación:** Ideas de actividades por nivel/asignatura
+  - [ ] **Reuniones:** Generación de órdenes del día, resumen de acuerdos
+  - [ ] **Notas:** Corrección ortográfica, mejora de redacción, ideas de contenido
+- [ ] Añadir sistema de plantillas de prompts personalizables
+- [ ] Implementar historial de conversación
+- [ ] Configurar modo offline con mensajes informativos
+- [ ] Añadir indicador de uso de créditos (si aplica)
+- [ ] Implementar cache de respuestas para evitar repeticiones
+
+**Opciones de APIs Gratuitas a Evaluar:**
+- **Hugging Face Inference API** - Modelos de lenguaje gratuitos con límites razonables
+- **Groq** - Inferencia ultrarrápida con modelos open-source (Llama 3, Mixtral)
+- **OpenRouter** - Agregador que permite usar modelos con créditos gratuitos
+- **Cohere** - Plan gratuito con límites diarios
+- **Mistral AI** - API gratuita con límites de uso
+
+**Entregables:**
+- Asistente de IA integrado en la aplicación
+- Prompts especializados funcionales para cada módulo
+- Sistema de historial y cache
+- Documentación de uso del asistente
+- Validación de funcionamiento con API gratuita seleccionada
+
+---
+
 ## Estructura del Proyecto
 
 ```
@@ -474,6 +514,7 @@ npm run format
 3. Estadísticas de uso
 4. Temas personalizables
 5. Integración con calendarios externos
+6. **Asistente con IA** (ver FASE 9)
 
 ---
 
