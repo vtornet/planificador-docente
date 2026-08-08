@@ -3,7 +3,10 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { nodePolyfills } from 'vite-plugin-node-polyfills'
 
+const base = process.env.GITHUB_PAGES ? '/planificador-docente/' : '/'
+
 export default defineConfig({
+  base,
   plugins: [
     react(),
     nodePolyfills({
@@ -27,21 +30,21 @@ export default defineConfig({
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait',
-        scope: '/',
-        start_url: '/',
+        scope: base,
+        start_url: base,
         icons: [
           {
-            src: '/icons/icon-192x192.png',
+            src: `${base}icons/icon-192x192.png`,
             sizes: '192x192',
             type: 'image/png'
           },
           {
-            src: '/icons/icon-512x512.png',
+            src: `${base}icons/icon-512x512.png`,
             sizes: '512x512',
             type: 'image/png'
           },
           {
-            src: '/icons/icon-maskable-512x512.png',
+            src: `${base}icons/icon-maskable-512x512.png`,
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable'
