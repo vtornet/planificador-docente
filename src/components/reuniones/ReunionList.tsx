@@ -122,13 +122,11 @@ export function ReunionList() {
       <div className="flex items-center justify-between flex-wrap gap-4">
         <h2 className="text-2xl font-bold text-foreground tracking-tight">Reuniones</h2>
         <Dialog open={showCrear || !!editingReunion} onOpenChange={(open) => {
-          if (!open) {
-            setShowCrear(false)
-            setEditingReunion(null)
-          }
+          setShowCrear(open)
+          if (!open) setEditingReunion(null)
         }}>
           <DialogTrigger asChild>
-            <Button onClick={() => setShowCrear(true)}>+ Nueva Reunión</Button>
+            <Button>+ Nueva Reunión</Button>
           </DialogTrigger>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>

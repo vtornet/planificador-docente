@@ -132,13 +132,11 @@ export function NotasList() {
       <div className="flex items-center justify-between flex-wrap gap-4">
         <h2 className="text-2xl font-bold text-foreground tracking-tight">Notas</h2>
         <Dialog open={showCrear || !!editingNota} onOpenChange={(open) => {
-          if (!open) {
-            setShowCrear(false)
-            setEditingNota(null)
-          }
+          setShowCrear(open)
+          if (!open) setEditingNota(null)
         }}>
           <DialogTrigger asChild>
-            <Button onClick={() => setShowCrear(true)}>+ Nueva Nota</Button>
+            <Button>+ Nueva Nota</Button>
           </DialogTrigger>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>

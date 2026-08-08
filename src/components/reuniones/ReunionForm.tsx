@@ -82,16 +82,11 @@ export function ReunionForm({ reunion, onSave, onCancel }: ReunionFormProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-foreground tracking-tight">
-          {reunion ? 'Editar Reunión' : 'Nueva Reunión'}
-        </h3>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={onCancel}>
-            Cancelar
-          </Button>
-          <Button onClick={handleGuardar}>Guardar</Button>
-        </div>
+      <div className="flex items-center justify-end gap-2">
+        <Button variant="outline" onClick={onCancel}>
+          Cancelar
+        </Button>
+        <Button onClick={handleGuardar}>Guardar</Button>
       </div>
 
       <Card>

@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { createPortal } from 'react-dom'
 import { cn } from '../../utils/cn'
 
 interface DialogContextValue {
@@ -41,25 +42,40 @@ const DialogContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTML
   ({ className, children, ...props }, ref) => {
     const { isOpen, setIsOpen } = useDialog()
 
+    React.useEffect(() => {
+      if (!isOpen) return
+      const onKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') setIsOpen(false)
+      }
+      window.addEventListener('keydown', onKeyDown)
+      return () => window.removeEventListener('keydown', onKeyDown)
+    }, [isOpen, setIsOpen])
+
     if (!isOpen) return null
 
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center">
+    // Renderizado en portal a document.body: si el Dialog se abre desde un
+    // ancestro con backdrop-blur/filter/transform, ese ancestro crea un
+    // containing block nuevo que rompe `position: fixed` y recorta el modal.
+    return createPortal(
+      <div className="fixed inset-0 z-50 overflow-y-auto">
         {/* Backdrop */}
         <div className="fixed inset-0 bg-black/50" onClick={() => setIsOpen(false)} />
 
         {/* Content */}
-        <div
-          ref={ref}
-          className={cn(
-            'relative z-50 grid w-full max-w-lg gap-4 border bg-background p-6 shadow-lg duration-200 sm:rounded-lg',
-            className
-          )}
-          {...props}
-        >
-          {children}
+        <div className="flex min-h-full items-start justify-center p-4 sm:items-center">
+          <div
+            ref={ref}
+            className={cn(
+              'relative z-50 my-8 grid w-full max-w-lg gap-4 border bg-background p-6 shadow-lg duration-200 sm:rounded-lg sm:my-0',
+              className
+            )}
+            {...props}
+          >
+            {children}
+          </div>
         </div>
-      </div>
+      </div>,
+      document.body
     )
   }
 )
