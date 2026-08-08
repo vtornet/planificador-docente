@@ -146,16 +146,11 @@ export function HorarioManager() {
               <DialogTitle>Nuevo horario</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 max-h-[60vh] overflow-y-auto">
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-1">
-                  Nombre del horario
-                </label>
-                <Input
-                  value={nuevoNombre}
-                  onChange={(e) => setNuevoNombre(e.target.value)}
-                  placeholder="Ej: Horario 1º ESO A"
-                />
-              </div>
+              <CampoNombreHorario
+                value={nuevoNombre}
+                onChange={setNuevoNombre}
+                cursos={cuadernoActual?.metadata.cursos || []}
+              />
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1">
                   Tipo
@@ -303,16 +298,11 @@ export function HorarioManager() {
               <DialogTitle>Nuevo horario</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 max-h-[60vh] overflow-y-auto">
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-1">
-                  Nombre del horario
-                </label>
-                <Input
-                  value={nuevoNombre}
-                  onChange={(e) => setNuevoNombre(e.target.value)}
-                  placeholder="Ej: Horario 1º ESO A"
-                />
-              </div>
+              <CampoNombreHorario
+                value={nuevoNombre}
+                onChange={setNuevoNombre}
+                cursos={cuadernoActual?.metadata.cursos || []}
+              />
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1">
                   Tipo
@@ -451,16 +441,11 @@ export function HorarioManager() {
               <DialogTitle>Editar horario</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 max-h-[60vh] overflow-y-auto">
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-1">
-                  Nombre del horario
-                </label>
-                <Input
-                  value={nuevoNombre}
-                  onChange={(e) => setNuevoNombre(e.target.value)}
-                  placeholder="Ej: Horario 1º ESO A"
-                />
-              </div>
+              <CampoNombreHorario
+                value={nuevoNombre}
+                onChange={setNuevoNombre}
+                cursos={cuadernoActual?.metadata.cursos || []}
+              />
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1">
                   Tipo
@@ -633,6 +618,48 @@ export function HorarioManager() {
           </Card>
         ))}
       </div>
+    </div>
+  )
+}
+
+function CampoNombreHorario({
+  value,
+  onChange,
+  cursos,
+}: {
+  value: string
+  onChange: (value: string) => void
+  cursos: string[]
+}) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-foreground mb-1">
+        Nombre del horario
+      </label>
+      {cursos.length > 0 && (
+        <select
+          value={cursos.includes(value) ? value : ''}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm mb-2"
+        >
+          <option value="">Elegir un curso del perfil...</option>
+          {cursos.map((curso) => (
+            <option key={curso} value={curso}>
+              {curso}
+            </option>
+          ))}
+        </select>
+      )}
+      <Input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Ej: Horario 1º ESO A"
+      />
+      {cursos.length === 0 && (
+        <p className="text-xs text-muted-foreground mt-1">
+          Tip: añade tus cursos en el perfil para elegirlos aquí directamente.
+        </p>
+      )}
     </div>
   )
 }

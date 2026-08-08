@@ -17,7 +17,7 @@ interface ReunionFormProps {
 }
 
 export function ReunionForm({ reunion, onSave, onCancel }: ReunionFormProps) {
-  const { addReunion, updateReunion } = useCuadernoStore()
+  const { cuadernoActual, addReunion, updateReunion } = useCuadernoStore()
 
   const [titulo, setTitulo] = useState(reunion?.titulo || '')
   const [fecha, setFecha] = useState(
@@ -27,7 +27,7 @@ export function ReunionForm({ reunion, onSave, onCancel }: ReunionFormProps) {
   )
   const [tipo, setTipo] = useState<Reunion['tipo']>(reunion?.tipo || 'claustro')
   const [asistentes, setAsistentes] = useState(
-    reunion?.asistentes?.join(', ') || ''
+    reunion?.asistentes?.join(', ') || cuadernoActual?.metadata.docente || ''
   )
   const [asuntosTratados, setAsuntosTratados] = useState(
     reunion?.asuntosTratados || ''

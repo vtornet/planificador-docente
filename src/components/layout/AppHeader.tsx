@@ -1,9 +1,11 @@
+import { useState } from 'react'
 import { useCuadernoStore } from '../../stores/useCuadernoStore'
 import { cn } from '../../utils/cn'
-import { Calendar, CalendarDays, Users, FileText, Moon, Sun } from 'lucide-react'
+import { Calendar, CalendarDays, Users, FileText, Moon, Sun, UserCircle } from 'lucide-react'
 import { ExportMenu } from '../export/ExportMenu'
 import { Button } from '../ui/button'
 import { useTheme } from '../../hooks/useTheme'
+import { PerfilDialog } from '../perfil/PerfilDialog'
 
 interface AppHeaderProps {
   className?: string
@@ -19,6 +21,7 @@ const viewConfig = {
 export function AppHeader({ className }: AppHeaderProps) {
   const { cuadernoActual, view } = useCuadernoStore()
   const { theme, toggleTheme } = useTheme()
+  const [showPerfil, setShowPerfil] = useState(false)
 
   if (!cuadernoActual) return null
 
@@ -50,6 +53,15 @@ export function AppHeader({ className }: AppHeaderProps) {
           <Button
             variant="ghost"
             size="icon"
+            onClick={() => setShowPerfil(true)}
+            aria-label="Perfil"
+            title="Perfil"
+          >
+            <UserCircle className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={toggleTheme}
             aria-label={theme === 'dark' ? 'Activar modo claro' : 'Activar modo oscuro'}
           >
@@ -58,6 +70,7 @@ export function AppHeader({ className }: AppHeaderProps) {
           <ExportMenu />
         </div>
       </div>
+      <PerfilDialog open={showPerfil} onOpenChange={setShowPerfil} />
     </header>
   )
 }

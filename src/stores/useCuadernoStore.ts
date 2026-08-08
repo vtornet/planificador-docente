@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { CuadernoDocente, Horario, Semana, Reunion, Nota } from '../types'
+import type { CuadernoDocente, CuadernoMetadata, Horario, Semana, Reunion, Nota } from '../types'
 
 interface CuadernoState {
   // Estado
@@ -12,6 +12,7 @@ interface CuadernoState {
   loadCuaderno: (id: string) => Promise<void>
   createCuaderno: (metadata: CuadernoDocente['metadata']) => Promise<void>
   updateCuaderno: (updates: Partial<CuadernoDocente>) => Promise<void>
+  updateMetadata: (updates: Partial<CuadernoMetadata>) => void
 
   // Acciones - Horarios
   addHorario: (horario: Omit<Horario, 'id'>) => void
@@ -148,6 +149,19 @@ export const useCuadernoStore = create<CuadernoState>((set, get) => ({
     } catch (e) {
       set({ error: 'Error al guardar cambios' })
     }
+  },
+
+  // Metadata / Perfil
+  updateMetadata: (updates) => {
+    const { cuadernoActual } = get()
+    if (!cuadernoActual) return
+
+    const actualizado = {
+      ...cuadernoActual,
+      metadata: { ...cuadernoActual.metadata, ...updates, actualizado: new Date() },
+    }
+    set({ cuadernoActual: actualizado })
+    saveCuadernoAsync(actualizado)
   },
 
   // Horarios

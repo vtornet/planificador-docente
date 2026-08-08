@@ -5,6 +5,7 @@ interface CuadernoMetadata {
   cursoEscolar: string // "2026-2027"
   centro: string
   docente: string
+  cursos?: string[] // Ej: ["1º ESO A", "2º ESO B"] - usado como desplegable al crear horarios
   creado: Date
   actualizado: Date
 }
