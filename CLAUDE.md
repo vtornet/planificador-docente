@@ -12,7 +12,7 @@ Aplicación web progresiva (PWA) que permite a los docentes gestionar su planifi
 
 ## Estado del Proyecto
 
-**Última actualización:** Junio 2026
+**Última actualización:** Agosto 2026
 
 ### Fases Completadas ✅
 - ✅ **FASE 1:** Fundación - Proyecto configurado con React, Vite, TypeScript, TailwindCSS
@@ -20,15 +20,17 @@ Aplicación web progresiva (PWA) que permite a los docentes gestionar su planifi
 - ✅ **FASE 3:** Calendarios y Planificadores - Calendario mensual y vista semanal
 - ✅ **FASE 4:** Módulo Reuniones - CRUD de reuniones con firmas digitales
 - ✅ **FASE 5:** Páginas Libres - Notas con editor rico (Tiptap)
+- ✅ **FASE 6:** Exportación e Impresión - PDF por módulo, PDF completo del cuaderno y backup JSON (`ExportMenu.tsx`, `utils/pdf.tsx`, `utils/pdfTemplates.tsx`)
 
 ### Fases Pendientes ⏳
-- ⏳ **FASE 6:** Exportación e Impresión (PDF)
-- ⏳ **FASE 7:** PWA y Offline
+- ⏳ **FASE 7:** PWA y Offline (base ya configurada con `vite-plugin-pwa`; falta validar offline completo y Lighthouse)
 - ⏳ **FASE 8:** Testing y Polish
 - ⏳ **FASE 9:** Asistente con IA Gratuita
 
 ### Tareas Pendientes Importantes 📌
-- **MEJORA VISUAL (PENDIENTE):** La funcionalidad está completa pero la apariencia requiere un rediseño para ser más moderna y profesional. Esto se abordará en la próxima sesión.
+- **MEJORA VISUAL:** ✅ Hecho (Agosto 2026). Se migraron los 4 módulos (Horarios, Calendario, Reuniones, Notas) y el shell (Sidebar/Header/BottomNav) a los tokens del sistema de diseño (`bg-card`, `text-foreground`, `bg-primary`...), y se implementó el modo oscuro (toggle en el header, persistido en `localStorage`). Verificado visualmente con capturas en claro y oscuro en las 4 secciones y en diálogos/formularios.
+- **BUILD ROTO (RESUELTO):** `npm run build` fallaba por tipos faltantes de `file-saver`, un tipo `CeldaHorario` sin importar en `pdfTemplates.tsx`, y el límite de precaché de Workbox (2 MiB) superado por el bundle (3.76 MB). Corregido: `@types/file-saver` instalado, import arreglado, `maximumFileSizeToCacheInBytes` ampliado en `vite.config.ts`.
+- **Pendiente para más adelante:** el bundle de producción pesa 3.76 MB (aviso de Vite) — considerar code-splitting con `import()` dinámico cuando se aborde performance (Fase 8). También se detectó un error de consola (`DexieError2`) al inicializar la app en una sesión de navegador nueva; no bloquea el uso pero merece investigarse.
 
 ---
 
@@ -46,15 +48,15 @@ Aplicación web progresiva (PWA) que permite a los docentes gestionar su planifi
 ### Estado y Datos
 - **Zustand** - Gestión de estado ligera y simple
 - **Dexie.js** - Wrapper de IndexedDB para almacenamiento local robusto
-- **React Hook Form + Zod** - Formularios con validación
+- **React Hook Form + Zod** *(planificado, no instalado)* - Los formularios actuales (reuniones, notas, horarios) usan `useState` nativo con validación manual. Migrar si los formularios ganan complejidad.
 
 ### Calendario
 - **React Big Calendar** - Calendario interactivo personalizable
 - **date-fns** - Utilidades para manejo de fechas (calendario escolar septiembre-agosto)
 
 ### Exportación
-- **react-pdf / @react-pdf/renderer** - Generación de PDFs programática
-- **html2pdf.js** - Exportación directa del DOM a PDF
+- **@react-pdf/renderer** - Generación de PDFs programática (`src/utils/pdf.tsx`, `src/utils/pdfTemplates.tsx`)
+- **file-saver** - Descarga de PDFs y backups JSON en el navegador
 
 ### PWA
 - **Vite PWA Plugin (vite-plugin-pwa)** - Service workers y manifest automáticos
@@ -274,24 +276,24 @@ Base de datos: PlafinicadorDB
 
 ---
 
-### FASE 6: Exportación e Impresión (Semana 8)
+### FASE 6: Exportación e Impresión (Semana 8) ✅ COMPLETADA
 **Objetivo:** Generación de documentos en múltiples formatos.
 
 **Tareas:**
-- [ ] Implementar exportación a PDF por módulo
+- [x] Implementar exportación a PDF por módulo (horarios, planificación, reuniones, notas)
 - [ ] Crear estilos CSS @media print personalizados
 - [ ] Añadir previsualización antes de exportar
 - [ ] Implementar Web Share API para móviles
-- [ ] Exportación completa del cuaderno (todo en un PDF)
+- [x] Exportación completa del cuaderno (todo en un PDF)
 - [ ] Configurar encabezados y pies de página
 - [ ] Añadir marca de agua opcional
-- [ ] Implementar sistema de backups (JSON import/export)
+- [x] Implementar sistema de backups (JSON import/export)
 
 **Entregables:**
-- Exportación PDF funcional
-- Opción de impresión optimizada
-- Compartir en móviles
-- Sistema de backups
+- [x] Exportación PDF funcional (`src/utils/pdf.tsx`, `src/utils/pdfTemplates.tsx`)
+- [ ] Opción de impresión optimizada (pendiente CSS @media print)
+- [ ] Compartir en móviles (Web Share API pendiente)
+- [x] Sistema de backups (JSON import/export en `src/utils/export.ts`)
 
 ---
 
@@ -549,10 +551,12 @@ npm run format
 
 ## Testing Strategy
 
+**Estado real:** no hay ningún framework de testing instalado todavía (sin Vitest, Playwright ni Chromatic en `package.json`). Lo de abajo es la estrategia planificada para Fase 8, pendiente de implementar.
+
 - **Unit Testing:** Vitest para componentes y utilidades
 - **E2E Testing:** Playwright para flujos críticos
 - **Visual Regression:** Chromatic para componentes UI
-- **Manual Testing:** Dispositivos reales (especialmente móviles)
+- **Manual Testing:** Dispositivos reales (especialmente móviles) — esto es lo único hecho hasta ahora
 
 ---
 

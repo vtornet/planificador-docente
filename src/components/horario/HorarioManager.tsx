@@ -128,13 +128,13 @@ export function HorarioManager() {
   if (horarios.length === 0) {
     return (
       <div className="text-center py-12">
-        <div className="text-6xl mb-4 text-blue-200">
-          <Calendar className="w-16 h-16 mx-auto text-blue-400" />
+        <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-primary/10 flex items-center justify-center">
+          <Calendar className="w-8 h-8 text-primary" />
         </div>
-        <h3 className="text-xl font-semibold text-slate-900 mb-2">
+        <h3 className="text-xl font-semibold text-foreground mb-2">
           No hay horarios creados
         </h3>
-        <p className="text-slate-600 mb-6">
+        <p className="text-muted-foreground mb-6">
           Crea tu primer horario para empezar a planificar
         </p>
         <Dialog open={showCrear} onOpenChange={setShowCrear}>
@@ -147,7 +147,7 @@ export function HorarioManager() {
             </DialogHeader>
             <div className="space-y-4 max-h-[60vh] overflow-y-auto">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Nombre del horario
                 </label>
                 <Input
@@ -157,7 +157,7 @@ export function HorarioManager() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Tipo
                 </label>
                 <select
@@ -176,18 +176,18 @@ export function HorarioManager() {
                   id="configPersonalizada"
                   checked={configPersonalizada}
                   onChange={(e) => setConfigPersonalizada(e.target.checked)}
-                  className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                  className="w-4 h-4 text-primary rounded border-input focus:ring-ring"
                 />
-                <label htmlFor="configPersonalizada" className="text-sm font-medium text-slate-700">
+                <label htmlFor="configPersonalizada" className="text-sm font-medium text-foreground">
                   Personalizar intervalos horarios
                 </label>
               </div>
 
               {configPersonalizada && (
-                <div className="space-y-4 pt-2 border-t border-slate-200">
+                <div className="space-y-4 pt-2 border-t border-border">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                      <label className="block text-sm font-medium text-foreground mb-1">
                         Número de periodos
                       </label>
                       <Input
@@ -199,7 +199,7 @@ export function HorarioManager() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                      <label className="block text-sm font-medium text-foreground mb-1">
                         Hora de inicio
                       </label>
                       <Input
@@ -212,7 +212,7 @@ export function HorarioManager() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                      <label className="block text-sm font-medium text-foreground mb-1">
                         Duración (minutos)
                       </label>
                       <Input
@@ -231,9 +231,9 @@ export function HorarioManager() {
                           id="conRecreo"
                           checked={conRecreo}
                           onChange={(e) => setConRecreo(e.target.checked)}
-                          className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                          className="w-4 h-4 text-primary rounded border-input focus:ring-ring"
                         />
-                        <label htmlFor="conRecreo" className="text-sm font-medium text-slate-700">
+                        <label htmlFor="conRecreo" className="text-sm font-medium text-foreground">
                           Con recreo
                         </label>
                       </div>
@@ -243,7 +243,7 @@ export function HorarioManager() {
                   {conRecreo && (
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                        <label className="block text-sm font-medium text-foreground mb-1">
                           Recreo después del periodo
                         </label>
                         <Input
@@ -255,7 +255,7 @@ export function HorarioManager() {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                        <label className="block text-sm font-medium text-foreground mb-1">
                           Duración recreo (min)
                         </label>
                         <Input
@@ -270,8 +270,8 @@ export function HorarioManager() {
                     </div>
                   )}
 
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                    <div className="flex items-center gap-2 text-blue-800">
+                  <div className="bg-primary/10 border border-primary/20 rounded-lg p-3">
+                    <div className="flex items-center gap-2 text-primary">
                       <Clock className="w-4 h-4" />
                       <span className="text-sm font-medium">
                         Total: {totalPeriodos} periodos
@@ -293,7 +293,7 @@ export function HorarioManager() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-slate-900">Horarios</h2>
+        <h2 className="text-2xl font-bold text-foreground tracking-tight">Horarios</h2>
         <Dialog open={showCrear} onOpenChange={setShowCrear}>
           <DialogTrigger asChild>
             <Button>+ Nuevo horario</Button>
@@ -304,7 +304,7 @@ export function HorarioManager() {
             </DialogHeader>
             <div className="space-y-4 max-h-[60vh] overflow-y-auto">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Nombre del horario
                 </label>
                 <Input
@@ -314,7 +314,7 @@ export function HorarioManager() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Tipo
                 </label>
                 <select
@@ -333,18 +333,18 @@ export function HorarioManager() {
                   id="configPersonalizada"
                   checked={configPersonalizada}
                   onChange={(e) => setConfigPersonalizada(e.target.checked)}
-                  className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                  className="w-4 h-4 text-primary rounded border-input focus:ring-ring"
                 />
-                <label htmlFor="configPersonalizada" className="text-sm font-medium text-slate-700">
+                <label htmlFor="configPersonalizada" className="text-sm font-medium text-foreground">
                   Personalizar intervalos horarios
                 </label>
               </div>
 
               {configPersonalizada && (
-                <div className="space-y-4 pt-2 border-t border-slate-200">
+                <div className="space-y-4 pt-2 border-t border-border">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                      <label className="block text-sm font-medium text-foreground mb-1">
                         Número de periodos
                       </label>
                       <Input
@@ -356,7 +356,7 @@ export function HorarioManager() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                      <label className="block text-sm font-medium text-foreground mb-1">
                         Hora de inicio
                       </label>
                       <Input
@@ -369,7 +369,7 @@ export function HorarioManager() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                      <label className="block text-sm font-medium text-foreground mb-1">
                         Duración (minutos)
                       </label>
                       <Input
@@ -388,9 +388,9 @@ export function HorarioManager() {
                           id="conRecreo"
                           checked={conRecreo}
                           onChange={(e) => setConRecreo(e.target.checked)}
-                          className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                          className="w-4 h-4 text-primary rounded border-input focus:ring-ring"
                         />
-                        <label htmlFor="conRecreo" className="text-sm font-medium text-slate-700">
+                        <label htmlFor="conRecreo" className="text-sm font-medium text-foreground">
                           Con recreo
                         </label>
                       </div>
@@ -400,7 +400,7 @@ export function HorarioManager() {
                   {conRecreo && (
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                        <label className="block text-sm font-medium text-foreground mb-1">
                           Recreo después del periodo
                         </label>
                         <Input
@@ -412,7 +412,7 @@ export function HorarioManager() {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                        <label className="block text-sm font-medium text-foreground mb-1">
                           Duración recreo (min)
                         </label>
                         <Input
@@ -427,8 +427,8 @@ export function HorarioManager() {
                     </div>
                   )}
 
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                    <div className="flex items-center gap-2 text-blue-800">
+                  <div className="bg-primary/10 border border-primary/20 rounded-lg p-3">
+                    <div className="flex items-center gap-2 text-primary">
                       <Clock className="w-4 h-4" />
                       <span className="text-sm font-medium">
                         Total: {totalPeriodos} periodos
@@ -452,7 +452,7 @@ export function HorarioManager() {
             </DialogHeader>
             <div className="space-y-4 max-h-[60vh] overflow-y-auto">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Nombre del horario
                 </label>
                 <Input
@@ -462,7 +462,7 @@ export function HorarioManager() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   Tipo
                 </label>
                 <select
@@ -481,18 +481,18 @@ export function HorarioManager() {
                   id="configPersonalizadaEdit"
                   checked={configPersonalizada}
                   onChange={(e) => setConfigPersonalizada(e.target.checked)}
-                  className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                  className="w-4 h-4 text-primary rounded border-input focus:ring-ring"
                 />
-                <label htmlFor="configPersonalizadaEdit" className="text-sm font-medium text-slate-700">
+                <label htmlFor="configPersonalizadaEdit" className="text-sm font-medium text-foreground">
                   Personalizar intervalos horarios
                 </label>
               </div>
 
               {configPersonalizada && (
-                <div className="space-y-4 pt-2 border-t border-slate-200">
+                <div className="space-y-4 pt-2 border-t border-border">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                      <label className="block text-sm font-medium text-foreground mb-1">
                         Número de periodos
                       </label>
                       <Input
@@ -504,7 +504,7 @@ export function HorarioManager() {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                      <label className="block text-sm font-medium text-foreground mb-1">
                         Hora de inicio
                       </label>
                       <Input
@@ -517,7 +517,7 @@ export function HorarioManager() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                      <label className="block text-sm font-medium text-foreground mb-1">
                         Duración (minutos)
                       </label>
                       <Input
@@ -536,9 +536,9 @@ export function HorarioManager() {
                           id="conRecreoEdit"
                           checked={conRecreo}
                           onChange={(e) => setConRecreo(e.target.checked)}
-                          className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                          className="w-4 h-4 text-primary rounded border-input focus:ring-ring"
                         />
-                        <label htmlFor="conRecreoEdit" className="text-sm font-medium text-slate-700">
+                        <label htmlFor="conRecreoEdit" className="text-sm font-medium text-foreground">
                           Con recreo
                         </label>
                       </div>
@@ -548,7 +548,7 @@ export function HorarioManager() {
                   {conRecreo && (
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                        <label className="block text-sm font-medium text-foreground mb-1">
                           Recreo después del periodo
                         </label>
                         <Input
@@ -560,7 +560,7 @@ export function HorarioManager() {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                        <label className="block text-sm font-medium text-foreground mb-1">
                           Duración recreo (min)
                         </label>
                         <Input
@@ -575,8 +575,8 @@ export function HorarioManager() {
                     </div>
                   )}
 
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                    <div className="flex items-center gap-2 text-blue-800">
+                  <div className="bg-primary/10 border border-primary/20 rounded-lg p-3">
+                    <div className="flex items-center gap-2 text-primary">
                       <Clock className="w-4 h-4" />
                       <span className="text-sm font-medium">
                         Total: {totalPeriodos} periodos
@@ -584,8 +584,8 @@ export function HorarioManager() {
                     </div>
                   </div>
 
-                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                    <p className="text-sm text-amber-800">
+                  <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded-lg p-3">
+                    <p className="text-sm text-amber-800 dark:text-amber-300">
                       ⚠️ Al modificar la configuración de intervalos, se reiniciará el contenido de las celdas.
                     </p>
                   </div>
@@ -606,20 +606,24 @@ export function HorarioManager() {
               <div className="flex items-center justify-between">
                 <CardTitle>{horario.nombre}</CardTitle>
                 <div className="flex items-center gap-1">
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={() => handleEditarClick(horario)}
-                    className="text-blue-600 hover:text-blue-700 transition-colors p-2 rounded-md hover:bg-blue-50"
+                    className="text-primary hover:text-primary hover:bg-primary/10"
                     title="Editar horario"
                   >
                     <Edit2 className="w-4 h-4" />
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={() => handleDelete(horario.id)}
-                    className="text-red-600 hover:text-red-700 transition-colors p-2 rounded-md hover:bg-red-50"
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
                     title="Eliminar horario"
                   >
                     <Trash2 className="w-4 h-4" />
-                  </button>
+                  </Button>
                 </div>
               </div>
             </CardHeader>

@@ -13,10 +13,10 @@ export function Layout({ children }: LayoutProps) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4" />
-          <p className="text-slate-600">Cargando...</p>
+      <div className="min-h-screen flex items-center justify-center bg-muted/30">
+        <div className="text-center animate-fade-in">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Cargando...</p>
         </div>
       </div>
     )
@@ -24,11 +24,11 @@ export function Layout({ children }: LayoutProps) {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-center max-w-md px-4">
-          <div className="text-red-500 text-4xl mb-4">⚠️</div>
-          <h2 className="text-xl font-bold text-slate-900 mb-2">Error</h2>
-          <p className="text-slate-600">{error}</p>
+      <div className="min-h-screen flex items-center justify-center bg-muted/30">
+        <div className="text-center max-w-md px-4 animate-fade-in">
+          <div className="text-destructive text-4xl mb-4">⚠️</div>
+          <h2 className="text-xl font-bold text-foreground mb-2">Error</h2>
+          <p className="text-muted-foreground">{error}</p>
         </div>
       </div>
     )
@@ -39,7 +39,7 @@ export function Layout({ children }: LayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-muted/30">
       <Sidebar />
       <div className="md:ml-64 pb-16 md:pb-0">
         <AppHeader />

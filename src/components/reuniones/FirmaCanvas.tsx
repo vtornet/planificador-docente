@@ -118,7 +118,7 @@ export function FirmaCanvas({ onGuardar, onCancel }: FirmaCanvasProps) {
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-1">
+        <label className="block text-sm font-medium text-foreground mb-1">
           Nombre de quien firma *
         </label>
         <Input
@@ -128,7 +128,7 @@ export function FirmaCanvas({ onGuardar, onCancel }: FirmaCanvasProps) {
         />
       </div>
 
-      <div className="border-2 border-dashed border-slate-300 rounded-lg p-2 bg-white">
+      <div className="border-2 border-dashed border-border rounded-lg p-2 bg-white">
         <canvas
           ref={canvasRef}
           className="w-full h-32 bg-white rounded cursor-crosshair"
@@ -146,7 +146,7 @@ export function FirmaCanvas({ onGuardar, onCancel }: FirmaCanvasProps) {
         <Button onClick={handleGuardar}>Guardar Firma</Button>
       </div>
 
-      <p className="text-xs text-slate-500 text-center">
+      <p className="text-xs text-muted-foreground text-center">
         Dibuja tu firma en el área de arriba
       </p>
     </div>

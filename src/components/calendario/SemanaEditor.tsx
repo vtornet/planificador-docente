@@ -117,10 +117,10 @@ export function SemanaEditor({
       {/* Cabecera */}
       <div className="flex items-center justify-between">
         <div className="flex-1">
-          <h3 className="text-lg font-semibold text-slate-900">
+          <h3 className="text-lg font-semibold text-foreground tracking-tight">
             {semana ? `Editar Semana ${numeroSemana}` : 'Nueva Semana'}
           </h3>
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-muted-foreground">
             {fechaInicio && (
               <>Del {format(fechaInicio, 'dd/MM/yyyy', { locale: es })} al{' '}
               {format(addDays(fechaInicio, 4), 'dd/MM/yyyy', { locale: es })}</>
@@ -134,7 +134,7 @@ export function SemanaEditor({
 
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-slate-700">
+            <label className="text-sm font-medium text-foreground">
               Nº Semana:
             </label>
             <Input
@@ -160,7 +160,7 @@ export function SemanaEditor({
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Planificación de Periodos</CardTitle>
-            <div className="text-sm text-slate-500">
+            <div className="text-sm text-muted-foreground">
               Click en celda para editar • Enter para guardar
             </div>
           </div>
@@ -169,20 +169,20 @@ export function SemanaEditor({
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
-                <tr className="bg-slate-100">
-                  <th className="border border-slate-300 p-2 text-left text-sm font-semibold text-slate-700 min-w-[80px]">
+                <tr className="bg-muted">
+                  <th className="border border-border p-2 text-left text-sm font-semibold text-foreground min-w-[80px]">
                     Hora
                   </th>
                   {DIAS_SEMANA.map((dia) => (
                     <th
                       key={dia}
-                      className="border border-slate-300 p-2 text-center text-sm font-semibold text-slate-700 min-w-[140px]"
+                      className="border border-border p-2 text-center text-sm font-semibold text-foreground min-w-[140px]"
                     >
                       <div className="flex items-center justify-center gap-2">
                         {dia}
                         <button
                           onClick={() => handleCopiarDia(DIAS_SEMANA.indexOf(dia))}
-                          className="text-xs text-blue-600 hover:text-blue-700"
+                          className="text-xs text-primary hover:text-primary/80"
                           title="Copiar este día a los siguientes"
                         >
                           📋
@@ -195,17 +195,17 @@ export function SemanaEditor({
               <tbody>
                 {periodosHorarios.map((periodo, periodoIndex) => (
                   <tr key={periodoIndex}>
-                    <td className="border border-slate-300 p-2 text-sm text-slate-600 font-medium bg-slate-50">
+                    <td className="border border-border p-2 text-sm text-muted-foreground font-medium bg-muted/50">
                       <div className="text-center">
                         {periodo.esRecreo ? (
                           <>
                             <div className="text-2xl">☕</div>
-                            <div className="text-xs text-slate-500">Recreo</div>
+                            <div className="text-xs text-muted-foreground">Recreo</div>
                           </>
                         ) : (
                           <>
                             <div>{periodo.inicio}</div>
-                            <div className="text-xs text-slate-400">- {periodo.fin}</div>
+                            <div className="text-xs text-muted-foreground/70">- {periodo.fin}</div>
                           </>
                         )}
                       </div>
@@ -213,7 +213,7 @@ export function SemanaEditor({
                     {DIAS_SEMANA.map((_, diaIndex) => (
                       <td
                         key={diaIndex}
-                        className="border border-slate-300 p-1 align-top min-h-[60px]"
+                        className="border border-border p-1 align-top min-h-[60px]"
                       >
                         <input
                           type="text"
@@ -225,7 +225,7 @@ export function SemanaEditor({
                               e.target.value
                             )
                           }
-                          className="w-full min-h-[50px] p-2 text-sm resize-none bg-transparent border-0 focus:ring-2 focus:ring-blue-500 rounded"
+                          className="w-full min-h-[50px] p-2 text-sm resize-none bg-transparent text-foreground border-0 focus:ring-2 focus:ring-ring rounded"
                           placeholder="Click para editar..."
                         />
                       </td>

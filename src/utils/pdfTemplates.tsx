@@ -9,7 +9,7 @@ import {
   StyleSheet,
   Font,
 } from '@react-pdf/renderer'
-import type { Horario, Semana, Reunion, Nota, CuadernoDocente } from '../types'
+import type { Horario, Semana, Reunion, Nota, CuadernoDocente, CeldaHorario } from '../types'
 
 // Intentar registrar fuentes (opcional, si no existen usa fuentes por defecto)
 try {
@@ -260,7 +260,7 @@ interface NotasPDFProps {
 export function NotasPDFDocument({ notas, metadata }: NotasPDFProps) {
   return (
     <Document>
-      {notas.map((nota, idx) => (
+      {notas.map((nota) => (
         <Page key={nota.id} size="A4" style={styles.page}>
           {/* Header */}
           <View style={styles.header}>

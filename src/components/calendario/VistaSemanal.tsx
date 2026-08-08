@@ -77,10 +77,10 @@ export function VistaSemanal({ semana, onClose }: VistaSemanalProps) {
       {/* Cabecera */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-slate-900">
+          <h3 className="text-lg font-semibold text-foreground tracking-tight">
             Semana {semana.numeroSemana}
           </h3>
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-muted-foreground">
             Del {format(new Date(semana.fechaInicio), 'dd/MM/yyyy', { locale: es })}{' '}
             al {format(new Date(semana.fechaFin), 'dd/MM/yyyy', { locale: es })}
           </p>
@@ -102,17 +102,17 @@ export function VistaSemanal({ semana, onClose }: VistaSemanalProps) {
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
-                <tr className="bg-slate-100">
-                  <th className="border border-slate-300 p-2 text-left text-sm font-semibold text-slate-700 min-w-[80px]">
+                <tr className="bg-muted">
+                  <th className="border border-border p-2 text-left text-sm font-semibold text-foreground min-w-[80px]">
                     Hora
                   </th>
                   {diasSemana.map((dia) => (
                     <th
                       key={dia.nombre}
-                      className="border border-slate-300 p-2 text-center text-sm font-semibold text-slate-700 min-w-[140px]"
+                      className="border border-border p-2 text-center text-sm font-semibold text-foreground min-w-[140px]"
                     >
                       <div>{dia.nombre}</div>
-                      <div className="text-xs text-slate-500">
+                      <div className="text-xs text-muted-foreground">
                         {format(dia.fecha, 'dd/MM')}
                       </div>
                     </th>
@@ -122,17 +122,17 @@ export function VistaSemanal({ semana, onClose }: VistaSemanalProps) {
               <tbody>
                 {periodosHorarios.map((periodo, periodoIndex) => (
                   <tr key={periodoIndex}>
-                    <td className="border border-slate-300 p-2 text-sm text-slate-600 font-medium bg-slate-50">
+                    <td className="border border-border p-2 text-sm text-muted-foreground font-medium bg-muted/50">
                       <div className="text-center">
                         {periodo.esRecreo ? (
                           <>
                             <div className="text-2xl">☕</div>
-                            <div className="text-xs text-slate-500">Recreo</div>
+                            <div className="text-xs text-muted-foreground">Recreo</div>
                           </>
                         ) : (
                           <>
                             <div>{periodo.inicio}</div>
-                            <div className="text-xs text-slate-400">- {periodo.fin}</div>
+                            <div className="text-xs text-muted-foreground/70">- {periodo.fin}</div>
                           </>
                         )}
                       </div>
@@ -148,7 +148,7 @@ export function VistaSemanal({ semana, onClose }: VistaSemanalProps) {
                           onClick={() =>
                             !isEditando && handleCeldaClick(diaIndex, periodoIndex)
                           }
-                          className="border border-slate-300 p-1 align-top min-h-[60px] cursor-pointer hover:bg-blue-50 transition-colors"
+                          className="border border-border p-1 align-top min-h-[60px] cursor-pointer hover:bg-accent/50 transition-colors"
                         >
                           {isEditando ? (
                             <Input
@@ -173,9 +173,9 @@ export function VistaSemanal({ semana, onClose }: VistaSemanalProps) {
                               onClick={(e) => e.stopPropagation()}
                             />
                           ) : (
-                            <div className="text-sm text-slate-700 whitespace-pre-wrap p-2 min-h-[50px]">
+                            <div className="text-sm text-foreground whitespace-pre-wrap p-2 min-h-[50px]">
                               {getCeldaContenido(diaIndex, periodoIndex) || (
-                                <span className="text-slate-300 italic">
+                                <span className="text-muted-foreground/50 italic">
                                   Click para editar
                                 </span>
                               )}
@@ -190,7 +190,7 @@ export function VistaSemanal({ semana, onClose }: VistaSemanalProps) {
             </table>
           </div>
 
-          <div className="mt-4 text-sm text-slate-500">
+          <div className="mt-4 text-sm text-muted-foreground">
             Tip: Click en celda para editar, Enter para guardar
           </div>
         </CardContent>

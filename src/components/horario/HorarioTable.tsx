@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { DIAS_SEMANA } from '../../types/constants'
 import type { Horario } from '../../types'
 import { cn } from '../../utils/cn'
-import { UserCircle, GraduationCap } from 'lucide-react'
+import { UserCircle, GraduationCap, Copy } from 'lucide-react'
+import { Button } from '../ui/button'
 
 interface HorarioTableProps {
   horario: Horario
@@ -35,8 +36,8 @@ export function HorarioTable({ horario, onUpdate, onDuplicate, className }: Hora
   return (
     <div className={cn('w-full', className)}>
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-slate-900">{horario.nombre}</h3>
-        <span className="text-sm text-slate-500 flex items-center gap-1">
+        <h3 className="text-lg font-semibold text-foreground tracking-tight">{horario.nombre}</h3>
+        <span className="text-sm text-muted-foreground flex items-center gap-1.5 bg-muted px-2.5 py-1 rounded-full">
           {horario.tipo === 'docente' ? (
             <>
               <UserCircle className="w-4 h-4" /> Docente
@@ -49,17 +50,17 @@ export function HorarioTable({ horario, onUpdate, onDuplicate, className }: Hora
         </span>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-slate-200">
+      <div className="overflow-x-auto rounded-xl border border-border shadow-[var(--shadow-soft)]">
         <table className="w-full border-collapse">
           <thead>
-            <tr className="bg-slate-100">
-              <th className="border border-slate-300 p-2 text-left text-sm font-semibold text-slate-700 min-w-[80px]">
+            <tr className="bg-muted">
+              <th className="border border-border p-2 text-left text-sm font-semibold text-foreground min-w-[80px]">
                 Hora
               </th>
               {DIAS_SEMANA.map((dia) => (
                 <th
                   key={dia}
-                  className="border border-slate-300 p-2 text-center text-sm font-semibold text-slate-700 min-w-[120px]"
+                  className="border border-border p-2 text-center text-sm font-semibold text-foreground min-w-[120px]"
                 >
                   {dia}
                 </th>
@@ -69,17 +70,17 @@ export function HorarioTable({ horario, onUpdate, onDuplicate, className }: Hora
           <tbody>
             {periodos.map((periodo, fila) => (
               <tr key={fila}>
-                <td className="border border-slate-300 p-2 text-sm text-slate-600 font-medium bg-slate-50">
+                <td className="border border-border p-2 text-sm text-muted-foreground font-medium bg-muted/50">
                   <div className="text-center">
                     {periodo.esRecreo ? (
                       <>
                         <div className="text-2xl">☕</div>
-                        <div className="text-xs text-slate-500">Recreo</div>
+                        <div className="text-xs text-muted-foreground">Recreo</div>
                       </>
                     ) : (
                       <>
                         <div>{periodo.inicio}</div>
-                        <div className="text-xs text-slate-400">- {periodo.fin}</div>
+                        <div className="text-xs text-muted-foreground/70">- {periodo.fin}</div>
                       </>
                     )}
                   </div>
@@ -94,7 +95,7 @@ export function HorarioTable({ horario, onUpdate, onDuplicate, className }: Hora
                       key={columna}
                       onClick={() => !isEditando && handleCeldaClick(fila, columna)}
                       className={cn(
-                        'border border-slate-300 p-1 align-top min-h-[60px] cursor-pointer hover:bg-blue-50 transition-colors',
+                        'border border-border p-1 align-top min-h-[60px] cursor-pointer hover:bg-accent/50 transition-colors',
                         celda?.color && 'bg-opacity-20'
                       )}
                       style={{ backgroundColor: celda?.color || undefined }}
@@ -110,13 +111,13 @@ export function HorarioTable({ horario, onUpdate, onDuplicate, className }: Hora
                             if (e.key === 'Enter') setCeldaEditando(null)
                             if (e.key === 'Escape') setCeldaEditando(null)
                           }}
-                          className="w-full h-full min-h-[50px] p-1 text-sm resize-none bg-white border-0 focus:ring-2 focus:ring-blue-500 rounded"
+                          className="w-full h-full min-h-[50px] p-1 text-sm resize-none bg-card border-0 focus:ring-2 focus:ring-ring rounded"
                           onClick={(e) => e.stopPropagation()}
                         />
                       ) : (
-                        <div className="text-sm text-slate-700 whitespace-pre-wrap p-1 min-h-[50px]">
+                        <div className="text-sm text-foreground whitespace-pre-wrap p-1 min-h-[50px]">
                           {celda?.contenido || (
-                            <span className="text-slate-300 italic">Click para editar</span>
+                            <span className="text-muted-foreground/50 italic">Click para editar</span>
                           )}
                         </div>
                       )}
@@ -131,7 +132,9 @@ export function HorarioTable({ horario, onUpdate, onDuplicate, className }: Hora
 
       <div className="mt-4 flex items-center gap-4">
         {onDuplicate && (
-          <button
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={() => {
               const nuevoTipo = horario.tipo === 'docente' ? 'alumnado' : 'docente'
               if (confirm(`¿Duplicar este horario como horario de ${nuevoTipo}?`)) {
@@ -144,12 +147,12 @@ export function HorarioTable({ horario, onUpdate, onDuplicate, className }: Hora
                 onDuplicate(duplicado)
               }
             }}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
           >
+            <Copy className="w-4 h-4" />
             Duplicar horario
-          </button>
+          </Button>
         )}
-        <span className="text-sm text-slate-500">
+        <span className="text-sm text-muted-foreground">
           Tip: Click en celda para editar, Enter para guardar, Esc para cancelar
         </span>
       </div>

@@ -93,8 +93,8 @@ export function TiptapEditor({
       onClick={onClick}
       type="button"
       title={title}
-      className={`p-2 rounded hover:bg-slate-100 transition-colors ${
-        active ? 'bg-blue-100 text-blue-700' : 'text-slate-700'
+      className={`p-2 rounded hover:bg-accent transition-colors ${
+        active ? 'bg-primary/15 text-primary' : 'text-foreground'
       }`}
     >
       {children}
@@ -102,7 +102,7 @@ export function TiptapEditor({
   )
 
   const MenuBar = () => (
-    <div className="flex flex-wrap items-center gap-1 border-b border-slate-200 pb-2 mb-2">
+    <div className="flex flex-wrap items-center gap-1 border-b border-border pb-2 mb-2">
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleBold().run()}
         active={editor.isActive('bold')}
@@ -127,7 +127,7 @@ export function TiptapEditor({
         <Heading2 size={18} />
       </ToolbarButton>
 
-      <div className="w-px h-6 bg-slate-300 mx-1" />
+      <div className="w-px h-6 bg-border mx-1" />
 
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleBulletList().run()}
@@ -145,7 +145,7 @@ export function TiptapEditor({
         <ListOrdered size={18} />
       </ToolbarButton>
 
-      <div className="w-px h-6 bg-slate-300 mx-1" />
+      <div className="w-px h-6 bg-border mx-1" />
 
       <ToolbarButton onClick={setLink} active={editor.isActive('link')} title="Enlace">
         <LinkIcon size={18} />
@@ -159,7 +159,7 @@ export function TiptapEditor({
         <TableIcon size={18} />
       </ToolbarButton>
 
-      <div className="w-px h-6 bg-slate-300 mx-1" />
+      <div className="w-px h-6 bg-border mx-1" />
 
       <ToolbarButton
         onClick={() => editor.chain().focus().undo().run()}
@@ -178,11 +178,11 @@ export function TiptapEditor({
   )
 
   return (
-    <div className="border border-slate-300 rounded-lg overflow-hidden">
+    <div className="border border-input rounded-lg overflow-hidden bg-background">
       {editable && <MenuBar />}
       <EditorContent
         editor={editor}
-        className="prose prose-sm max-w-none p-4 min-h-[200px]"
+        className="prose prose-sm max-w-none p-4 min-h-[200px] text-foreground"
       />
     </div>
   )

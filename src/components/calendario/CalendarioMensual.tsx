@@ -154,13 +154,13 @@ export function CalendarioMensual() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-slate-900">Calendario Escolar</h2>
-        <div className="text-sm text-slate-600">
+        <h2 className="text-2xl font-bold text-foreground tracking-tight">Calendario Escolar</h2>
+        <div className="text-sm text-muted-foreground bg-muted px-3 py-1 rounded-full">
           Curso {cursoEscolar}
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow-sm p-4">
+      <div className="bg-card border border-border rounded-xl shadow-[var(--shadow-soft)] p-4">
         <Calendar
           localizer={localizer}
           events={events}
@@ -212,12 +212,12 @@ export function CalendarioMensual() {
         </DialogContent>
       </Dialog>
 
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h4 className="font-medium text-blue-900 mb-2 flex items-center gap-2">
+      <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
+        <h4 className="font-medium text-primary mb-2 flex items-center gap-2">
           <Lightbulb className="w-4 h-4" />
           Consejos
         </h4>
-        <ul className="text-sm text-blue-800 space-y-1">
+        <ul className="text-sm text-primary/90 space-y-1">
           <li>• Click en un día para crear o editar una semana</li>
           <li>• Usa las flechas para navegar entre meses</li>
           <li>• Próximamente: sistema de plantillas y copia de semanas</li>

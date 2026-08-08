@@ -6,6 +6,8 @@ import { CalendarioMensual } from './components/calendario/CalendarioMensual'
 import { ReunionList } from './components/reuniones/ReunionList'
 import { NotasList } from './components/notas/NotasList'
 import { initDB, getCuadernos } from './db/db'
+import { Button } from './components/ui/button'
+import { useTheme } from './hooks/useTheme'
 
 function HorariosView() {
   return <HorarioManager />
@@ -27,6 +29,7 @@ function App() {
   const { cuadernoActual, view, createCuaderno, loadCuaderno } = useCuadernoStore()
   const [isLoading, setIsLoading] = useState(true)
   const [cuadernosExistentes, setCuadernosExistentes] = useState<any[]>([])
+  useTheme() // aplica el tema guardado también en las pantallas previas al Layout
 
   useEffect(() => {
     async function init() {
@@ -56,10 +59,10 @@ function App() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Cargando...</p>
+      <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-accent/10 flex items-center justify-center">
+        <div className="text-center animate-fade-in">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Cargando...</p>
         </div>
       </div>
     )
@@ -67,28 +70,30 @@ function App() {
 
   if (!cuadernoActual) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-lg w-full text-center">
-          <div className="text-6xl mb-6">📘</div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-3">
+      <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-accent/10 flex items-center justify-center p-4">
+        <div className="bg-card text-card-foreground rounded-2xl shadow-[var(--shadow-strong)] border border-border p-8 max-w-lg w-full text-center animate-scale-in">
+          <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-3xl shadow-lg">
+            📘
+          </div>
+          <h1 className="text-3xl font-bold text-foreground mb-3 tracking-tight">
             Plafinicador Docente
           </h1>
-          <p className="text-slate-600 mb-8">
+          <p className="text-muted-foreground mb-8">
             Tu planificador digital para la gestión escolar
           </p>
 
           {cuadernosExistentes.length > 0 && (
             <div className="mb-6 text-left">
-              <p className="text-sm font-medium text-slate-700 mb-3">Cuadernos disponibles:</p>
+              <p className="text-sm font-medium text-foreground mb-3">Cuadernos disponibles:</p>
               <div className="space-y-2 max-h-48 overflow-y-auto">
                 {cuadernosExistentes.map((cuaderno) => (
                   <button
                     key={cuaderno.id}
                     onClick={() => loadCuaderno(cuaderno.id)}
-                    className="w-full text-left px-4 py-3 bg-slate-50 hover:bg-slate-100 rounded-lg transition-colors"
+                    className="w-full text-left px-4 py-3 bg-muted hover:bg-accent/50 border border-transparent hover:border-border rounded-lg transition-colors"
                   >
-                    <div className="font-medium text-slate-900">{cuaderno.data?.nombre || cuaderno.metadata.centro}</div>
-                    <div className="text-sm text-slate-500">
+                    <div className="font-medium text-foreground">{cuaderno.data?.nombre || cuaderno.metadata.centro}</div>
+                    <div className="text-sm text-muted-foreground">
                       {cuaderno.metadata.cursoEscolar} • {cuaderno.metadata.docente}
                     </div>
                   </button>
@@ -98,7 +103,9 @@ function App() {
           )}
 
           <div className="space-y-3">
-            <button
+            <Button
+              size="lg"
+              className="w-full"
               onClick={() => {
                 createCuaderno({
                   cursoEscolar: '2026-2027',
@@ -108,10 +115,9 @@ function App() {
                   actualizado: new Date(),
                 })
               }}
-              className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
             >
               Crear nuevo cuaderno
-            </button>
+            </Button>
           </div>
         </div>
       </div>

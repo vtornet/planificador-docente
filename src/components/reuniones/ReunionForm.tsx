@@ -83,7 +83,7 @@ export function ReunionForm({ reunion, onSave, onCancel }: ReunionFormProps) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-slate-900">
+        <h3 className="text-lg font-semibold text-foreground tracking-tight">
           {reunion ? 'Editar Reunión' : 'Nueva Reunión'}
         </h3>
         <div className="flex gap-2">
@@ -100,7 +100,7 @@ export function ReunionForm({ reunion, onSave, onCancel }: ReunionFormProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
+            <label className="block text-sm font-medium text-foreground mb-1">
               Título *
             </label>
             <Input
@@ -112,7 +112,7 @@ export function ReunionForm({ reunion, onSave, onCancel }: ReunionFormProps) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
+              <label className="block text-sm font-medium text-foreground mb-1">
                 Fecha *
               </label>
               <Input
@@ -123,7 +123,7 @@ export function ReunionForm({ reunion, onSave, onCancel }: ReunionFormProps) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
+              <label className="block text-sm font-medium text-foreground mb-1">
                 Tipo
               </label>
               <select
@@ -143,7 +143,7 @@ export function ReunionForm({ reunion, onSave, onCancel }: ReunionFormProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
+            <label className="block text-sm font-medium text-foreground mb-1">
               Asistentes
             </label>
             <Input
@@ -151,7 +151,7 @@ export function ReunionForm({ reunion, onSave, onCancel }: ReunionFormProps) {
               onChange={(e) => setAsistentes(e.target.value)}
               placeholder="Ej: Juan Pérez, María García, Carlos López"
             />
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               Separados por coma
             </p>
           </div>
@@ -164,7 +164,7 @@ export function ReunionForm({ reunion, onSave, onCancel }: ReunionFormProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
+            <label className="block text-sm font-medium text-foreground mb-1">
               Asuntos Tratados
             </label>
             <Textarea
@@ -176,7 +176,7 @@ export function ReunionForm({ reunion, onSave, onCancel }: ReunionFormProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
+            <label className="block text-sm font-medium text-foreground mb-1">
               Acuerdos y Conclusiones
             </label>
             <Textarea
@@ -199,18 +199,18 @@ export function ReunionForm({ reunion, onSave, onCancel }: ReunionFormProps) {
               {firmas.map((firma, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center justify-between p-3 bg-slate-50 rounded-lg"
+                  className="flex items-center justify-between p-3 bg-muted rounded-lg"
                 >
                   <div>
-                    <div className="font-medium text-slate-900">
+                    <div className="font-medium text-foreground">
                       {firma.nombre}
                     </div>
-                    <div className="text-xs text-slate-500">
+                    <div className="text-xs text-muted-foreground">
                       {format(new Date(firma.fecha), 'dd/MM/yyyy HH:mm')}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-20 h-12 border border-slate-300 rounded bg-white p-1">
+                    <div className="w-20 h-12 border border-border rounded bg-card p-1">
                       {firma.imagen && (
                         <img
                           src={firma.imagen}
@@ -222,7 +222,7 @@ export function ReunionForm({ reunion, onSave, onCancel }: ReunionFormProps) {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="text-red-600 hover:text-red-700"
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
                       onClick={() => handleEliminarFirma(idx)}
                     >
                       ×

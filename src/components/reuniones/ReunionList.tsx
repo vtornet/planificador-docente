@@ -7,7 +7,7 @@ import { Input } from '../ui/input'
 import { Card, CardContent } from '../ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog'
 import { ReunionForm } from './ReunionForm'
-import { Users, Calendar, FileText, Edit, Trash2, Pencil } from 'lucide-react'
+import { Users, Calendar, FileText, Trash2, Pencil } from 'lucide-react'
 
 const TIPOS_FILTRO = [
   { value: 'todos', label: 'Todas' },
@@ -76,11 +76,11 @@ export function ReunionList() {
 
   const getTipoColor = (tipo: string) => {
     const colors = {
-      claustro: 'bg-purple-100 text-purple-800',
-      departamento: 'bg-blue-100 text-blue-800',
-      ciclo: 'bg-green-100 text-green-800',
-      tutoria: 'bg-orange-100 text-orange-800',
-      otra: 'bg-slate-100 text-slate-800',
+      claustro: 'bg-purple-100 text-purple-800 dark:bg-purple-950/50 dark:text-purple-300',
+      departamento: 'bg-blue-100 text-blue-800 dark:bg-blue-950/50 dark:text-blue-300',
+      ciclo: 'bg-green-100 text-green-800 dark:bg-green-950/50 dark:text-green-300',
+      tutoria: 'bg-orange-100 text-orange-800 dark:bg-orange-950/50 dark:text-orange-300',
+      otra: 'bg-muted text-muted-foreground',
     }
     return colors[tipo as keyof typeof colors] || colors.otra
   }
@@ -88,13 +88,13 @@ export function ReunionList() {
   if (reuniones.length === 0 && !showCrear) {
     return (
       <div className="text-center py-12">
-        <div className="text-6xl mb-4 text-blue-200">
-          <Users className="w-16 h-16 mx-auto text-blue-400" />
+        <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-primary/10 flex items-center justify-center">
+          <Users className="w-8 h-8 text-primary" />
         </div>
-        <h3 className="text-xl font-semibold text-slate-900 mb-2">
+        <h3 className="text-xl font-semibold text-foreground mb-2">
           No hay reuniones registradas
         </h3>
-        <p className="text-slate-600 mb-6">
+        <p className="text-muted-foreground mb-6">
           Crea tu primera reunión para empezar a documentar las actas
         </p>
         <Dialog open={showCrear} onOpenChange={setShowCrear}>
@@ -120,7 +120,7 @@ export function ReunionList() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
-        <h2 className="text-2xl font-bold text-slate-900">Reuniones</h2>
+        <h2 className="text-2xl font-bold text-foreground tracking-tight">Reuniones</h2>
         <Dialog open={showCrear || !!editingReunion} onOpenChange={(open) => {
           if (!open) {
             setShowCrear(false)
@@ -163,7 +163,7 @@ export function ReunionList() {
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
+              <label className="block text-sm font-medium text-foreground mb-1">
                 Buscar
               </label>
               <Input
@@ -173,7 +173,7 @@ export function ReunionList() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
+              <label className="block text-sm font-medium text-foreground mb-1">
                 Tipo
               </label>
               <select
@@ -189,7 +189,7 @@ export function ReunionList() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
+              <label className="block text-sm font-medium text-foreground mb-1">
                 Mes
               </label>
               <Input
@@ -205,7 +205,7 @@ export function ReunionList() {
       {/* Lista de reuniones */}
       <div className="space-y-4">
         {reunionesFiltradas.length === 0 ? (
-          <div className="text-center py-8 text-slate-500">
+          <div className="text-center py-8 text-muted-foreground">
             No se encontraron reuniones con los filtros aplicados
           </div>
         ) : (
@@ -219,7 +219,7 @@ export function ReunionList() {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-lg font-semibold text-slate-900">
+                      <h3 className="text-lg font-semibold text-foreground">
                         {reunion.titulo}
                       </h3>
                       <span
@@ -230,18 +230,18 @@ export function ReunionList() {
                         {getTipoLabel(reunion.tipo)}
                       </span>
                     </div>
-                    <div className="text-sm text-slate-600 mb-2 flex items-center gap-2">
+                    <div className="text-sm text-muted-foreground mb-2 flex items-center gap-2">
                       <Calendar className="w-4 h-4" />
                       {format(new Date(reunion.fecha), 'EEEE, dd MMMM yyyy', {
                         locale: es,
                       })}
                     </div>
-                    <div className="text-sm text-slate-600 mb-3 flex items-center gap-2">
+                    <div className="text-sm text-muted-foreground mb-3 flex items-center gap-2">
                       <Users className="w-4 h-4" />
                       {reunion.asistentes.join(', ') || 'Sin asistentes'}
                     </div>
                     {reunion.asuntosTratados && (
-                      <div className="text-sm text-slate-600 line-clamp-2 flex items-start gap-2">
+                      <div className="text-sm text-muted-foreground line-clamp-2 flex items-start gap-2">
                         <FileText className="w-4 h-4 mt-0.5 flex-shrink-0" />
                         {reunion.asuntosTratados}
                       </div>
@@ -261,7 +261,7 @@ export function ReunionList() {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="text-red-600 hover:text-red-700"
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
                       onClick={(e) => {
                         e.stopPropagation()
                         handleEliminar(reunion.id, reunion.titulo)
@@ -277,7 +277,7 @@ export function ReunionList() {
         )}
       </div>
 
-      <div className="text-sm text-slate-500 text-center">
+      <div className="text-sm text-muted-foreground text-center">
         {reunionesFiltradas.length} {reunionesFiltradas.length === 1 ? 'reunión' : 'reuniones'}
         {reunionesFiltradas.length !== reuniones.length && ` de ${reuniones.length} totales`}
       </div>

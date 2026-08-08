@@ -75,7 +75,7 @@ export function NotaEditor({ nota, onSave, onCancel }: NotaEditorProps) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-slate-900">
+        <h3 className="text-lg font-semibold text-foreground tracking-tight">
           {nota ? 'Editar Nota' : 'Nueva Nota'}
         </h3>
         <div className="flex gap-2">
@@ -92,7 +92,7 @@ export function NotaEditor({ nota, onSave, onCancel }: NotaEditorProps) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
+            <label className="block text-sm font-medium text-foreground mb-1">
               Título *
             </label>
             <Input
@@ -103,7 +103,7 @@ export function NotaEditor({ nota, onSave, onCancel }: NotaEditorProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
+            <label className="block text-sm font-medium text-foreground mb-1">
               Categoría
             </label>
             <select
@@ -120,7 +120,7 @@ export function NotaEditor({ nota, onSave, onCancel }: NotaEditorProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
+            <label className="block text-sm font-medium text-foreground mb-1">
               Etiquetas
             </label>
             <div className="flex gap-2 mb-2">
@@ -139,13 +139,13 @@ export function NotaEditor({ nota, onSave, onCancel }: NotaEditorProps) {
                 {tags.map((tag) => (
                   <span
                     key={tag}
-                    className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
+                    className="inline-flex items-center gap-1 px-3 py-1 bg-primary/15 text-primary rounded-full text-sm"
                   >
                     #{tag}
                     <button
                       type="button"
                       onClick={() => handleEliminarTag(tag)}
-                      className="hover:text-blue-600"
+                      className="hover:text-primary/70"
                     >
                       <X size={14} />
                     </button>
@@ -156,7 +156,7 @@ export function NotaEditor({ nota, onSave, onCancel }: NotaEditorProps) {
           </div>
 
           {nota && (
-            <div className="text-sm text-slate-500">
+            <div className="text-sm text-muted-foreground">
               Creada: {format(new Date(nota.creado), 'dd/MM/yyyy HH:mm', {
                 locale: es,
               })}
@@ -181,9 +181,9 @@ export function NotaEditor({ nota, onSave, onCancel }: NotaEditorProps) {
         </CardContent>
       </Card>
 
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h4 className="font-medium text-blue-900 mb-2">💡 Consejos</h4>
-        <ul className="text-sm text-blue-800 space-y-1">
+      <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
+        <h4 className="font-medium text-primary mb-2">💡 Consejos</h4>
+        <ul className="text-sm text-primary/90 space-y-1">
           <li>• Usa el toolbar para formatear texto: negrita, cursiva, listas...</li>
           <li>• Añade enlaces e imágenes con los botones correspondientes</li>
           <li>• Las etiquetas te ayudarán a encontrar tus notas rápidamente</li>

@@ -79,12 +79,12 @@ export function NotasList() {
 
   const getCategoriaColor = (categoria: string) => {
     const colors: Record<string, string> = {
-      Proyectos: 'bg-purple-100 text-purple-800',
-      'Salidas escolares': 'bg-green-100 text-green-800',
-      'Planos de clase': 'bg-blue-100 text-blue-800',
-      Ideas: 'bg-yellow-100 text-yellow-800',
-      Recursos: 'bg-orange-100 text-orange-800',
-      Otro: 'bg-slate-100 text-slate-800',
+      Proyectos: 'bg-purple-100 text-purple-800 dark:bg-purple-950/50 dark:text-purple-300',
+      'Salidas escolares': 'bg-green-100 text-green-800 dark:bg-green-950/50 dark:text-green-300',
+      'Planos de clase': 'bg-blue-100 text-blue-800 dark:bg-blue-950/50 dark:text-blue-300',
+      Ideas: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-950/50 dark:text-yellow-300',
+      Recursos: 'bg-orange-100 text-orange-800 dark:bg-orange-950/50 dark:text-orange-300',
+      Otro: 'bg-muted text-muted-foreground',
     }
     return colors[categoria] || colors.Otro
   }
@@ -98,13 +98,13 @@ export function NotasList() {
   if (notas.length === 0 && !showCrear) {
     return (
       <div className="text-center py-12">
-        <div className="text-6xl mb-4 text-blue-200">
-          <FileText className="w-16 h-16 mx-auto text-blue-400" />
+        <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-primary/10 flex items-center justify-center">
+          <FileText className="w-8 h-8 text-primary" />
         </div>
-        <h3 className="text-xl font-semibold text-slate-900 mb-2">
+        <h3 className="text-xl font-semibold text-foreground mb-2">
           No hay notas creadas
         </h3>
-        <p className="text-slate-600 mb-6">
+        <p className="text-muted-foreground mb-6">
           Crea tu primera nota para empezar a organizar tus ideas
         </p>
         <Dialog open={showCrear} onOpenChange={setShowCrear}>
@@ -130,7 +130,7 @@ export function NotasList() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
-        <h2 className="text-2xl font-bold text-slate-900">Notas</h2>
+        <h2 className="text-2xl font-bold text-foreground tracking-tight">Notas</h2>
         <Dialog open={showCrear || !!editingNota} onOpenChange={(open) => {
           if (!open) {
             setShowCrear(false)
@@ -174,7 +174,7 @@ export function NotasList() {
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
                 <Input
                   value={busqueda}
                   onChange={(e) => setBusqueda(e.target.value)}
@@ -219,17 +219,17 @@ export function NotasList() {
                   {filtroTag ? (
                     <button
                       onClick={() => setFiltroTag(null)}
-                      className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm flex items-center gap-1"
+                      className="px-2 py-1 bg-primary/15 text-primary rounded text-sm flex items-center gap-1"
                     >
                       #{filtroTag}
-                      <span className="hover:text-blue-600">×</span>
+                      <span className="hover:text-primary/70">×</span>
                     </button>
                   ) : (
                     todosTags.slice(0, 5).map((tag) => (
                       <button
                         key={tag}
                         onClick={() => setFiltroTag(tag)}
-                        className="px-2 py-1 bg-slate-100 text-slate-700 rounded text-sm hover:bg-slate-200"
+                        className="px-2 py-1 bg-muted text-muted-foreground rounded text-sm hover:bg-accent"
                       >
                         #{tag}
                       </button>
@@ -244,7 +244,7 @@ export function NotasList() {
 
       {/* Lista de notas */}
       {notasFiltradas.length === 0 ? (
-        <div className="text-center py-8 text-slate-500">
+        <div className="text-center py-8 text-muted-foreground">
           No se encontraron notas con los filtros aplicados
         </div>
       ) : vista === 'grid' ? (
@@ -258,7 +258,7 @@ export function NotasList() {
               <CardContent className="pt-6">
                 <div className="space-y-3">
                   <div className="flex items-start justify-between">
-                    <h3 className="font-semibold text-slate-900 line-clamp-1">
+                    <h3 className="font-semibold text-foreground line-clamp-1">
                       {nota.titulo}
                     </h3>
                     <span
@@ -270,7 +270,7 @@ export function NotasList() {
                     </span>
                   </div>
 
-                  <p className="text-sm text-slate-600 line-clamp-3">
+                  <p className="text-sm text-muted-foreground line-clamp-3">
                     {stripHtml(nota.contenido)}
                   </p>
 
@@ -279,20 +279,20 @@ export function NotasList() {
                       {nota.tags.slice(0, 3).map((tag) => (
                         <span
                           key={tag}
-                          className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-xs"
+                          className="px-2 py-0.5 bg-muted text-muted-foreground rounded text-xs"
                         >
                           #{tag}
                         </span>
                       ))}
                       {nota.tags.length > 3 && (
-                        <span className="px-2 py-0.5 text-slate-500 text-xs">
+                        <span className="px-2 py-0.5 text-muted-foreground text-xs">
                           +{nota.tags.length - 3}
                         </span>
                       )}
                     </div>
                   )}
 
-                  <div className="text-xs text-slate-500">
+                  <div className="text-xs text-muted-foreground">
                     {new Date(nota.actualizado).toLocaleDateString('es-ES', {
                       day: '2-digit',
                       month: 'short',
@@ -316,7 +316,7 @@ export function NotasList() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-2">
-                      <h3 className="font-semibold text-slate-900">
+                      <h3 className="font-semibold text-foreground">
                         {nota.titulo}
                       </h3>
                       <span
@@ -328,7 +328,7 @@ export function NotasList() {
                       </span>
                     </div>
 
-                    <p className="text-sm text-slate-600 line-clamp-2 mb-2">
+                    <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
                       {stripHtml(nota.contenido)}
                     </p>
 
@@ -337,7 +337,7 @@ export function NotasList() {
                         {nota.tags.map((tag) => (
                           <span
                             key={tag}
-                            className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-xs"
+                            className="px-2 py-0.5 bg-muted text-muted-foreground rounded text-xs"
                           >
                             #{tag}
                           </span>
@@ -345,7 +345,7 @@ export function NotasList() {
                       </div>
                     )}
 
-                    <div className="text-xs text-slate-500">
+                    <div className="text-xs text-muted-foreground">
                       Actualizada: {new Date(nota.actualizado).toLocaleDateString('es-ES', {
                         day: '2-digit',
                         month: 'short',
@@ -370,7 +370,7 @@ export function NotasList() {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="text-red-600 hover:text-red-700"
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
                       onClick={(e) => {
                         e.stopPropagation()
                         handleEliminar(nota.id, nota.titulo)
@@ -386,7 +386,7 @@ export function NotasList() {
         </div>
       )}
 
-      <div className="text-sm text-slate-500 text-center">
+      <div className="text-sm text-muted-foreground text-center">
         {notasFiltradas.length} {notasFiltradas.length === 1 ? 'nota' : 'notas'}
         {notasFiltradas.length !== notas.length && ` de ${notas.length} totales`}
       </div>
