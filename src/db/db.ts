@@ -54,7 +54,11 @@ export async function initDB(): Promise<void> {
 async function ensureConfig(): Promise<void> {
   const configCount = await db.configuracion.count()
   if (configCount === 0) {
-    await db.configuracion.add({
+    // put (no add): si dos llamadas concurrentes pasan el check a la vez
+    // (dos pestañas abiertas a la vez, StrictMode en desarrollo...), la
+    // segunda sobrescribe con el mismo valor por defecto en vez de fallar
+    // con ConstraintError por clave duplicada.
+    await db.configuracion.put({
       id: 'config',
       cursoEscolarActual: '2026-2027',
       fechaInicioCurso: new Date('2026-09-01').getTime(),
