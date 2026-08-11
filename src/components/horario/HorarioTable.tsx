@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { DIAS_SEMANA } from '../../types/constants'
-import type { Horario } from '../../types'
+import type { CeldaHorario, Horario } from '../../types'
 import { cn } from '../../utils/cn'
-import { UserCircle, GraduationCap, Copy } from 'lucide-react'
+import { UserCircle, GraduationCap, Copy, StickyNote } from 'lucide-react'
 import { Button } from '../ui/button'
+import { CeldaHorarioDialog } from './CeldaHorarioDialog'
 
 interface HorarioTableProps {
   horario: Horario
@@ -21,15 +22,14 @@ export function HorarioTable({ horario, onUpdate, onDuplicate, className }: Hora
     setCeldaEditando({ fila, columna })
   }
 
-  const handleCeldaChange = (fila: number, columna: number, valor: string) => {
+  const handleGuardarCelda = (celdaActualizada: CeldaHorario) => {
+    if (!celdaEditando) return
+    const { fila, columna } = celdaEditando
     const nuevosDatos = [...horario.datos]
     if (!nuevosDatos[fila]) {
       nuevosDatos[fila] = []
     }
-    nuevosDatos[fila][columna] = {
-      ...nuevosDatos[fila][columna],
-      contenido: valor,
-    }
+    nuevosDatos[fila][columna] = celdaActualizada
     onUpdate({ ...horario, datos: nuevosDatos })
   }
 
@@ -87,40 +87,31 @@ export function HorarioTable({ horario, onUpdate, onDuplicate, className }: Hora
                 </td>
                 {DIAS_SEMANA.map((_, columna) => {
                   const celda = horario.datos[fila]?.[columna]
-                  const isEditando =
-                    celdaEditando?.fila === fila && celdaEditando?.columna === columna
 
                   return (
                     <td
                       key={columna}
-                      onClick={() => !isEditando && handleCeldaClick(fila, columna)}
+                      onClick={() => handleCeldaClick(fila, columna)}
                       className={cn(
                         'border border-border p-1 align-top min-h-[60px] cursor-pointer hover:bg-accent/50 transition-colors',
                         celda?.color && 'bg-opacity-20'
                       )}
                       style={{ backgroundColor: celda?.color || undefined }}
                     >
-                      {isEditando ? (
-                        <input
-                          type="text"
-                          autoFocus
-                          value={celda?.contenido || ''}
-                          onChange={(e) => handleCeldaChange(fila, columna, e.target.value)}
-                          onBlur={() => setCeldaEditando(null)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') setCeldaEditando(null)
-                            if (e.key === 'Escape') setCeldaEditando(null)
-                          }}
-                          className="w-full h-full min-h-[50px] p-1 text-sm resize-none bg-card border-0 focus:ring-2 focus:ring-ring rounded"
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      ) : (
-                        <div className="text-sm text-foreground whitespace-pre-wrap p-1 min-h-[50px]">
-                          {celda?.contenido || (
-                            <span className="text-muted-foreground/50 italic">Click para editar</span>
-                          )}
-                        </div>
-                      )}
+                      <div className="text-sm text-foreground whitespace-pre-wrap p-1 min-h-[50px]">
+                        {celda?.contenido || (
+                          <span className="text-muted-foreground/50 italic">Click para editar</span>
+                        )}
+                        {celda?.nota && (
+                          <div
+                            className="mt-1 flex items-start gap-1 text-xs text-muted-foreground italic"
+                            title={celda.nota}
+                          >
+                            <StickyNote className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                            <span className="line-clamp-2">{celda.nota}</span>
+                          </div>
+                        )}
+                      </div>
                     </td>
                   )
                 })}
@@ -153,9 +144,18 @@ export function HorarioTable({ horario, onUpdate, onDuplicate, className }: Hora
           </Button>
         )}
         <span className="text-sm text-muted-foreground">
-          Tip: Click en celda para editar, Enter para guardar, Esc para cancelar
+          Tip: Click en celda para elegir asignatura y añadir una nota
         </span>
       </div>
+
+      <CeldaHorarioDialog
+        open={celdaEditando !== null}
+        onOpenChange={(open) => {
+          if (!open) setCeldaEditando(null)
+        }}
+        celda={celdaEditando ? horario.datos[celdaEditando.fila]?.[celdaEditando.columna] : undefined}
+        onGuardar={handleGuardarCelda}
+      />
     </div>
   )
 }

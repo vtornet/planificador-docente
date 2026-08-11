@@ -28,6 +28,7 @@ interface ConfigHorarios {
 
 interface CeldaHorario {
   contenido: string
+  nota?: string
   color?: string
 }
 

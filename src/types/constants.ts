@@ -56,6 +56,21 @@ export const CURSOS_ESCOLARES = [
   '2028-2029',
 ] as const
 
+export const ASIGNATURAS_PREDEFINIDAS = [
+  'Lengua',
+  'Matemáticas',
+  'Conocimiento del Medio',
+  'Atención Educativa',
+  'Plástica',
+  'Música',
+  'Inglés',
+  'Francés',
+  'Portugués',
+  'Religión',
+  'Educación Física',
+  'Valores Sociales y Cívicos',
+] as const
+
 export const COLORES_CELDA = [
   { nombre: 'Sin color', valor: undefined },
   { nombre: 'Rojo claro', valor: '#fecaca' },
