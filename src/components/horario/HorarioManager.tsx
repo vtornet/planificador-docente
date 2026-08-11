@@ -85,6 +85,17 @@ export function HorarioManager() {
     return [partes[0] || hoy, partes[1] || hoy + 1]
   }, [cuadernoActual?.metadata.cursoEscolar])
 
+  // Límites del curso escolar (1 de septiembre al 31 de julio) para saber si una
+  // fecha cae fuera de los 11 meses navegables (ej. agosto, o un año distinto).
+  const [inicioCursoEscolar, finCursoEscolar] = useMemo(() => {
+    const primerMes = anioYMesDe(0, anioInicio, anioFin)
+    const ultimoMes = anioYMesDe(MESES.length - 1, anioInicio, anioFin)
+    return [
+      startOfMonth(new Date(primerMes.anio, primerMes.mes, 1)),
+      endOfMonth(new Date(ultimoMes.anio, ultimoMes.mes, 1)),
+    ]
+  }, [anioInicio, anioFin])
+
   const handleAbrirCrear = (rango?: { inicio: Date; fin: Date }) => {
     setNuevoNombre('')
     setNuevoTipo('docente')
@@ -219,7 +230,14 @@ export function HorarioManager() {
     return horarios.filter((h) => horarioActivoEnRango(h, semanaSeleccionada.inicio, semanaSeleccionada.fin))
   }, [horarios, semanaSeleccionada])
 
-  const horariosSinFecha = horarios.filter((h) => !h.fechaInicio)
+  // "Sin periodo asignado": sin fecha, o con una fecha que no cae en ninguno de
+  // los 11 meses navegables (ej. agosto, o un curso escolar distinto al activo).
+  // Así nunca se pierde de vista un horario, aunque su fecha no encaje en la navegación.
+  const horariosSinFecha = horarios.filter((h) => {
+    if (!h.fechaInicio) return true
+    const fecha = new Date(h.fechaInicio)
+    return fecha < inicioCursoEscolar || fecha > finCursoEscolar
+  })
 
   const renderHorarioCard = (horario: Horario) => (
     <Card key={horario.id}>
