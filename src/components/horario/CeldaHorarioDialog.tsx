@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
-import { ASIGNATURAS_PREDEFINIDAS } from '../../types/constants'
+import { useCuadernoStore } from '../../stores/useCuadernoStore'
+import { ASIGNATURAS_PREDEFINIDAS, COLORES_ASIGNATURAS_PREDEFINIDAS, PALETA_ASIGNATURAS } from '../../types/constants'
 import type { CeldaHorario } from '../../types'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Textarea } from '../ui/textarea'
-import { StickyNote } from 'lucide-react'
+import { StickyNote, Check } from 'lucide-react'
+import { cn } from '../../utils/cn'
 
 const OTRA = '__otra__'
 
@@ -16,12 +18,37 @@ interface CeldaHorarioDialogProps {
   onGuardar: (celda: CeldaHorario) => void
 }
 
+// Solo las clases de fondo (bg-... y dark:bg-...) de una entrada de la paleta,
+// para pintar un círculo de muestra sin arrastrar también el color del texto.
+function claseSwatch(colorId: string): string {
+  const color = PALETA_ASIGNATURAS.find((c) => c.id === colorId)
+  if (!color) return ''
+  return color.clase
+    .split(' ')
+    .filter((clase) => clase.includes('bg-'))
+    .join(' ')
+}
+
 export function CeldaHorarioDialog({ open, onOpenChange, celda, onGuardar }: CeldaHorarioDialogProps) {
+  const { cuadernoActual, updateCuaderno } = useCuadernoStore()
+  const coloresPersonalizados = cuadernoActual?.configuracion.coloresAsignaturas || {}
+
   const [modo, setModo] = useState<'ver' | 'editar'>('editar')
   const [asignatura, setAsignatura] = useState('')
   const [personalizada, setPersonalizada] = useState('')
   const [esPersonalizada, setEsPersonalizada] = useState(false)
   const [nota, setNota] = useState('')
+  const [colorElegido, setColorElegido] = useState('')
+
+  const coloresUsados = new Set([
+    ...Object.values(COLORES_ASIGNATURAS_PREDEFINIDAS),
+    ...Object.values(coloresPersonalizados),
+  ])
+  const coloresDisponibles = PALETA_ASIGNATURAS.filter((c) => !coloresUsados.has(c.id))
+  const paletaParaElegir = coloresDisponibles.length > 0 ? coloresDisponibles : PALETA_ASIGNATURAS
+
+  const nombrePersonalizada = personalizada.trim()
+  const esAsignaturaNueva = esPersonalizada && nombrePersonalizada !== '' && !coloresPersonalizados[nombrePersonalizada]
 
   useEffect(() => {
     if (!open) return
@@ -38,7 +65,9 @@ export function CeldaHorarioDialog({ open, onOpenChange, celda, onGuardar }: Cel
       setPersonalizada('')
     }
     setNota(celda?.nota || '')
+    setColorElegido('')
     setModo(contenidoActual ? 'ver' : 'editar')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, celda])
 
   const handleChangeAsignatura = (valor: string) => {
@@ -46,18 +75,42 @@ export function CeldaHorarioDialog({ open, onOpenChange, celda, onGuardar }: Cel
     setEsPersonalizada(valor === OTRA)
   }
 
+  const handleChangePersonalizada = (valor: string) => {
+    setPersonalizada(valor)
+    const trimmed = valor.trim()
+    if (trimmed && !coloresPersonalizados[trimmed]) {
+      setColorElegido((prev) => (prev && paletaParaElegir.some((c) => c.id === prev) ? prev : paletaParaElegir[0]?.id || ''))
+    }
+  }
+
   const handleGuardar = () => {
-    const contenido = esPersonalizada ? personalizada.trim() : asignatura
-    onGuardar({
-      ...celda,
-      contenido,
-      nota: nota.trim() || undefined,
-    })
+    const contenido = esPersonalizada ? nombrePersonalizada : asignatura
+    let color: string | undefined
+
+    if (!contenido) {
+      color = undefined
+    } else if (COLORES_ASIGNATURAS_PREDEFINIDAS[contenido]) {
+      color = COLORES_ASIGNATURAS_PREDEFINIDAS[contenido]
+    } else if (coloresPersonalizados[contenido]) {
+      color = coloresPersonalizados[contenido]
+    } else {
+      color = colorElegido || paletaParaElegir[0]?.id
+      if (cuadernoActual && color) {
+        updateCuaderno({
+          configuracion: {
+            ...cuadernoActual.configuracion,
+            coloresAsignaturas: { ...coloresPersonalizados, [contenido]: color },
+          },
+        })
+      }
+    }
+
+    onGuardar({ ...celda, contenido, nota: nota.trim() || undefined, color })
     onOpenChange(false)
   }
 
   const handleVaciar = () => {
-    onGuardar({ ...celda, contenido: '', nota: undefined })
+    onGuardar({ ...celda, contenido: '', nota: undefined, color: undefined })
     onOpenChange(false)
   }
 
@@ -66,7 +119,12 @@ export function CeldaHorarioDialog({ open, onOpenChange, celda, onGuardar }: Cel
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{celda?.contenido || 'Celda'}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              {celda?.color && (
+                <span className={cn('w-3 h-3 rounded-full flex-shrink-0', claseSwatch(celda.color))} />
+              )}
+              {celda?.contenido || 'Celda'}
+            </DialogTitle>
           </DialogHeader>
           <div>
             {celda?.nota ? (
@@ -122,10 +180,42 @@ export function CeldaHorarioDialog({ open, onOpenChange, celda, onGuardar }: Cel
               </label>
               <Input
                 value={personalizada}
-                onChange={(e) => setPersonalizada(e.target.value)}
+                onChange={(e) => handleChangePersonalizada(e.target.value)}
                 placeholder="Ej: Robótica"
                 autoFocus
               />
+            </div>
+          )}
+
+          {esAsignaturaNueva && (
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1">
+                Color de la asignatura
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {paletaParaElegir.map((color) => (
+                  <button
+                    key={color.id}
+                    type="button"
+                    onClick={() => setColorElegido(color.id)}
+                    title={color.id}
+                    className={cn(
+                      'w-8 h-8 rounded-full flex items-center justify-center border-2 transition-transform',
+                      claseSwatch(color.id),
+                      colorElegido === color.id
+                        ? 'border-foreground scale-110'
+                        : 'border-transparent hover:scale-105'
+                    )}
+                  >
+                    {colorElegido === color.id && <Check className="w-4 h-4" />}
+                  </button>
+                ))}
+              </div>
+              {coloresDisponibles.length === 0 && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Ya se han usado todos los colores disponibles, puedes repetir uno.
+                </p>
+              )}
             </div>
           )}
 

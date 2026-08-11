@@ -117,7 +117,7 @@ export function HorarioPDFDocument({ horario, metadata }: HorarioPDFProps) {
 
   return (
     <Document>
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" orientation="landscape" style={styles.page}>
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>{horario.nombre}</Text>

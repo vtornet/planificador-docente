@@ -101,6 +101,7 @@ interface Configuracion {
   fechaFinCurso: Date
   festivos: Date[]
   vacaciones: Vacacion[]
+  coloresAsignaturas?: Record<string, string> // nombre de asignatura personalizada -> id de color en PALETA_ASIGNATURAS
 }
 
 interface Vacacion {

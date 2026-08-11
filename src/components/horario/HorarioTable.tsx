@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { DIAS_SEMANA } from '../../types/constants'
+import { DIAS_SEMANA, PALETA_ASIGNATURAS } from '../../types/constants'
 import type { CeldaHorario, Horario } from '../../types'
 import { cn } from '../../utils/cn'
 import { UserCircle, GraduationCap, Copy, StickyNote } from 'lucide-react'
@@ -87,25 +87,27 @@ export function HorarioTable({ horario, onUpdate, onDuplicate, className }: Hora
                 </td>
                 {DIAS_SEMANA.map((_, columna) => {
                   const celda = horario.datos[fila]?.[columna]
+                  const claseColor = celda?.color
+                    ? PALETA_ASIGNATURAS.find((c) => c.id === celda.color)?.clase
+                    : undefined
 
                   return (
                     <td
                       key={columna}
                       onClick={() => handleCeldaClick(fila, columna)}
                       className={cn(
-                        'border border-border p-1 align-top min-h-[60px] cursor-pointer hover:bg-accent/50 transition-colors',
-                        celda?.color && 'bg-opacity-20'
+                        'border border-border p-1 align-top min-h-[60px] cursor-pointer transition-colors',
+                        claseColor ? cn(claseColor, 'hover:brightness-95 dark:hover:brightness-125') : 'hover:bg-accent/50'
                       )}
-                      style={{ backgroundColor: celda?.color || undefined }}
                     >
                       <div className="p-1 min-h-[50px] overflow-hidden">
-                        <div className="text-sm text-foreground truncate">
+                        <div className="text-sm truncate">
                           {celda?.contenido || (
                             <span className="text-muted-foreground/50 italic">Click para editar</span>
                           )}
                         </div>
                         {celda?.nota && (
-                          <div className="mt-0.5 flex items-start gap-1 text-xs text-muted-foreground italic">
+                          <div className="mt-0.5 flex items-start gap-1 text-xs opacity-80 italic">
                             <StickyNote className="w-3 h-3 mt-0.5 flex-shrink-0" />
                             <span className="line-clamp-2 break-words">{celda.nota}</span>
                           </div>
