@@ -98,14 +98,17 @@ export function HorarioTable({ horario, onUpdate, onDuplicate, className }: Hora
                       )}
                       style={{ backgroundColor: celda?.color || undefined }}
                     >
-                      <div className="flex items-start justify-between gap-1 p-1 min-h-[50px] overflow-hidden">
-                        <span className="text-sm text-foreground truncate">
+                      <div className="p-1 min-h-[50px] overflow-hidden">
+                        <div className="text-sm text-foreground truncate">
                           {celda?.contenido || (
                             <span className="text-muted-foreground/50 italic">Click para editar</span>
                           )}
-                        </span>
+                        </div>
                         {celda?.nota && (
-                          <StickyNote className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-muted-foreground" />
+                          <div className="mt-0.5 flex items-start gap-1 text-xs text-muted-foreground italic">
+                            <StickyNote className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                            <span className="line-clamp-2 break-words">{celda.nota}</span>
+                          </div>
                         )}
                       </div>
                     </td>
