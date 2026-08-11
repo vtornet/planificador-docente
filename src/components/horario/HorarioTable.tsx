@@ -51,16 +51,16 @@ export function HorarioTable({ horario, onUpdate, onDuplicate, className }: Hora
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-border shadow-[var(--shadow-soft)]">
-        <table className="w-full border-collapse">
+        <table className="w-full border-collapse table-fixed">
           <thead>
             <tr className="bg-muted">
-              <th className="border border-border p-2 text-left text-sm font-semibold text-foreground min-w-[80px]">
+              <th className="border border-border p-2 text-left text-sm font-semibold text-foreground w-20">
                 Hora
               </th>
               {DIAS_SEMANA.map((dia) => (
                 <th
                   key={dia}
-                  className="border border-border p-2 text-center text-sm font-semibold text-foreground min-w-[120px]"
+                  className="border border-border p-2 text-center text-sm font-semibold text-foreground w-[140px]"
                 >
                   {dia}
                 </th>
@@ -98,18 +98,14 @@ export function HorarioTable({ horario, onUpdate, onDuplicate, className }: Hora
                       )}
                       style={{ backgroundColor: celda?.color || undefined }}
                     >
-                      <div className="text-sm text-foreground whitespace-pre-wrap p-1 min-h-[50px]">
-                        {celda?.contenido || (
-                          <span className="text-muted-foreground/50 italic">Click para editar</span>
-                        )}
+                      <div className="flex items-start justify-between gap-1 p-1 min-h-[50px] overflow-hidden">
+                        <span className="text-sm text-foreground truncate">
+                          {celda?.contenido || (
+                            <span className="text-muted-foreground/50 italic">Click para editar</span>
+                          )}
+                        </span>
                         {celda?.nota && (
-                          <div
-                            className="mt-1 flex items-start gap-1 text-xs text-muted-foreground italic"
-                            title={celda.nota}
-                          >
-                            <StickyNote className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                            <span className="line-clamp-2">{celda.nota}</span>
-                          </div>
+                          <StickyNote className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-muted-foreground" />
                         )}
                       </div>
                     </td>
@@ -144,7 +140,7 @@ export function HorarioTable({ horario, onUpdate, onDuplicate, className }: Hora
           </Button>
         )}
         <span className="text-sm text-muted-foreground">
-          Tip: Click en celda para elegir asignatura y añadir una nota
+          Tip: Click en celda para ver el contenido completo, editarlo o añadir una nota
         </span>
       </div>
 

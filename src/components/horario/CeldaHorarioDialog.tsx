@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Textarea } from '../ui/textarea'
+import { StickyNote } from 'lucide-react'
 
 const OTRA = '__otra__'
 
@@ -16,6 +17,7 @@ interface CeldaHorarioDialogProps {
 }
 
 export function CeldaHorarioDialog({ open, onOpenChange, celda, onGuardar }: CeldaHorarioDialogProps) {
+  const [modo, setModo] = useState<'ver' | 'editar'>('editar')
   const [asignatura, setAsignatura] = useState('')
   const [personalizada, setPersonalizada] = useState('')
   const [esPersonalizada, setEsPersonalizada] = useState(false)
@@ -36,6 +38,7 @@ export function CeldaHorarioDialog({ open, onOpenChange, celda, onGuardar }: Cel
       setPersonalizada('')
     }
     setNota(celda?.nota || '')
+    setModo(contenidoActual ? 'ver' : 'editar')
   }, [open, celda])
 
   const handleChangeAsignatura = (valor: string) => {
@@ -56,6 +59,34 @@ export function CeldaHorarioDialog({ open, onOpenChange, celda, onGuardar }: Cel
   const handleVaciar = () => {
     onGuardar({ ...celda, contenido: '', nota: undefined })
     onOpenChange(false)
+  }
+
+  if (modo === 'ver') {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{celda?.contenido || 'Celda'}</DialogTitle>
+          </DialogHeader>
+          <div>
+            {celda?.nota ? (
+              <div className="flex items-start gap-2 text-sm text-foreground bg-muted rounded-lg p-3">
+                <StickyNote className="w-4 h-4 mt-0.5 flex-shrink-0 text-muted-foreground" />
+                <p className="whitespace-pre-wrap break-words">{celda.nota}</p>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground italic">Sin nota</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cerrar
+            </Button>
+            <Button onClick={() => setModo('editar')}>Editar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    )
   }
 
   return (
