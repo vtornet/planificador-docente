@@ -133,6 +133,8 @@ export function HorarioTable({ horario, onUpdate, onDuplicate, className }: Hora
                   nombre: `${horario.nombre} (${nuevoTipo})`,
                   datos: horario.datos.map((fila) => fila.map((celda) => ({ ...celda }))),
                   configHorarios: horario.configHorarios,
+                  fechaInicio: horario.fechaInicio,
+                  fechaFin: horario.fechaFin,
                 }
                 onDuplicate(duplicado)
               }

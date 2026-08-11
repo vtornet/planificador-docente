@@ -11,6 +11,7 @@ export const MESES = [
   'Abril',
   'Mayo',
   'Junio',
+  'Julio',
 ] as const
 
 export const DIAS_SEMANA = [

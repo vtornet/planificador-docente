@@ -17,6 +17,8 @@ interface Horario {
   nombre: string
   datos: CeldaHorario[][] // [hora][dia]
   configHorarios: ConfigHorarios
+  fechaInicio?: Date // tramo de fechas en que el horario está vigente
+  fechaFin?: Date
 }
 
 interface ConfigHorarios {
