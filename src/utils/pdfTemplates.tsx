@@ -75,6 +75,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#e0e0e0',
     fontWeight: 'bold',
   },
+  tableCellNota: {
+    fontSize: 7,
+    fontStyle: 'italic',
+    color: '#666',
+    marginTop: 2,
+  },
   text: {
     marginBottom: 5,
   },
@@ -160,6 +166,11 @@ export function HorarioPDFDocument({ horario, metadata }: HorarioPDFProps) {
                     <Text style={color ? { color: color.texto } : undefined}>
                       {celda.contenido || '-'}
                     </Text>
+                    {celda.nota && (
+                      <Text style={color ? [styles.tableCellNota, { color: color.texto }] : styles.tableCellNota}>
+                        {celda.nota}
+                      </Text>
+                    )}
                   </View>
                 )
               })}
