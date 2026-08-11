@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { format } from 'date-fns'
+import { useMemo, useState } from 'react'
+import { format, startOfMonth, endOfMonth, eachWeekOfInterval, addDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { useCuadernoStore } from '../../stores/useCuadernoStore'
 import { CONFIG_HORARIOS_PREDEFINIDOS, MESES } from '../../types/constants'
@@ -9,11 +9,28 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Input } from '../ui/input'
 import { HorarioTable } from './HorarioTable'
 import type { Horario, ConfigHorarios } from '../../types'
-import { Calendar, Trash2, Clock, Edit2 } from 'lucide-react'
+import { Calendar, Trash2, Clock, Edit2, ChevronRight, ChevronLeft } from 'lucide-react'
 
-// Índice del mes dentro del curso escolar (0 = Septiembre ... 10 = Julio)
-function indiceMesEscolar(fecha: Date): number {
-  return ((fecha.getMonth() - 8) % 12 + 12) % 12
+// El curso escolar empieza en Septiembre (mes 8, 0-indexado). MESES: 0=Septiembre...10=Julio.
+function anioYMesDe(indiceMes: number, anioInicio: number, anioFin: number): { anio: number; mes: number } {
+  if (indiceMes <= 3) return { anio: anioInicio, mes: 8 + indiceMes } // Sept-Dic
+  return { anio: anioFin, mes: indiceMes - 4 } // Ene-Jul
+}
+
+function semanasDelMes(anio: number, mes: number): { inicio: Date; fin: Date }[] {
+  const inicioMes = startOfMonth(new Date(anio, mes, 1))
+  const finMes = endOfMonth(inicioMes)
+  const lunes = eachWeekOfInterval({ start: inicioMes, end: finMes }, { weekStartsOn: 1 })
+    .filter((l) => l.getMonth() === mes)
+  return lunes.map((inicio) => ({ inicio, fin: addDays(inicio, 4) }))
+}
+
+// ¿El horario está vigente en algún punto del rango [desde, hasta]?
+function horarioActivoEnRango(horario: Horario, desde: Date, hasta: Date): boolean {
+  if (!horario.fechaInicio) return false
+  const inicio = new Date(horario.fechaInicio)
+  const fin = horario.fechaFin ? new Date(horario.fechaFin) : null
+  return inicio <= hasta && (fin === null || fin >= desde)
 }
 
 function formatRangoFechas(fechaInicio?: Date, fechaFin?: Date): string {
@@ -29,9 +46,18 @@ function formatRangoFechas(fechaInicio?: Date, fechaFin?: Date): string {
   return `Del ${format(inicio, 'd MMM', { locale: es })} al ${format(fin, 'd MMM yyyy', { locale: es })}`
 }
 
+type Vista = 'meses' | 'semanas' | 'semana' | 'sinFecha'
+
 export function HorarioManager() {
   const { cuadernoActual, addHorario, updateHorario, deleteHorario } = useCuadernoStore()
   const horarios = cuadernoActual?.horarios || []
+
+  // Navegación
+  const [vista, setVista] = useState<Vista>('meses')
+  const [mesSeleccionado, setMesSeleccionado] = useState<number | null>(null)
+  const [semanaSeleccionada, setSemanaSeleccionada] = useState<{ inicio: Date; fin: Date } | null>(null)
+
+  // Diálogos crear/editar
   const [showCrear, setShowCrear] = useState(false)
   const [showEditar, setShowEditar] = useState(false)
   const [horarioEditando, setHorarioEditando] = useState<Horario | null>(null)
@@ -53,13 +79,23 @@ export function HorarioManager() {
     ? numPeriodos + (conRecreo ? 1 : 0)
     : 6 + 1 // secundaria tiene 6 periodos + recreo
 
-  const handleAbrirCrear = () => {
+  const [anioInicio, anioFin] = useMemo(() => {
+    const partes = (cuadernoActual?.metadata.cursoEscolar || '').split('-').map(Number)
+    const hoy = new Date().getFullYear()
+    return [partes[0] || hoy, partes[1] || hoy + 1]
+  }, [cuadernoActual?.metadata.cursoEscolar])
+
+  const handleAbrirCrear = (rango?: { inicio: Date; fin: Date }) => {
     setNuevoNombre('')
     setNuevoTipo('docente')
     setConfigPersonalizada(false)
-    setFechaInicio(format(new Date(), 'yyyy-MM-dd'))
-    const [, anioFin] = (cuadernoActual?.metadata.cursoEscolar || '').split('-').map(Number)
-    setFechaFin(anioFin ? `${anioFin}-07-31` : '')
+    if (rango) {
+      setFechaInicio(format(rango.inicio, 'yyyy-MM-dd'))
+      setFechaFin(format(rango.fin, 'yyyy-MM-dd'))
+    } else {
+      setFechaInicio(format(new Date(), 'yyyy-MM-dd'))
+      setFechaFin(`${anioFin}-07-31`)
+    }
     setShowCrear(true)
   }
 
@@ -155,13 +191,35 @@ export function HorarioManager() {
     setHorarioEditando(null)
   }
 
+  const irAMeses = () => {
+    setVista('meses')
+    setMesSeleccionado(null)
+    setSemanaSeleccionada(null)
+  }
+
+  const irAMes = (idx: number) => {
+    setMesSeleccionado(idx)
+    setSemanaSeleccionada(null)
+    setVista('semanas')
+  }
+
+  const irASemana = (semana: { inicio: Date; fin: Date }) => {
+    setSemanaSeleccionada(semana)
+    setVista('semana')
+  }
+
+  const semanasMesActual = useMemo(() => {
+    if (mesSeleccionado === null) return []
+    const { anio, mes } = anioYMesDe(mesSeleccionado, anioInicio, anioFin)
+    return semanasDelMes(anio, mes)
+  }, [mesSeleccionado, anioInicio, anioFin])
+
+  const horariosDeLaSemana = useMemo(() => {
+    if (!semanaSeleccionada) return []
+    return horarios.filter((h) => horarioActivoEnRango(h, semanaSeleccionada.inicio, semanaSeleccionada.fin))
+  }, [horarios, semanaSeleccionada])
+
   const horariosSinFecha = horarios.filter((h) => !h.fechaInicio)
-  const gruposPorMes = MESES.map((nombreMes, idx) => ({
-    nombreMes,
-    horarios: horarios
-      .filter((h) => h.fechaInicio && indiceMesEscolar(new Date(h.fechaInicio)) === idx)
-      .sort((a, b) => new Date(a.fechaInicio!).getTime() - new Date(b.fechaInicio!).getTime()),
-  })).filter((grupo) => grupo.horarios.length > 0)
 
   const renderHorarioCard = (horario: Horario) => (
     <Card key={horario.id}>
@@ -205,9 +263,44 @@ export function HorarioManager() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-foreground tracking-tight">Horarios</h2>
-        <Button onClick={handleAbrirCrear}>+ Nuevo horario</Button>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <nav className="flex items-center gap-1 text-sm">
+          <button
+            onClick={irAMeses}
+            className={vista === 'meses' ? 'font-bold text-foreground text-2xl tracking-tight' : 'text-primary hover:underline'}
+          >
+            Horarios
+          </button>
+          {mesSeleccionado !== null && (
+            <>
+              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+              <button
+                onClick={() => irAMes(mesSeleccionado)}
+                className={vista === 'semanas' ? 'font-bold text-foreground text-2xl tracking-tight' : 'text-primary hover:underline'}
+              >
+                {MESES[mesSeleccionado]}
+              </button>
+            </>
+          )}
+          {vista === 'semana' && semanaSeleccionada && (
+            <>
+              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+              <span className="font-bold text-foreground text-2xl tracking-tight">
+                Semana del {format(semanaSeleccionada.inicio, 'd')} al{' '}
+                {format(semanaSeleccionada.fin, "d 'de' MMMM", { locale: es })}
+              </span>
+            </>
+          )}
+          {vista === 'sinFecha' && (
+            <>
+              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+              <span className="font-bold text-foreground text-2xl tracking-tight">
+                Sin periodo asignado
+              </span>
+            </>
+          )}
+        </nav>
+        <Button onClick={() => handleAbrirCrear()}>+ Nuevo horario</Button>
       </div>
 
       <Dialog open={showCrear} onOpenChange={setShowCrear}>
@@ -287,38 +380,129 @@ export function HorarioManager() {
         </DialogContent>
       </Dialog>
 
-      {horarios.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-primary/10 flex items-center justify-center">
-            <Calendar className="w-8 h-8 text-primary" />
-          </div>
-          <h3 className="text-xl font-semibold text-foreground mb-2">
-            No hay horarios creados
-          </h3>
-          <p className="text-muted-foreground mb-6">
-            Crea tu primer horario para empezar a planificar
-          </p>
-          <Button onClick={handleAbrirCrear}>Crear horario</Button>
-        </div>
-      ) : (
-        <div className="space-y-8">
-          {horariosSinFecha.length > 0 && (
-            <section>
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3 pb-2 border-b border-border">
-                Sin periodo asignado
-              </h3>
-              <div className="space-y-6">{horariosSinFecha.map(renderHorarioCard)}</div>
-            </section>
-          )}
+      {vista === 'meses' && horariosSinFecha.length > 0 && (
+        <button
+          onClick={() => setVista('sinFecha')}
+          className="w-full text-left text-sm text-muted-foreground hover:text-primary underline underline-offset-2"
+        >
+          Ver {horariosSinFecha.length} {horariosSinFecha.length === 1 ? 'horario' : 'horarios'} sin periodo asignado
+        </button>
+      )}
 
-          {gruposPorMes.map((grupo) => (
-            <section key={grupo.nombreMes}>
-              <h3 className="text-sm font-semibold text-primary uppercase tracking-wide mb-3 pb-2 border-b border-border">
-                {grupo.nombreMes}
+      {vista === 'meses' && (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {MESES.map((nombreMes, idx) => {
+            const { anio, mes } = anioYMesDe(idx, anioInicio, anioFin)
+            const desde = startOfMonth(new Date(anio, mes, 1))
+            const hasta = endOfMonth(desde)
+            const numHorarios = horarios.filter((h) => horarioActivoEnRango(h, desde, hasta)).length
+
+            return (
+              <Card
+                key={nombreMes}
+                className="cursor-pointer hover:shadow-md transition-shadow"
+                onClick={() => irAMes(idx)}
+              >
+                <CardContent className="pt-6 flex flex-col items-center text-center gap-2">
+                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Calendar className="w-6 h-6 text-primary" />
+                  </div>
+                  <div className="font-semibold text-foreground">{nombreMes}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {numHorarios === 0
+                      ? 'Sin horarios'
+                      : `${numHorarios} ${numHorarios === 1 ? 'horario' : 'horarios'}`}
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
+      )}
+
+      {vista === 'semanas' && mesSeleccionado !== null && (
+        <div className="space-y-4">
+          <Button variant="ghost" size="sm" onClick={irAMeses} className="text-muted-foreground">
+            <ChevronLeft className="w-4 h-4" /> Volver a meses
+          </Button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {semanasMesActual.map((semana) => {
+              const horariosSemana = horarios.filter((h) => horarioActivoEnRango(h, semana.inicio, semana.fin))
+              return (
+                <Card
+                  key={semana.inicio.toISOString()}
+                  className="cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={() => irASemana(semana)}
+                >
+                  <CardContent className="pt-6">
+                    <div className="font-semibold text-foreground mb-2">
+                      Del {format(semana.inicio, 'd')} al {format(semana.fin, "d 'de' MMMM", { locale: es })}
+                    </div>
+                    {horariosSemana.length === 0 ? (
+                      <p className="text-sm text-muted-foreground italic">Sin horario asignado</p>
+                    ) : (
+                      <ul className="space-y-1">
+                        {horariosSemana.map((h) => (
+                          <li key={h.id} className="text-sm text-primary truncate">
+                            {h.nombre}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {vista === 'semana' && semanaSeleccionada && (
+        <div className="space-y-6">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => mesSeleccionado !== null && irAMes(mesSeleccionado)}
+            className="text-muted-foreground"
+          >
+            <ChevronLeft className="w-4 h-4" /> Volver a {mesSeleccionado !== null ? MESES[mesSeleccionado] : 'el mes'}
+          </Button>
+
+          {horariosDeLaSemana.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <Calendar className="w-8 h-8 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold text-foreground mb-2">
+                No hay horario para esta semana
               </h3>
-              <div className="space-y-6">{grupo.horarios.map(renderHorarioCard)}</div>
-            </section>
-          ))}
+              <p className="text-muted-foreground mb-6">
+                Crea uno para esta semana, o ábrelo con un rango más amplio si va a durar varias semanas
+              </p>
+              <Button onClick={() => handleAbrirCrear(semanaSeleccionada)}>
+                Crear horario para esta semana
+              </Button>
+            </div>
+          ) : (
+            <>
+              <div className="space-y-6">{horariosDeLaSemana.map(renderHorarioCard)}</div>
+              <Button variant="outline" onClick={() => handleAbrirCrear(semanaSeleccionada)}>
+                + Añadir otro horario para esta semana
+              </Button>
+            </>
+          )}
+        </div>
+      )}
+
+      {vista === 'sinFecha' && (
+        <div className="space-y-6">
+          <Button variant="ghost" size="sm" onClick={irAMeses} className="text-muted-foreground">
+            <ChevronLeft className="w-4 h-4" /> Volver a meses
+          </Button>
+          <p className="text-sm text-muted-foreground">
+            Horarios creados sin un periodo de fechas. Edítalos para asignarles uno y que aparezcan en su mes correspondiente.
+          </p>
+          <div className="space-y-6">{horariosSinFecha.map(renderHorarioCard)}</div>
         </div>
       )}
     </div>
