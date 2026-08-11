@@ -10,6 +10,7 @@ import {
   Font,
 } from '@react-pdf/renderer'
 import type { Horario, Semana, Reunion, Nota, CuadernoDocente, CeldaHorario } from '../types'
+import { PALETA_ASIGNATURAS } from '../types/constants'
 
 // Intentar registrar fuentes (opcional, si no existen usa fuentes por defecto)
 try {
@@ -147,11 +148,21 @@ export function HorarioPDFDocument({ horario, metadata }: HorarioPDFProps) {
               <View style={styles.tableCell}>
                 <Text>{horas[idx]}</Text>
               </View>
-              {fila.map((celda, cidx) => (
-                <View key={cidx} style={styles.tableCell}>
-                  <Text>{celda.contenido || '-'}</Text>
-                </View>
-              ))}
+              {fila.map((celda, cidx) => {
+                const color = celda.color
+                  ? PALETA_ASIGNATURAS.find((c) => c.id === celda.color)
+                  : undefined
+                return (
+                  <View
+                    key={cidx}
+                    style={color ? [styles.tableCell, { backgroundColor: color.bg }] : styles.tableCell}
+                  >
+                    <Text style={color ? { color: color.texto } : undefined}>
+                      {celda.contenido || '-'}
+                    </Text>
+                  </View>
+                )
+              })}
             </View>
           ))}
         </View>

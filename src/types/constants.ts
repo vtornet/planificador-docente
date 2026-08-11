@@ -73,26 +73,28 @@ export const ASIGNATURAS_PREDEFINIDAS = [
 ] as const
 
 // Paleta de colores para asignaturas: cada entrada es un id + las clases
-// Tailwind (con variante dark:) para pintar la celda del horario.
+// Tailwind (con variante dark:) para pintar la celda del horario en la web,
+// más los hex de fondo/texto equivalentes (claros, "modo día") para el PDF,
+// que no entiende clases de Tailwind ni tiene modo oscuro (es papel impreso).
 export const PALETA_ASIGNATURAS = [
-  { id: 'red', clase: 'bg-red-100 dark:bg-red-950/40 text-red-900 dark:text-red-200' },
-  { id: 'orange', clase: 'bg-orange-100 dark:bg-orange-950/40 text-orange-900 dark:text-orange-200' },
-  { id: 'amber', clase: 'bg-amber-100 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200' },
-  { id: 'yellow', clase: 'bg-yellow-100 dark:bg-yellow-950/40 text-yellow-900 dark:text-yellow-200' },
-  { id: 'lime', clase: 'bg-lime-100 dark:bg-lime-950/40 text-lime-900 dark:text-lime-200' },
-  { id: 'green', clase: 'bg-green-100 dark:bg-green-950/40 text-green-900 dark:text-green-200' },
-  { id: 'emerald', clase: 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200' },
-  { id: 'teal', clase: 'bg-teal-100 dark:bg-teal-950/40 text-teal-900 dark:text-teal-200' },
-  { id: 'cyan', clase: 'bg-cyan-100 dark:bg-cyan-950/40 text-cyan-900 dark:text-cyan-200' },
-  { id: 'sky', clase: 'bg-sky-100 dark:bg-sky-950/40 text-sky-900 dark:text-sky-200' },
-  { id: 'blue', clase: 'bg-blue-100 dark:bg-blue-950/40 text-blue-900 dark:text-blue-200' },
-  { id: 'indigo', clase: 'bg-indigo-100 dark:bg-indigo-950/40 text-indigo-900 dark:text-indigo-200' },
-  { id: 'violet', clase: 'bg-violet-100 dark:bg-violet-950/40 text-violet-900 dark:text-violet-200' },
-  { id: 'purple', clase: 'bg-purple-100 dark:bg-purple-950/40 text-purple-900 dark:text-purple-200' },
-  { id: 'fuchsia', clase: 'bg-fuchsia-100 dark:bg-fuchsia-950/40 text-fuchsia-900 dark:text-fuchsia-200' },
-  { id: 'pink', clase: 'bg-pink-100 dark:bg-pink-950/40 text-pink-900 dark:text-pink-200' },
-  { id: 'rose', clase: 'bg-rose-100 dark:bg-rose-950/40 text-rose-900 dark:text-rose-200' },
-  { id: 'stone', clase: 'bg-stone-100 dark:bg-stone-950/40 text-stone-900 dark:text-stone-200' },
+  { id: 'red', clase: 'bg-red-100 dark:bg-red-950/40 text-red-900 dark:text-red-200', bg: '#fee2e2', texto: '#7f1d1d' },
+  { id: 'orange', clase: 'bg-orange-100 dark:bg-orange-950/40 text-orange-900 dark:text-orange-200', bg: '#ffedd5', texto: '#7c2d12' },
+  { id: 'amber', clase: 'bg-amber-100 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200', bg: '#fef3c7', texto: '#78350f' },
+  { id: 'yellow', clase: 'bg-yellow-100 dark:bg-yellow-950/40 text-yellow-900 dark:text-yellow-200', bg: '#fef9c3', texto: '#713f12' },
+  { id: 'lime', clase: 'bg-lime-100 dark:bg-lime-950/40 text-lime-900 dark:text-lime-200', bg: '#ecfccb', texto: '#365314' },
+  { id: 'green', clase: 'bg-green-100 dark:bg-green-950/40 text-green-900 dark:text-green-200', bg: '#dcfce7', texto: '#14532d' },
+  { id: 'emerald', clase: 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200', bg: '#d1fae5', texto: '#064e3b' },
+  { id: 'teal', clase: 'bg-teal-100 dark:bg-teal-950/40 text-teal-900 dark:text-teal-200', bg: '#ccfbf1', texto: '#134e4a' },
+  { id: 'cyan', clase: 'bg-cyan-100 dark:bg-cyan-950/40 text-cyan-900 dark:text-cyan-200', bg: '#cffafe', texto: '#164e63' },
+  { id: 'sky', clase: 'bg-sky-100 dark:bg-sky-950/40 text-sky-900 dark:text-sky-200', bg: '#e0f2fe', texto: '#0c4a6e' },
+  { id: 'blue', clase: 'bg-blue-100 dark:bg-blue-950/40 text-blue-900 dark:text-blue-200', bg: '#dbeafe', texto: '#1e3a8a' },
+  { id: 'indigo', clase: 'bg-indigo-100 dark:bg-indigo-950/40 text-indigo-900 dark:text-indigo-200', bg: '#e0e7ff', texto: '#312e81' },
+  { id: 'violet', clase: 'bg-violet-100 dark:bg-violet-950/40 text-violet-900 dark:text-violet-200', bg: '#ede9fe', texto: '#4c1d95' },
+  { id: 'purple', clase: 'bg-purple-100 dark:bg-purple-950/40 text-purple-900 dark:text-purple-200', bg: '#f3e8ff', texto: '#581c87' },
+  { id: 'fuchsia', clase: 'bg-fuchsia-100 dark:bg-fuchsia-950/40 text-fuchsia-900 dark:text-fuchsia-200', bg: '#fae8ff', texto: '#701a75' },
+  { id: 'pink', clase: 'bg-pink-100 dark:bg-pink-950/40 text-pink-900 dark:text-pink-200', bg: '#fce7f3', texto: '#831843' },
+  { id: 'rose', clase: 'bg-rose-100 dark:bg-rose-950/40 text-rose-900 dark:text-rose-200', bg: '#ffe4e6', texto: '#881337' },
+  { id: 'stone', clase: 'bg-stone-100 dark:bg-stone-950/40 text-stone-900 dark:text-stone-200', bg: '#f5f5f4', texto: '#1c1917' },
 ] as const
 
 // Color fijo para cada asignatura predefinida (siempre el mismo, no hay que elegirlo)
