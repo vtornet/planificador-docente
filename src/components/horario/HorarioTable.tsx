@@ -1,20 +1,31 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { DIAS_SEMANA, PALETA_ASIGNATURAS } from '../../types/constants'
 import type { CeldaHorario, Horario } from '../../types'
 import { cn } from '../../utils/cn'
-import { UserCircle, GraduationCap, Copy, StickyNote } from 'lucide-react'
+import { UserCircle, GraduationCap, Copy, StickyNote, Save } from 'lucide-react'
 import { Button } from '../ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog'
 import { CeldaHorarioDialog } from './CeldaHorarioDialog'
 
 interface HorarioTableProps {
   horario: Horario
-  onUpdate: (horario: Horario) => void
+  onGuardar: (datos: CeldaHorario[][], alcance?: 'periodo' | 'semana') => void
+  preguntarAlcance?: boolean
   onDuplicate?: (horario: Omit<Horario, 'id'>) => void
   className?: string
 }
 
-export function HorarioTable({ horario, onUpdate, onDuplicate, className }: HorarioTableProps) {
+export function HorarioTable({ horario, onGuardar, preguntarAlcance, onDuplicate, className }: HorarioTableProps) {
   const [celdaEditando, setCeldaEditando] = useState<{ fila: number; columna: number } | null>(null)
+  const [datos, setDatos] = useState<CeldaHorario[][]>(horario.datos)
+  const [dirty, setDirty] = useState(false)
+  const [mostrarPreguntaAlcance, setMostrarPreguntaAlcance] = useState(false)
+
+  // Mientras haya cambios sin guardar, no se sincroniza con lo que llegue del
+  // padre (evita perder el borrador si se actualiza el horario por otra vía).
+  useEffect(() => {
+    if (!dirty) setDatos(horario.datos)
+  }, [horario.datos, dirty])
 
   const periodos = generarPeriodos(horario.configHorarios)
 
@@ -25,12 +36,27 @@ export function HorarioTable({ horario, onUpdate, onDuplicate, className }: Hora
   const handleGuardarCelda = (celdaActualizada: CeldaHorario) => {
     if (!celdaEditando) return
     const { fila, columna } = celdaEditando
-    const nuevosDatos = [...horario.datos]
-    if (!nuevosDatos[fila]) {
-      nuevosDatos[fila] = []
+    setDatos((prev) => {
+      const nuevosDatos = [...prev]
+      nuevosDatos[fila] = [...(nuevosDatos[fila] || [])]
+      nuevosDatos[fila][columna] = celdaActualizada
+      return nuevosDatos
+    })
+    setDirty(true)
+  }
+
+  const confirmarGuardado = (alcance?: 'periodo' | 'semana') => {
+    onGuardar(datos, alcance)
+    setDirty(false)
+    setMostrarPreguntaAlcance(false)
+  }
+
+  const handleClickGuardar = () => {
+    if (preguntarAlcance) {
+      setMostrarPreguntaAlcance(true)
+    } else {
+      confirmarGuardado()
     }
-    nuevosDatos[fila][columna] = celdaActualizada
-    onUpdate({ ...horario, datos: nuevosDatos })
   }
 
   return (
@@ -86,7 +112,7 @@ export function HorarioTable({ horario, onUpdate, onDuplicate, className }: Hora
                   </div>
                 </td>
                 {DIAS_SEMANA.map((_, columna) => {
-                  const celda = horario.datos[fila]?.[columna]
+                  const celda = datos[fila]?.[columna]
                   const claseColor = celda?.color
                     ? PALETA_ASIGNATURAS.find((c) => c.id === celda.color)?.clase
                     : undefined
@@ -122,33 +148,39 @@ export function HorarioTable({ horario, onUpdate, onDuplicate, className }: Hora
         </table>
       </div>
 
-      <div className="mt-4 flex items-center gap-4">
-        {onDuplicate && (
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => {
-              const nuevoTipo = horario.tipo === 'docente' ? 'alumnado' : 'docente'
-              if (confirm(`¿Duplicar este horario como horario de ${nuevoTipo}?`)) {
-                const duplicado: Omit<Horario, 'id'> = {
-                  tipo: nuevoTipo,
-                  nombre: `${horario.nombre} (${nuevoTipo})`,
-                  datos: horario.datos.map((fila) => fila.map((celda) => ({ ...celda }))),
-                  configHorarios: horario.configHorarios,
-                  fechaInicio: horario.fechaInicio,
-                  fechaFin: horario.fechaFin,
+      <div className="mt-4 flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-4 flex-wrap">
+          {onDuplicate && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                const nuevoTipo = horario.tipo === 'docente' ? 'alumnado' : 'docente'
+                if (confirm(`¿Duplicar este horario como horario de ${nuevoTipo}?`)) {
+                  const duplicado: Omit<Horario, 'id'> = {
+                    tipo: nuevoTipo,
+                    nombre: `${horario.nombre} (${nuevoTipo})`,
+                    datos: horario.datos.map((fila) => fila.map((celda) => ({ ...celda }))),
+                    configHorarios: horario.configHorarios,
+                    fechaInicio: horario.fechaInicio,
+                    fechaFin: horario.fechaFin,
+                  }
+                  onDuplicate(duplicado)
                 }
-                onDuplicate(duplicado)
-              }
-            }}
-          >
-            <Copy className="w-4 h-4" />
-            Duplicar horario
-          </Button>
-        )}
-        <span className="text-sm text-muted-foreground">
-          Tip: Click en celda para ver el contenido completo, editarlo o añadir una nota
-        </span>
+              }}
+            >
+              <Copy className="w-4 h-4" />
+              Duplicar horario
+            </Button>
+          )}
+          <span className="text-sm text-muted-foreground hidden sm:inline">
+            Tip: Click en celda para ver el contenido completo, editarlo o añadir una nota
+          </span>
+        </div>
+        <Button onClick={handleClickGuardar} disabled={!dirty}>
+          <Save className="w-4 h-4" />
+          Guardar cambios
+        </Button>
       </div>
 
       <CeldaHorarioDialog
@@ -156,9 +188,33 @@ export function HorarioTable({ horario, onUpdate, onDuplicate, className }: Hora
         onOpenChange={(open) => {
           if (!open) setCeldaEditando(null)
         }}
-        celda={celdaEditando ? horario.datos[celdaEditando.fila]?.[celdaEditando.columna] : undefined}
+        celda={celdaEditando ? datos[celdaEditando.fila]?.[celdaEditando.columna] : undefined}
         onGuardar={handleGuardarCelda}
       />
+
+      <Dialog open={mostrarPreguntaAlcance} onOpenChange={setMostrarPreguntaAlcance}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>¿Guardar todo el periodo o solo esta semana?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Este horario abarca varias semanas. Elige si los cambios se aplican a todas ellas
+            o solo a la semana que estás viendo ahora mismo (se independizará del resto).
+          </p>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              className="w-full sm:w-auto"
+              onClick={() => confirmarGuardado('semana')}
+            >
+              Solo esta semana
+            </Button>
+            <Button className="w-full sm:w-auto" onClick={() => confirmarGuardado('periodo')}>
+              Todo el periodo
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

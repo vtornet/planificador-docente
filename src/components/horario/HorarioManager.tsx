@@ -112,7 +112,6 @@ export function HorarioManager() {
   const [vista, setVista] = useState<Vista>('meses')
   const [mesSeleccionado, setMesSeleccionado] = useState<number | null>(null)
   const [semanaSeleccionada, setSemanaSeleccionada] = useState<{ inicio: Date; fin: Date } | null>(null)
-  const [avisosPeriodoOcultos, setAvisosPeriodoOcultos] = useState<Set<string>>(new Set())
 
   // Diálogos crear/editar
   const [showCrear, setShowCrear] = useState(false)
@@ -192,8 +191,22 @@ export function HorarioManager() {
     setShowCrear(false)
   }
 
-  const handleUpdate = (horario: Horario) => {
-    updateHorario(horario.id, horario)
+  // Guarda los datos editados de un horario. Si abarca más de la semana que se
+  // está viendo, `alcance` decide si se aplica a todo el periodo (misma fila,
+  // se actualiza tal cual) o solo a esta semana (se independiza con un split).
+  const handleGuardarDatosHorario = (
+    horario: Horario,
+    datos: Horario['datos'],
+    alcance?: 'periodo' | 'semana'
+  ) => {
+    if (alcance === 'semana' && semanaSeleccionada) {
+      const { actualizacionOriginal, nuevos } = dividirHorarioParaSemana(horario, semanaSeleccionada)
+      nuevos[0] = { ...nuevos[0], datos }
+      updateHorario(horario.id, actualizacionOriginal)
+      nuevos.forEach((nuevo) => addHorario(nuevo))
+    } else {
+      updateHorario(horario.id, { ...horario, datos })
+    }
   }
 
   const handleDelete = (id: string) => {
@@ -210,16 +223,6 @@ export function HorarioManager() {
       console.error('Error exportando horario a PDF:', error)
       alert('Error al exportar el horario a PDF. Inténtalo de nuevo.')
     }
-  }
-
-  const handleModificarSoloEstaSemana = (horario: Horario) => {
-    if (!semanaSeleccionada) return
-    if (!confirm('Esta semana pasará a tener su propio horario independiente, con los mismos datos que tiene ahora. El resto de semanas de este periodo no se verán afectadas. ¿Continuar?')) {
-      return
-    }
-    const { actualizacionOriginal, nuevos } = dividirHorarioParaSemana(horario, semanaSeleccionada)
-    updateHorario(horario.id, actualizacionOriginal)
-    nuevos.forEach((nuevo) => addHorario(nuevo))
   }
 
   const handleEditarClick = (horario: Horario) => {
@@ -316,54 +319,66 @@ export function HorarioManager() {
     return fecha < inicioCursoEscolar || fecha > finCursoEscolar
   })
 
-  const renderHorarioCard = (horario: Horario) => (
-    <Card key={horario.id}>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>{horario.nombre}</CardTitle>
-            {horario.fechaInicio && (
-              <p className="text-sm text-muted-foreground mt-1">
-                {formatRangoFechas(horario.fechaInicio, horario.fechaFin)}
-              </p>
-            )}
+  const renderHorarioCard = (horario: Horario) => {
+    const preguntarAlcance =
+      vista === 'semana' && semanaSeleccionada
+        ? horarioAbarcaMasDeLaSemana(horario, semanaSeleccionada)
+        : false
+
+    return (
+      <Card key={horario.id}>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>{horario.nombre}</CardTitle>
+              {horario.fechaInicio && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  {formatRangoFechas(horario.fechaInicio, horario.fechaFin)}
+                </p>
+              )}
+            </div>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleExportarPDF(horario)}
+                className="text-muted-foreground hover:text-foreground"
+                title="Descargar este horario en PDF"
+              >
+                <Download className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleEditarClick(horario)}
+                className="text-primary hover:text-primary hover:bg-primary/10"
+                title="Editar horario"
+              >
+                <Edit2 className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleDelete(horario.id)}
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                title="Eliminar horario"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => handleExportarPDF(horario)}
-              className="text-muted-foreground hover:text-foreground"
-              title="Descargar este horario en PDF"
-            >
-              <Download className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => handleEditarClick(horario)}
-              className="text-primary hover:text-primary hover:bg-primary/10"
-              title="Editar horario"
-            >
-              <Edit2 className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => handleDelete(horario.id)}
-              className="text-destructive hover:text-destructive hover:bg-destructive/10"
-              title="Eliminar horario"
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <HorarioTable horario={horario} onUpdate={handleUpdate} onDuplicate={addHorario} />
-      </CardContent>
-    </Card>
-  )
+        </CardHeader>
+        <CardContent>
+          <HorarioTable
+            horario={horario}
+            onGuardar={(datos, alcance) => handleGuardarDatosHorario(horario, datos, alcance)}
+            preguntarAlcance={preguntarAlcance}
+            onDuplicate={addHorario}
+          />
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -591,39 +606,15 @@ export function HorarioManager() {
             <>
               <div className="space-y-6">
                 {horariosDeLaSemana.map((horario) => {
-                  const claveAviso = `${horario.id}-${semanaSeleccionada.inicio.toISOString()}`
-                  const mostrarAviso =
-                    horarioAbarcaMasDeLaSemana(horario, semanaSeleccionada) &&
-                    !avisosPeriodoOcultos.has(claveAviso)
+                  const mostrarAviso = horarioAbarcaMasDeLaSemana(horario, semanaSeleccionada)
 
                   return (
                     <div key={horario.id}>
                       {mostrarAviso && (
-                        <div className="mb-3 flex flex-col sm:flex-row sm:items-center gap-3 justify-between bg-primary/10 border border-primary/20 rounded-lg p-3">
-                          <p className="text-sm text-primary">
-                            Este horario es del <strong>{formatRangoFechas(horario.fechaInicio, horario.fechaFin)}</strong>.
-                            Si lo modificas, los cambios se aplican a todas esas semanas.
-                          </p>
-                          <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="w-full sm:w-auto"
-                              onClick={() =>
-                                setAvisosPeriodoOcultos((prev) => new Set(prev).add(claveAviso))
-                              }
-                            >
-                              Modificar todo el periodo
-                            </Button>
-                            <Button
-                              size="sm"
-                              className="w-full sm:w-auto"
-                              onClick={() => handleModificarSoloEstaSemana(horario)}
-                            >
-                              Modificar solo esta semana
-                            </Button>
-                          </div>
-                        </div>
+                        <p className="mb-3 text-sm text-muted-foreground">
+                          Este horario es del <strong>{formatRangoFechas(horario.fechaInicio, horario.fechaFin)}</strong>.
+                          Al guardar, podrás elegir si los cambios se aplican a todo el periodo o solo a esta semana.
+                        </p>
                       )}
                       {renderHorarioCard(horario)}
                     </div>
