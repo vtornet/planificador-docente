@@ -7,7 +7,16 @@ import { ReunionList } from './components/reuniones/ReunionList'
 import { NotasList } from './components/notas/NotasList'
 import { initDB, getCuadernos } from './db/db'
 import { Button } from './components/ui/button'
+import { Input } from './components/ui/input'
 import { useTheme } from './hooks/useTheme'
+
+function cursoEscolarPorDefecto(): string {
+  const hoy = new Date()
+  const anio = hoy.getFullYear()
+  // getMonth() es 0-indexado: 7 = agosto. Desde agosto ya se prepara el curso
+  // que empieza en septiembre, así que sugerimos ese como valor por defecto.
+  return hoy.getMonth() >= 7 ? `${anio}-${anio + 1}` : `${anio - 1}-${anio}`
+}
 
 function HorariosView() {
   return <HorarioManager />
@@ -29,6 +38,9 @@ function App() {
   const { cuadernoActual, view, createCuaderno, loadCuaderno } = useCuadernoStore()
   const [isLoading, setIsLoading] = useState(true)
   const [cuadernosExistentes, setCuadernosExistentes] = useState<any[]>([])
+  const [centro, setCentro] = useState('')
+  const [docente, setDocente] = useState('')
+  const [cursoEscolar, setCursoEscolar] = useState(cursoEscolarPorDefecto())
   useTheme() // aplica el tema guardado también en las pantallas previas al Layout
 
   useEffect(() => {
@@ -102,21 +114,38 @@ function App() {
             </div>
           )}
 
-          <div className="space-y-3">
+          <div className="space-y-3 text-left">
+            <p className="text-sm font-medium text-foreground -mb-1">Crear nuevo cuaderno</p>
+            <Input
+              value={centro}
+              onChange={(e) => setCentro(e.target.value)}
+              placeholder="Centro (ej: IES Mi Instituto)"
+            />
+            <Input
+              value={docente}
+              onChange={(e) => setDocente(e.target.value)}
+              placeholder="Tu nombre"
+            />
+            <Input
+              value={cursoEscolar}
+              onChange={(e) => setCursoEscolar(e.target.value)}
+              placeholder="Curso escolar (ej: 2026-2027)"
+            />
             <Button
               size="lg"
               className="w-full"
+              disabled={!centro.trim() || !docente.trim() || !cursoEscolar.trim()}
               onClick={() => {
                 createCuaderno({
-                  cursoEscolar: '2026-2027',
-                  centro: 'Mi Centro',
-                  docente: 'Docente',
+                  cursoEscolar: cursoEscolar.trim(),
+                  centro: centro.trim(),
+                  docente: docente.trim(),
                   creado: new Date(),
                   actualizado: new Date(),
                 })
               }}
             >
-              Crear nuevo cuaderno
+              Crear cuaderno
             </Button>
           </div>
         </div>

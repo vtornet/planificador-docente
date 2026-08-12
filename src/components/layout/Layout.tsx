@@ -3,6 +3,8 @@ import { Sidebar } from './Sidebar'
 import { BottomNav } from './BottomNav'
 import { AppHeader } from './AppHeader'
 import { useCuadernoStore } from '../../stores/useCuadernoStore'
+import { perfilCompleto } from '../../utils/perfil'
+import { CompletarPerfilScreen } from '../perfil/CompletarPerfilScreen'
 
 interface LayoutProps {
   children: React.ReactNode
@@ -36,6 +38,10 @@ export function Layout({ children }: LayoutProps) {
 
   if (!cuadernoActual) {
     return null // App maneja este caso
+  }
+
+  if (!perfilCompleto(cuadernoActual.metadata)) {
+    return <CompletarPerfilScreen />
   }
 
   return (

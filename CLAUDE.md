@@ -85,6 +85,11 @@ Aplicación web progresiva (PWA) que permite a los docentes gestionar su planifi
   - Aviso explícito de que importar **reemplaza todos los datos actuales** del cuaderno (horarios, reuniones, notas, planificación) y no se puede deshacer — se pide confirmación aparte del simple "seleccionar archivo".
   - Al confirmar, se importa manteniendo el `id` del cuaderno actual (para actualizar el mismo registro en IndexedDB, no crear uno duplicado suelto).
   - Verificado con un ciclo completo: exportar backup → añadir una nota nueva → importar el backup (más antiguo) → la nota nueva desaparece (se reemplaza, no se fusiona) y el horario del backup se restaura con sus datos intactos.
+- **PERFIL OBLIGATORIO ANTES DE USAR LA APP:** ✅ Hecho (Agosto 2026). Antes, `App.tsx` creaba el cuaderno con datos inventados (`'Mi Centro'`, `'Docente'`) al primer click, sin pedir nada real, y no había ninguna comprobación después — se podía crear horarios/reuniones/notas sin haber rellenado el perfil nunca.
+  - `src/utils/perfil.ts` (nuevo): `perfilCompleto(metadata)` — true solo si `centro`, `docente` y `cursoEscolar` están rellenos (no se exige `cursos`, es opcional a propósito).
+  - **Onboarding (`App.tsx`):** el botón único "Crear nuevo cuaderno" pasó a ser un formulario real (Centro, Docente, Curso escolar) con el botón deshabilitado hasta rellenar los 3 campos. `cursoEscolar` se precarga con una sugerencia calculada (`cursoEscolarPorDefecto()`: desde agosto ya sugiere el curso que empieza en septiembre, antes de agosto sugiere el curso en el que aún se está).
+  - **Bloqueo permanente (`Layout.tsx` + `CompletarPerfilScreen.tsx`, nuevo en `src/components/perfil/`):** si en cualquier momento `cuadernoActual.metadata` deja de cumplir `perfilCompleto` (ej. el usuario vacía el Centro desde el diálogo de Perfil y guarda), `Layout` deja de renderizar Sidebar/Header/contenido y en su lugar muestra una pantalla de pantalla completa sin forma de saltársela (no es un `Dialog`, así que no se puede cerrar con Escape ni con click fuera) hasta rellenar los 3 campos y guardar.
+  - Verificado con Playwright: botón de crear deshabilitado hasta rellenar todo → tras crear con los 3 campos entra directo a la app → vaciar el Centro desde Perfil hace desaparecer el Sidebar y aparecer la pantalla de bloqueo → rellenarlo de nuevo devuelve la app normal.
 
 ---
 
