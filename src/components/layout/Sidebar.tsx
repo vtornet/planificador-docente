@@ -1,6 +1,7 @@
 import { useCuadernoStore } from '../../stores/useCuadernoStore'
 import { cn } from '../../utils/cn'
-import { Calendar, CalendarDays, Users, FileText, BookOpen } from 'lucide-react'
+import { Calendar, CalendarDays, Users, FileText } from 'lucide-react'
+import docenzaIcon from '../../assets/docenza-icon.png'
 
 interface SidebarProps {
   className?: string
@@ -28,11 +29,9 @@ export function Sidebar({ className }: SidebarProps) {
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg">
-            <BookOpen className="w-5 h-5" />
-          </div>
+          <img src={docenzaIcon} alt="Docenza" className="w-10 h-10 flex-shrink-0" />
           <div>
-            <h2 className="text-lg font-bold tracking-tight">Plafinicador</h2>
+            <h2 className="text-lg font-bold tracking-tight">Docenza</h2>
             <p className="text-xs text-slate-400">
               {cuadernoActual.metadata.cursoEscolar}
             </p>

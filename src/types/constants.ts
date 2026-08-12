@@ -1,4 +1,4 @@
-// Constantes para el Plafinicador Docente
+// Constantes para Docenza (Planificador Docente)
 
 export const MESES = [
   'Septiembre',

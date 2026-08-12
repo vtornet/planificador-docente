@@ -9,6 +9,7 @@ import { initDB, getCuadernos } from './db/db'
 import { Button } from './components/ui/button'
 import { Input } from './components/ui/input'
 import { useTheme } from './hooks/useTheme'
+import docenzaIcon from './assets/docenza-icon.png'
 
 function cursoEscolarPorDefecto(): string {
   const hoy = new Date()
@@ -84,14 +85,16 @@ function App() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-accent/10 flex items-center justify-center p-4">
         <div className="bg-card text-card-foreground rounded-2xl shadow-[var(--shadow-strong)] border border-border p-8 max-w-lg w-full text-center animate-scale-in">
-          <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center text-3xl shadow-lg">
-            📘
-          </div>
+          <img
+            src={docenzaIcon}
+            alt="Docenza"
+            className="w-20 h-20 mx-auto mb-6 drop-shadow-lg"
+          />
           <h1 className="text-3xl font-bold text-foreground mb-3 tracking-tight">
-            Plafinicador Docente
+            Docenza
           </h1>
           <p className="text-muted-foreground mb-8">
-            Tu planificador digital para la gestión escolar
+            Planificador Docente
           </p>
 
           {cuadernosExistentes.length > 0 && (

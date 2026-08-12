@@ -1,4 +1,4 @@
-// Tipos principales del Plafinicador Docente
+// Tipos principales de Docenza (Planificador Docente)
 
 // ============== METADATA ==============
 interface CuadernoMetadata {

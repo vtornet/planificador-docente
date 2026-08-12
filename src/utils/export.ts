@@ -135,7 +135,7 @@ export function exportCuadernoToJSON(cuaderno: CuadernoDocente, filename?: strin
     const data = prepareCuadernoForExport(cuaderno)
     const jsonString = JSON.stringify(data, null, 2)
     const blob = new Blob([jsonString], { type: 'application/json' })
-    const defaultFilename = `plafinicador-${cuaderno.metadata.centro.replace(/\s+/g, '-')}-${cuaderno.metadata.cursoEscolar}.json`
+    const defaultFilename = `docenza-${cuaderno.metadata.centro.replace(/\s+/g, '-')}-${cuaderno.metadata.cursoEscolar}.json`
     saveAs(blob, filename || defaultFilename)
   } catch (error) {
     console.error('Error exporting cuaderno:', error)

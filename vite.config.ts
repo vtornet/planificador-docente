@@ -21,11 +21,11 @@ export default defineConfig({
     }),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'icons/*.png', 'icons/*.svg'],
+      includeAssets: ['favicon.ico', 'favicon-256.png', 'icons/*.png'],
       manifest: {
-        name: 'Plafinicador Docente',
-        short_name: 'Plafinicador',
-        description: 'Planificador digital para docentes',
+        name: 'Docenza',
+        short_name: 'Docenza',
+        description: 'Docenza, planificador digital para docentes',
         theme_color: '#3b82f6',
         background_color: '#ffffff',
         display: 'standalone',

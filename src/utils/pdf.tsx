@@ -95,7 +95,7 @@ export async function exportCuadernoCompletoToPDF(cuaderno: CuadernoDocente): Pr
   try {
     const doc = <CuadernoCompletoPDF cuaderno={cuaderno} />
     const pdfBlob = await pdf(doc).toBlob()
-    const filename = `plafinicador-completo-${cuaderno.metadata.centro.replace(/\s+/g, '-')}-${cuaderno.metadata.cursoEscolar}.pdf`
+    const filename = `docenza-completo-${cuaderno.metadata.centro.replace(/\s+/g, '-')}-${cuaderno.metadata.cursoEscolar}.pdf`
     saveAs(pdfBlob, filename)
   } catch (error) {
     console.error('Error generating cuaderno completo PDF:', error)

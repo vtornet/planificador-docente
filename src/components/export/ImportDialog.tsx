@@ -40,7 +40,7 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
     try {
       const cuaderno = await importCuadernoFromJSON(file)
       if (!validateCuaderno(cuaderno)) {
-        setError('El archivo no tiene el formato de una copia de seguridad válida de Plafinicador.')
+        setError('El archivo no tiene el formato de una copia de seguridad válida de Docenza.')
         return
       }
       setDatosImportados(cuaderno)
