@@ -64,7 +64,10 @@ function prepareCuadernoForExport(cuaderno: CuadernoDocente): any {
       ...cuaderno.configuracion,
       fechaInicioCurso: dateToISO(cuaderno.configuracion.fechaInicioCurso),
       fechaFinCurso: dateToISO(cuaderno.configuracion.fechaFinCurso),
-      festivos: cuaderno.configuracion.festivos.map((f) => dateToISO(f)!),
+      festivos: cuaderno.configuracion.festivos.map((f) => ({
+        ...f,
+        fecha: dateToISO(f.fecha),
+      })),
       vacaciones: cuaderno.configuracion.vacaciones.map((v) => ({
         ...v,
         inicio: dateToISO(v.inicio),
@@ -117,7 +120,10 @@ function restoreCuadernoFromImport(data: any): CuadernoDocente {
       ...data.configuracion,
       fechaInicioCurso: isoToDate(data.configuracion?.fechaInicioCurso)!,
       fechaFinCurso: isoToDate(data.configuracion?.fechaFinCurso)!,
-      festivos: (data.configuracion?.festivos || []).map((f: string) => isoToDate(f)!),
+      festivos: (data.configuracion?.festivos || []).map((f: any) => ({
+        ...f,
+        fecha: isoToDate(f.fecha)!,
+      })),
       vacaciones: (data.configuracion?.vacaciones || []).map((v: any) => ({
         ...v,
         inicio: isoToDate(v.inicio)!,

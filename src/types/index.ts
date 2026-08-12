@@ -99,12 +99,25 @@ interface Configuracion {
   cursoEscolarActual: string
   fechaInicioCurso: Date
   fechaFinCurso: Date
-  festivos: Date[]
+  festivos: Festivo[]
   vacaciones: Vacacion[]
   coloresAsignaturas?: Record<string, string> // nombre de asignatura personalizada -> id de color en PALETA_ASIGNATURAS
 }
 
+// 'nacional': festivo estatal (Constitución, Navidad...); 'autonomico': de la
+// comunidad autónoma (Día de Andalucía...); 'local': provincial o municipal
+// (días no lectivos elegidos por el Consejo Escolar Municipal, etc.)
+type TipoFestivo = 'nacional' | 'autonomico' | 'local'
+
+interface Festivo {
+  id: string
+  nombre: string
+  fecha: Date
+  tipo: TipoFestivo
+}
+
 interface Vacacion {
+  id: string
   nombre: string
   inicio: Date
   fin: Date
@@ -138,6 +151,8 @@ export type {
   Firma,
   Nota,
   Configuracion,
+  Festivo,
+  TipoFestivo,
   Vacacion,
   CuadernoDocente,
 }

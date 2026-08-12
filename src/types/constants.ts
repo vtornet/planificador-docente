@@ -125,6 +125,16 @@ export const COLORES_CELDA = [
   { nombre: 'Gris claro', valor: '#e5e7eb' },
 ] as const
 
+// Tipos de festivo, cada uno con su propio color para distinguirlos en el calendario.
+export const TIPOS_FESTIVO = [
+  { id: 'nacional', nombre: 'Nacional', color: '#ef4444' },
+  { id: 'autonomico', nombre: 'Autonómico', color: '#22c55e' },
+  { id: 'local', nombre: 'Local / provincial', color: '#a855f7' },
+] as const
+
+// Color para los periodos de vacaciones (distinto del azul ya usado por las semanas).
+export const COLOR_VACACIONES = '#f59e0b'
+
 export const CONFIG_HORARIOS_PREDEFINIDOS = {
   primaria: {
     numPeriodos: 7,

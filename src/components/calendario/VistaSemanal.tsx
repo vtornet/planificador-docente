@@ -8,7 +8,8 @@ import { Button } from '../ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Textarea } from '../ui/textarea'
 import { Input } from '../ui/input'
-import { CONFIG_HORARIOS_PREDEFINIDOS } from '../../types/constants'
+import { CONFIG_HORARIOS_PREDEFINIDOS, COLOR_VACACIONES } from '../../types/constants'
+import { cn } from '../../utils/cn'
 
 interface VistaSemanalProps {
   semana: Semana
@@ -34,6 +35,8 @@ export function VistaSemanal({ semana, onClose }: VistaSemanalProps) {
   const diasSemana = DIAS_SEMANA.map((_, idx) => ({
     nombre: DIAS_SEMANA[idx],
     fecha: addDays(new Date(semana.fechaInicio), idx),
+    esFestivo: semana.dias[idx]?.esFestivo || false,
+    esVacaciones: semana.dias[idx]?.esVacaciones || false,
   }))
 
   const handleGuardarObservaciones = () => {
@@ -115,6 +118,16 @@ export function VistaSemanal({ semana, onClose }: VistaSemanalProps) {
                       <div className="text-xs text-muted-foreground">
                         {format(dia.fecha, 'dd/MM')}
                       </div>
+                      {dia.esFestivo && (
+                        <div className="text-xs font-medium mt-0.5" style={{ color: '#ef4444' }}>
+                          Festivo
+                        </div>
+                      )}
+                      {dia.esVacaciones && (
+                        <div className="text-xs font-medium mt-0.5" style={{ color: COLOR_VACACIONES }}>
+                          Vacaciones
+                        </div>
+                      )}
                     </th>
                   ))}
                 </tr>
@@ -137,7 +150,7 @@ export function VistaSemanal({ semana, onClose }: VistaSemanalProps) {
                         )}
                       </div>
                     </td>
-                    {diasSemana.map((_, diaIndex) => {
+                    {diasSemana.map((dia, diaIndex) => {
                       const isEditando =
                         editandoCelda?.diaIndex === diaIndex &&
                         editandoCelda?.periodoIndex === periodoIndex
@@ -148,7 +161,10 @@ export function VistaSemanal({ semana, onClose }: VistaSemanalProps) {
                           onClick={() =>
                             !isEditando && handleCeldaClick(diaIndex, periodoIndex)
                           }
-                          className="border border-border p-1 align-top min-h-[60px] cursor-pointer hover:bg-accent/50 transition-colors"
+                          className={cn(
+                            'border border-border p-1 align-top min-h-[60px] cursor-pointer hover:bg-accent/50 transition-colors',
+                            (dia.esFestivo || dia.esVacaciones) && 'bg-muted/60'
+                          )}
                         >
                           {isEditando ? (
                             <Input

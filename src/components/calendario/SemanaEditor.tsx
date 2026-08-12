@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { format, addDays, startOfWeek } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { DIAS_SEMANA } from '../../types/constants'
+import { DIAS_SEMANA, COLOR_VACACIONES } from '../../types/constants'
 import { useCuadernoStore } from '../../stores/useCuadernoStore'
 import type { Semana } from '../../types'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
@@ -9,6 +9,8 @@ import { Input } from '../ui/input'
 import { Textarea } from '../ui/textarea'
 import { Button } from '../ui/button'
 import { CONFIG_HORARIOS_PREDEFINIDOS } from '../../types/constants'
+import { esDiaFestivo, esDiaVacaciones } from '../../utils/festivos'
+import { cn } from '../../utils/cn'
 
 interface SemanaEditorProps {
   semana?: Semana
@@ -23,7 +25,9 @@ export function SemanaEditor({
   onSave,
   onCancel,
 }: SemanaEditorProps) {
-  const { addSemana, updateSemana, duplicateSemana } = useCuadernoStore()
+  const { cuadernoActual, addSemana, updateSemana, duplicateSemana } = useCuadernoStore()
+  const festivos = cuadernoActual?.configuracion.festivos || []
+  const vacaciones = cuadernoActual?.configuracion.vacaciones || []
 
   const [numeroSemana, setNumeroSemana] = useState(semana?.numeroSemana || 1)
   const [observaciones, setObservaciones] = useState(semana?.observaciones || '')
@@ -41,8 +45,8 @@ export function SemanaEditor({
       const fecha = addDays(fechaInicio || new Date(), diaIndex)
       return {
         fecha,
-        esFestivo: false,
-        esVacaciones: false,
+        esFestivo: esDiaFestivo(fecha, festivos),
+        esVacaciones: esDiaVacaciones(fecha, vacaciones),
         periodos: Array.from({ length: numPeriodos }, () => ({
           contenido: '',
         })),
@@ -173,7 +177,7 @@ export function SemanaEditor({
                   <th className="border border-border p-2 text-left text-sm font-semibold text-foreground min-w-[80px]">
                     Hora
                   </th>
-                  {DIAS_SEMANA.map((dia) => (
+                  {DIAS_SEMANA.map((dia, diaIndex) => (
                     <th
                       key={dia}
                       className="border border-border p-2 text-center text-sm font-semibold text-foreground min-w-[140px]"
@@ -188,6 +192,19 @@ export function SemanaEditor({
                           📋
                         </button>
                       </div>
+                      <div className="text-xs text-muted-foreground font-normal">
+                        {format(dias[diaIndex]?.fecha || new Date(), 'dd/MM')}
+                      </div>
+                      {dias[diaIndex]?.esFestivo && (
+                        <div className="text-xs font-medium mt-0.5" style={{ color: '#ef4444' }}>
+                          Festivo
+                        </div>
+                      )}
+                      {dias[diaIndex]?.esVacaciones && (
+                        <div className="text-xs font-medium mt-0.5" style={{ color: COLOR_VACACIONES }}>
+                          Vacaciones
+                        </div>
+                      )}
                     </th>
                   ))}
                 </tr>
@@ -213,7 +230,10 @@ export function SemanaEditor({
                     {DIAS_SEMANA.map((_, diaIndex) => (
                       <td
                         key={diaIndex}
-                        className="border border-border p-1 align-top min-h-[60px]"
+                        className={cn(
+                          'border border-border p-1 align-top min-h-[60px]',
+                          (dias[diaIndex]?.esFestivo || dias[diaIndex]?.esVacaciones) && 'bg-muted/60'
+                        )}
                       >
                         <input
                           type="text"

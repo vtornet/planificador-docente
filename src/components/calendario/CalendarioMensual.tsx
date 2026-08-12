@@ -6,9 +6,13 @@ import 'react-big-calendar/lib/css/react-big-calendar.css'
 import './CalendarioMensual.css'
 import { useCuadernoStore } from '../../stores/useCuadernoStore'
 import { Dialog, DialogContent } from '../ui/dialog'
+import { Button } from '../ui/button'
 import { VistaSemanal } from './VistaSemanal'
 import { SemanaEditor } from './SemanaEditor'
-import { Lightbulb } from 'lucide-react'
+import { FestivosDialog } from './FestivosDialog'
+import { TIPOS_FESTIVO, COLOR_VACACIONES } from '../../types/constants'
+import type { TipoFestivo } from '../../types'
+import { Lightbulb, CalendarOff } from 'lucide-react'
 
 const locales = {
   'es': es,
@@ -30,6 +34,7 @@ interface CalendarioEvent {
   resource?: {
     tipo: 'semana' | 'festivo' | 'vacacion'
     semanaId?: string
+    tipoFestivo?: TipoFestivo
   }
 }
 
@@ -39,6 +44,7 @@ export function CalendarioMensual() {
   const [date, setDate] = useState(new Date())
   const [selectedEvent, setSelectedEvent] = useState<CalendarioEvent | null>(null)
   const [creatingWeek, setCreatingWeek] = useState<Date | null>(null)
+  const [showFestivos, setShowFestivos] = useState(false)
 
   // Obtener el año escolar actual desde la configuración
   const cursoEscolar = cuadernoActual?.configuracion.cursoEscolarActual || '2026-2027'
@@ -68,21 +74,21 @@ export function CalendarioMensual() {
     })
 
     // Eventos de festivos
-    festivos.forEach((festivo, idx) => {
-      const fecha = new Date(festivo)
+    festivos.forEach((festivo) => {
+      const fecha = new Date(festivo.fecha)
       eventos.push({
-        id: `festivo-${idx}`,
-        title: 'Festivo',
+        id: `festivo-${festivo.id}`,
+        title: festivo.nombre,
         start: fecha,
         end: new Date(fecha.getTime() + 24 * 60 * 60 * 1000),
-        resource: { tipo: 'festivo' },
+        resource: { tipo: 'festivo', tipoFestivo: festivo.tipo },
       })
     })
 
     // Eventos de vacaciones
-    vacaciones.forEach((vacacion, idx) => {
+    vacaciones.forEach((vacacion) => {
       eventos.push({
-        id: `vacacion-${idx}`,
+        id: `vacacion-${vacacion.id}`,
         title: vacacion.nombre,
         start: new Date(vacacion.inicio),
         end: new Date(vacacion.fin),
@@ -127,6 +133,17 @@ export function CalendarioMensual() {
     }
   }
 
+  const eventPropGetter = (event: CalendarioEvent) => {
+    if (event.resource?.tipo === 'festivo') {
+      const color = TIPOS_FESTIVO.find((t) => t.id === event.resource?.tipoFestivo)?.color
+      return { style: { backgroundColor: color || TIPOS_FESTIVO[0].color } }
+    }
+    if (event.resource?.tipo === 'vacacion') {
+      return { style: { backgroundColor: COLOR_VACACIONES } }
+    }
+    return {}
+  }
+
   const handleCrearSemana = () => {
     setCreatingWeek(null)
     // Forzar re-render
@@ -153,10 +170,16 @@ export function CalendarioMensual() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <h2 className="text-2xl font-bold text-foreground tracking-tight">Calendario Escolar</h2>
-        <div className="text-sm text-muted-foreground bg-muted px-3 py-1 rounded-full">
-          Curso {cursoEscolar}
+        <div className="flex items-center gap-2">
+          <div className="text-sm text-muted-foreground bg-muted px-3 py-1 rounded-full">
+            Curso {cursoEscolar}
+          </div>
+          <Button variant="outline" size="sm" onClick={() => setShowFestivos(true)}>
+            <CalendarOff className="w-4 h-4" />
+            Festivos y vacaciones
+          </Button>
         </div>
       </div>
 
@@ -170,6 +193,7 @@ export function CalendarioMensual() {
           onNavigate={handleNavigate}
           onSelectEvent={handleSelectEvent}
           onSelectSlot={handleSelectSlot}
+          eventPropGetter={eventPropGetter}
           selectable
           startAccessor="start"
           endAccessor="end"
@@ -197,7 +221,26 @@ export function CalendarioMensual() {
         />
       </div>
 
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
+        <span className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: 'hsl(var(--primary))' }} />
+          Semana planificada
+        </span>
+        {TIPOS_FESTIVO.map((t) => (
+          <span key={t.id} className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: t.color }} />
+            Festivo {t.nombre.toLowerCase()}
+          </span>
+        ))}
+        <span className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLOR_VACACIONES }} />
+          Vacaciones
+        </span>
+      </div>
+
       <VistaSemanalDialog />
+
+      <FestivosDialog open={showFestivos} onOpenChange={setShowFestivos} />
 
       {/* Dialog para crear nueva semana */}
       <Dialog open={!!creatingWeek} onOpenChange={() => setCreatingWeek(null)}>
