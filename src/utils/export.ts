@@ -60,6 +60,11 @@ function prepareCuadernoForExport(cuaderno: CuadernoDocente): any {
       creado: dateToISO(n.creado),
       actualizado: dateToISO(n.actualizado),
     })),
+    eventos: (cuaderno.eventos || []).map((e) => ({
+      ...e,
+      fecha: dateToISO(e.fecha),
+      creado: dateToISO(e.creado),
+    })),
     configuracion: {
       ...cuaderno.configuracion,
       fechaInicioCurso: dateToISO(cuaderno.configuracion.fechaInicioCurso),
@@ -115,6 +120,11 @@ function restoreCuadernoFromImport(data: any): CuadernoDocente {
       ...n,
       creado: isoToDate(n.creado)!,
       actualizado: isoToDate(n.actualizado)!,
+    })),
+    eventos: (data.eventos || []).map((e: any) => ({
+      ...e,
+      fecha: isoToDate(e.fecha)!,
+      creado: isoToDate(e.creado)!,
     })),
     configuracion: {
       ...data.configuracion,

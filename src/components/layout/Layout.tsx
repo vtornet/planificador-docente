@@ -5,6 +5,7 @@ import { AppHeader } from './AppHeader'
 import { useCuadernoStore } from '../../stores/useCuadernoStore'
 import { perfilCompleto } from '../../utils/perfil'
 import { CompletarPerfilScreen } from '../perfil/CompletarPerfilScreen'
+import { useRecordatoriosEventos } from '../../hooks/useRecordatoriosEventos'
 
 interface LayoutProps {
   children: React.ReactNode
@@ -12,6 +13,7 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const { cuadernoActual, isLoading, error } = useCuadernoStore()
+  useRecordatoriosEventos()
 
   if (isLoading) {
     return (

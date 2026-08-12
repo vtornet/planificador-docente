@@ -62,6 +62,24 @@ interface Periodo {
   contenido: string
 }
 
+// ============== EVENTOS DE AGENDA ==============
+// Recordatorio expresado como desplazamiento antes del evento (o del inicio del
+// día, en eventos de todo el día). 'ninguno' desactiva la notificación.
+type RecordatorioEvento = 'ninguno' | 'momento' | '10min' | '30min' | '1hora' | '1dia'
+
+interface Evento {
+  id: string
+  titulo: string
+  descripcion?: string
+  fecha: Date // día del evento
+  todoElDia: boolean
+  horaInicio?: string // "HH:mm", solo si !todoElDia
+  horaFin?: string // "HH:mm", opcional
+  color: string // id de COLORES_EVENTOS
+  recordatorio: RecordatorioEvento
+  creado: Date
+}
+
 // ============== REUNIONES ==============
 interface Reunion {
   id: string
@@ -134,6 +152,7 @@ interface CuadernoDocente {
   }
   reuniones: Reunion[]
   notas: Nota[]
+  eventos: Evento[]
   configuracion: Configuracion
 }
 
@@ -150,6 +169,8 @@ export type {
   Reunion,
   Firma,
   Nota,
+  Evento,
+  RecordatorioEvento,
   Configuracion,
   Festivo,
   TipoFestivo,

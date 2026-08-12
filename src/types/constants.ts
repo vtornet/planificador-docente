@@ -135,6 +135,35 @@ export const TIPOS_FESTIVO = [
 // Color para los periodos de vacaciones (distinto del azul ya usado por las semanas).
 export const COLOR_VACACIONES = '#f59e0b'
 
+// Paleta de colores para eventos de la agenda (estilo Google Calendar).
+export const COLORES_EVENTOS = [
+  { id: 'tomate', nombre: 'Tomate', color: '#d50000' },
+  { id: 'mandarina', nombre: 'Mandarina', color: '#f4511e' },
+  { id: 'platano', nombre: 'Plátano', color: '#f6bf26' },
+  { id: 'salvia', nombre: 'Salvia', color: '#33b679' },
+  { id: 'albahaca', nombre: 'Albahaca', color: '#0b8043' },
+  { id: 'pavo-real', nombre: 'Pavo real', color: '#039be5' },
+  { id: 'arandano', nombre: 'Arándano', color: '#3f51b5' },
+  { id: 'lavanda', nombre: 'Lavanda', color: '#7986cb' },
+  { id: 'uva', nombre: 'Uva', color: '#8e24aa' },
+  { id: 'grafito', nombre: 'Grafito', color: '#616161' },
+] as const
+
+export const COLOR_EVENTO_POR_DEFECTO = 'pavo-real'
+
+// Desplazamiento del recordatorio respecto al inicio del evento (o de las 09:00
+// del día, en eventos de todo el día, ya que no tienen una hora concreta).
+export const RECORDATORIOS = [
+  { id: 'ninguno', nombre: 'Sin recordatorio', minutos: null },
+  { id: 'momento', nombre: 'En el momento', minutos: 0 },
+  { id: '10min', nombre: '10 minutos antes', minutos: 10 },
+  { id: '30min', nombre: '30 minutos antes', minutos: 30 },
+  { id: '1hora', nombre: '1 hora antes', minutos: 60 },
+  { id: '1dia', nombre: '1 día antes', minutos: 24 * 60 },
+] as const
+
+export const HORA_RECORDATORIO_TODO_EL_DIA = '09:00'
+
 export const CONFIG_HORARIOS_PREDEFINIDOS = {
   primaria: {
     numPeriodos: 7,

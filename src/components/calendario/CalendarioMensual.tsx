@@ -10,9 +10,10 @@ import { Button } from '../ui/button'
 import { VistaSemanal } from './VistaSemanal'
 import { SemanaEditor } from './SemanaEditor'
 import { FestivosDialog } from './FestivosDialog'
-import { TIPOS_FESTIVO, COLOR_VACACIONES } from '../../types/constants'
-import type { TipoFestivo } from '../../types'
-import { Lightbulb, CalendarOff } from 'lucide-react'
+import { EventoDialog } from './EventoDialog'
+import { TIPOS_FESTIVO, COLOR_VACACIONES, COLORES_EVENTOS } from '../../types/constants'
+import type { TipoFestivo, Evento } from '../../types'
+import { Lightbulb, CalendarOff, Plus } from 'lucide-react'
 
 const locales = {
   'es': es,
@@ -32,9 +33,11 @@ interface CalendarioEvent {
   start: Date
   end: Date
   resource?: {
-    tipo: 'semana' | 'festivo' | 'vacacion'
+    tipo: 'semana' | 'festivo' | 'vacacion' | 'evento'
     semanaId?: string
     tipoFestivo?: TipoFestivo
+    eventoId?: string
+    color?: string
   }
 }
 
@@ -45,6 +48,8 @@ export function CalendarioMensual() {
   const [selectedEvent, setSelectedEvent] = useState<CalendarioEvent | null>(null)
   const [creatingWeek, setCreatingWeek] = useState<Date | null>(null)
   const [showFestivos, setShowFestivos] = useState(false)
+  const [eventoEditando, setEventoEditando] = useState<Evento | null>(null)
+  const [showNuevoEvento, setShowNuevoEvento] = useState(false)
 
   // Obtener el año escolar actual desde la configuración
   const cursoEscolar = cuadernoActual?.configuracion.cursoEscolarActual || '2026-2027'
@@ -56,6 +61,7 @@ export function CalendarioMensual() {
     const semanas = cuadernoActual.planificacion?.semanal || []
     const festivos = cuadernoActual.configuracion?.festivos || []
     const vacaciones = cuadernoActual.configuracion?.vacaciones || []
+    const eventosAgenda = cuadernoActual.eventos || []
 
     const eventos: CalendarioEvent[] = []
 
@@ -96,10 +102,45 @@ export function CalendarioMensual() {
       })
     })
 
+    // Eventos de la agenda (título, hora, todo el día, color, recordatorio)
+    eventosAgenda.forEach((evento) => {
+      const fecha = new Date(evento.fecha)
+      let start = fecha
+      let end = fecha
+
+      if (!evento.todoElDia && evento.horaInicio) {
+        const [hIni, mIni] = evento.horaInicio.split(':').map(Number)
+        start = new Date(fecha)
+        start.setHours(hIni, mIni, 0, 0)
+        if (evento.horaFin) {
+          const [hFin, mFin] = evento.horaFin.split(':').map(Number)
+          end = new Date(fecha)
+          end.setHours(hFin, mFin, 0, 0)
+        } else {
+          end = new Date(start.getTime() + 60 * 60 * 1000)
+        }
+      } else {
+        end = new Date(fecha.getTime() + 24 * 60 * 60 * 1000)
+      }
+
+      eventos.push({
+        id: `evento-${evento.id}`,
+        title: evento.todoElDia ? evento.titulo : `${evento.horaInicio} ${evento.titulo}`,
+        start,
+        end,
+        resource: { tipo: 'evento', eventoId: evento.id, color: evento.color },
+      })
+    })
+
     return eventos
   }, [cuadernoActual])
 
   const handleSelectEvent = (event: CalendarioEvent) => {
+    if (event.resource?.tipo === 'evento') {
+      const evento = (cuadernoActual?.eventos || []).find((e) => e.id === event.resource?.eventoId)
+      if (evento) setEventoEditando(evento)
+      return
+    }
     setSelectedEvent(event)
   }
 
@@ -141,6 +182,10 @@ export function CalendarioMensual() {
     if (event.resource?.tipo === 'vacacion') {
       return { style: { backgroundColor: COLOR_VACACIONES } }
     }
+    if (event.resource?.tipo === 'evento') {
+      const color = COLORES_EVENTOS.find((c) => c.id === event.resource?.color)?.color
+      return { style: { backgroundColor: color || COLORES_EVENTOS[0].color } }
+    }
     return {}
   }
 
@@ -179,6 +224,10 @@ export function CalendarioMensual() {
           <Button variant="outline" size="sm" onClick={() => setShowFestivos(true)}>
             <CalendarOff className="w-4 h-4" />
             Festivos y vacaciones
+          </Button>
+          <Button size="sm" onClick={() => setShowNuevoEvento(true)}>
+            <Plus className="w-4 h-4" />
+            Nuevo evento
           </Button>
         </div>
       </div>
@@ -236,11 +285,29 @@ export function CalendarioMensual() {
           <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLOR_VACACIONES }} />
           Vacaciones
         </span>
+        <span className="flex items-center gap-1.5">
+          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORES_EVENTOS[0].color }} />
+          Evento (color a elegir)
+        </span>
       </div>
 
       <VistaSemanalDialog />
 
       <FestivosDialog open={showFestivos} onOpenChange={setShowFestivos} />
+
+      <EventoDialog
+        open={showNuevoEvento}
+        onOpenChange={setShowNuevoEvento}
+        fechaInicial={date}
+      />
+
+      <EventoDialog
+        open={eventoEditando !== null}
+        onOpenChange={(open) => {
+          if (!open) setEventoEditando(null)
+        }}
+        evento={eventoEditando || undefined}
+      />
 
       {/* Dialog para crear nueva semana */}
       <Dialog open={!!creatingWeek} onOpenChange={() => setCreatingWeek(null)}>
@@ -261,9 +328,10 @@ export function CalendarioMensual() {
           Consejos
         </h4>
         <ul className="text-sm text-primary/90 space-y-1">
-          <li>• Click en un día para crear o editar una semana</li>
+          <li>• "Nuevo evento" para citas, tareas o recordatorios puntuales (título, hora, color, aviso)</li>
+          <li>• Click en un evento ya creado para editarlo o eliminarlo</li>
+          <li>• Click en un día vacío para crear o editar la planificación semanal de periodos</li>
           <li>• Usa las flechas para navegar entre meses</li>
-          <li>• Próximamente: sistema de plantillas y copia de semanas</li>
         </ul>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { CuadernoDocente, CuadernoMetadata, Horario, Semana, Reunion, Nota } from '../types'
+import type { CuadernoDocente, CuadernoMetadata, Horario, Semana, Reunion, Nota, Evento } from '../types'
 
 interface CuadernoState {
   // Estado
@@ -34,6 +34,11 @@ interface CuadernoState {
   addNota: (nota: Omit<Nota, 'id' | 'creado' | 'actualizado'>) => void
   updateNota: (id: string, updates: Partial<Nota>) => void
   deleteNota: (id: string) => void
+
+  // Acciones - Eventos (agenda)
+  addEvento: (evento: Omit<Evento, 'id' | 'creado'>) => void
+  updateEvento: (id: string, updates: Partial<Evento>) => void
+  deleteEvento: (id: string) => void
 
   // Acciones - Navegación
   setView: (view: CuadernoState['view']) => void
@@ -99,6 +104,7 @@ export const useCuadernoStore = create<CuadernoState>((set, get) => ({
         planificacion: { mensual: [], semanal: [] },
         reuniones: [],
         notas: [],
+        eventos: [],
         configuracion: {
           id: 'config',
           cursoEscolarActual: metadata.cursoEscolar,
@@ -377,6 +383,46 @@ export const useCuadernoStore = create<CuadernoState>((set, get) => ({
     const actualizado = {
       ...cuadernoActual,
       notas: cuadernoActual.notas.filter((n) => n.id !== id),
+    }
+    set({ cuadernoActual: actualizado })
+    saveCuadernoAsync(actualizado)
+  },
+
+  // Eventos (agenda)
+  addEvento: (evento) => {
+    const { cuadernoActual } = get()
+    if (!cuadernoActual) return
+
+    const nuevoEvento: Evento = { ...evento, id: generateId(), creado: new Date() }
+    const actualizado = {
+      ...cuadernoActual,
+      eventos: [...(cuadernoActual.eventos || []), nuevoEvento],
+    }
+    set({ cuadernoActual: actualizado })
+    saveCuadernoAsync(actualizado)
+  },
+
+  updateEvento: (id, updates) => {
+    const { cuadernoActual } = get()
+    if (!cuadernoActual) return
+
+    const actualizado = {
+      ...cuadernoActual,
+      eventos: (cuadernoActual.eventos || []).map((e) =>
+        e.id === id ? { ...e, ...updates } : e
+      ),
+    }
+    set({ cuadernoActual: actualizado })
+    saveCuadernoAsync(actualizado)
+  },
+
+  deleteEvento: (id) => {
+    const { cuadernoActual } = get()
+    if (!cuadernoActual) return
+
+    const actualizado = {
+      ...cuadernoActual,
+      eventos: (cuadernoActual.eventos || []).filter((e) => e.id !== id),
     }
     set({ cuadernoActual: actualizado })
     saveCuadernoAsync(actualizado)
