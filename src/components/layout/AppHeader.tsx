@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useCuadernoStore } from '../../stores/useCuadernoStore'
 import { cn } from '../../utils/cn'
-import { Calendar, CalendarDays, Users, FileText, Moon, Sun, UserCircle } from 'lucide-react'
+import { Calendar, CalendarDays, Users, FileText, Moon, Sun, UserCircle, Upload } from 'lucide-react'
 import { ExportMenu } from '../export/ExportMenu'
+import { ImportDialog } from '../export/ImportDialog'
 import { Button } from '../ui/button'
 import { useTheme } from '../../hooks/useTheme'
 import { PerfilDialog } from '../perfil/PerfilDialog'
@@ -22,6 +23,7 @@ export function AppHeader({ className }: AppHeaderProps) {
   const { cuadernoActual, view } = useCuadernoStore()
   const { theme, toggleTheme } = useTheme()
   const [showPerfil, setShowPerfil] = useState(false)
+  const [showImportar, setShowImportar] = useState(false)
 
   if (!cuadernoActual) return null
 
@@ -67,10 +69,20 @@ export function AppHeader({ className }: AppHeaderProps) {
           >
             {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowImportar(true)}
+            title="Importar copia de seguridad"
+          >
+            <Upload className="w-4 h-4" />
+            <span className="hidden sm:inline">Importar</span>
+          </Button>
           <ExportMenu />
         </div>
       </div>
       <PerfilDialog open={showPerfil} onOpenChange={setShowPerfil} />
+      <ImportDialog open={showImportar} onOpenChange={setShowImportar} />
     </header>
   )
 }

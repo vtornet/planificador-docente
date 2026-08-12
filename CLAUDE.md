@@ -79,6 +79,12 @@ Aplicación web progresiva (PWA) que permite a los docentes gestionar su planifi
   - **Todos a la vez:** la opción "Horarios (todos)" del menú `Exportar` ahora exporta un único PDF con todos los horarios, uno por página (`exportHorariosToPDF` / `HorariosPDFDocument`, nuevos en `pdf.tsx`/`pdfTemplates.tsx`) — antes exportaba solo el primero de forma arbitraria.
   - **Bug de fondo encontrado y arreglado de paso:** `CuadernoCompletoPDF` metía un `<HorarioPDFDocument>` (que ya lleva su propio `<Document>`) dentro de otro `<Document>` — `<Document>` anidado dentro de `<Document>`, estructuralmente inválido en `@react-pdf/renderer`. Solucionado extrayendo `HorarioPDFPage` (el contenido de la página, sin `<Document>` propio), reutilizado tanto en `HorarioPDFDocument` (uno solo) como en `HorariosPDFDocument` (varios) y en `CuadernoCompletoPDF`. **Ojo:** el mismo patrón de anidación sigue presente para Reuniones/Semanas/Notas dentro de `CuadernoCompletoPDF` (no se tocó, no se pidió) — si el PDF completo da problemas con esas secciones, es la misma causa y el mismo arreglo (extraer un `...PDFPage` sin `<Document>`).
   - Verificado con `pdfjs-dist`: exportar 1 horario da un PDF de 1 página con ese horario; exportar "todos" da un PDF de N páginas, una por horario.
+- **IMPORTAR COPIA DE SEGURIDAD (Backup JSON):** ✅ Hecho (Agosto 2026). El usuario señaló que solo existía exportar backup, no importar — pero `importCuadernoFromJSON` y `validateCuaderno` ya existían en `src/utils/export.ts` desde hacía tiempo, completos y correctos, simplemente **nunca se habían conectado a ninguna pantalla**. Se construyó la UI que faltaba:
+  - Botón "Importar" en `AppHeader.tsx`, junto a "Exportar", abre `ImportDialog.tsx` (nuevo, en `src/components/export/`).
+  - Selecciona un `.json`, lo valida (`validateCuaderno`) y muestra una vista previa (centro, docente, curso escolar, nº de horarios/reuniones/notas/semanas) antes de confirmar nada.
+  - Aviso explícito de que importar **reemplaza todos los datos actuales** del cuaderno (horarios, reuniones, notas, planificación) y no se puede deshacer — se pide confirmación aparte del simple "seleccionar archivo".
+  - Al confirmar, se importa manteniendo el `id` del cuaderno actual (para actualizar el mismo registro en IndexedDB, no crear uno duplicado suelto).
+  - Verificado con un ciclo completo: exportar backup → añadir una nota nueva → importar el backup (más antiguo) → la nota nueva desaparece (se reemplaza, no se fusiona) y el horario del backup se restaura con sus datos intactos.
 
 ---
 
