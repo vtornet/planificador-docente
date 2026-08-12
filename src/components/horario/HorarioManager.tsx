@@ -34,6 +34,61 @@ function horarioActivoEnRango(horario: Horario, desde: Date, hasta: Date): boole
   return inicio <= hasta && (fin === null || fin >= desde)
 }
 
+// ¿El horario abarca más semanas que la indicada? (para ofrecer "modificar solo esta semana")
+function horarioAbarcaMasDeLaSemana(horario: Horario, semana: { inicio: Date; fin: Date }): boolean {
+  if (!horario.fechaInicio) return false
+  const inicio = new Date(horario.fechaInicio)
+  const fin = horario.fechaFin ? new Date(horario.fechaFin) : null
+  return inicio < semana.inicio || fin === null || fin > semana.fin
+}
+
+// Separa una semana concreta de un horario más amplio en una copia
+// independiente (con los mismos datos, editable sin afectar al resto).
+function dividirHorarioParaSemana(
+  original: Horario,
+  semana: { inicio: Date; fin: Date }
+): { actualizacionOriginal: Partial<Horario>; nuevos: Omit<Horario, 'id'>[] } {
+  const diaAntes = addDays(semana.inicio, -1)
+  const diaDespues = addDays(semana.fin, 1)
+  const fechaFinOriginal = original.fechaFin ? new Date(original.fechaFin) : null
+
+  const hayAntes = new Date(original.fechaInicio!) < semana.inicio
+  const hayDespues = fechaFinOriginal === null || fechaFinOriginal > semana.fin
+
+  const clonarDatos = () => original.datos.map((fila) => fila.map((celda) => ({ ...celda })))
+
+  const nuevos: Omit<Horario, 'id'>[] = [
+    {
+      tipo: original.tipo,
+      nombre: original.nombre,
+      datos: clonarDatos(),
+      configHorarios: original.configHorarios,
+      fechaInicio: semana.inicio,
+      fechaFin: semana.fin,
+    },
+  ]
+
+  let actualizacionOriginal: Partial<Horario> = {}
+
+  if (hayAntes && hayDespues) {
+    actualizacionOriginal = { fechaFin: diaAntes }
+    nuevos.push({
+      tipo: original.tipo,
+      nombre: original.nombre,
+      datos: clonarDatos(),
+      configHorarios: original.configHorarios,
+      fechaInicio: diaDespues,
+      fechaFin: fechaFinOriginal!,
+    })
+  } else if (hayAntes) {
+    actualizacionOriginal = { fechaFin: diaAntes }
+  } else if (hayDespues) {
+    actualizacionOriginal = { fechaInicio: diaDespues }
+  }
+
+  return { actualizacionOriginal, nuevos }
+}
+
 function formatRangoFechas(fechaInicio?: Date, fechaFin?: Date): string {
   if (!fechaInicio) return ''
   const inicio = new Date(fechaInicio)
@@ -57,6 +112,7 @@ export function HorarioManager() {
   const [vista, setVista] = useState<Vista>('meses')
   const [mesSeleccionado, setMesSeleccionado] = useState<number | null>(null)
   const [semanaSeleccionada, setSemanaSeleccionada] = useState<{ inicio: Date; fin: Date } | null>(null)
+  const [avisosPeriodoOcultos, setAvisosPeriodoOcultos] = useState<Set<string>>(new Set())
 
   // Diálogos crear/editar
   const [showCrear, setShowCrear] = useState(false)
@@ -154,6 +210,16 @@ export function HorarioManager() {
       console.error('Error exportando horario a PDF:', error)
       alert('Error al exportar el horario a PDF. Inténtalo de nuevo.')
     }
+  }
+
+  const handleModificarSoloEstaSemana = (horario: Horario) => {
+    if (!semanaSeleccionada) return
+    if (!confirm('Esta semana pasará a tener su propio horario independiente, con los mismos datos que tiene ahora. El resto de semanas de este periodo no se verán afectadas. ¿Continuar?')) {
+      return
+    }
+    const { actualizacionOriginal, nuevos } = dividirHorarioParaSemana(horario, semanaSeleccionada)
+    updateHorario(horario.id, actualizacionOriginal)
+    nuevos.forEach((nuevo) => addHorario(nuevo))
   }
 
   const handleEditarClick = (horario: Horario) => {
@@ -523,7 +589,45 @@ export function HorarioManager() {
             </div>
           ) : (
             <>
-              <div className="space-y-6">{horariosDeLaSemana.map(renderHorarioCard)}</div>
+              <div className="space-y-6">
+                {horariosDeLaSemana.map((horario) => {
+                  const claveAviso = `${horario.id}-${semanaSeleccionada.inicio.toISOString()}`
+                  const mostrarAviso =
+                    horarioAbarcaMasDeLaSemana(horario, semanaSeleccionada) &&
+                    !avisosPeriodoOcultos.has(claveAviso)
+
+                  return (
+                    <div key={horario.id}>
+                      {mostrarAviso && (
+                        <div className="mb-3 flex flex-col sm:flex-row sm:items-center gap-3 justify-between bg-primary/10 border border-primary/20 rounded-lg p-3">
+                          <p className="text-sm text-primary">
+                            Este horario es del <strong>{formatRangoFechas(horario.fechaInicio, horario.fechaFin)}</strong>.
+                            Si lo modificas, los cambios se aplican a todas esas semanas.
+                          </p>
+                          <div className="flex gap-2 flex-shrink-0">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                setAvisosPeriodoOcultos((prev) => new Set(prev).add(claveAviso))
+                              }
+                            >
+                              Modificar todo el periodo
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => handleModificarSoloEstaSemana(horario)}
+                            >
+                              Modificar solo esta semana
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                      {renderHorarioCard(horario)}
+                    </div>
+                  )
+                })}
+              </div>
               <Button variant="outline" onClick={() => handleAbrirCrear(semanaSeleccionada)}>
                 + Añadir otro horario para esta semana
               </Button>
