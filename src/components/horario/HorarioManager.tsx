@@ -9,7 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Input } from '../ui/input'
 import { HorarioTable } from './HorarioTable'
 import type { Horario, ConfigHorarios } from '../../types'
-import { Calendar, Trash2, Clock, Edit2, ChevronRight, ChevronLeft } from 'lucide-react'
+import { Calendar, Trash2, Clock, Edit2, ChevronRight, ChevronLeft, Download } from 'lucide-react'
+import { exportHorarioToPDF } from '../../utils/pdf.tsx'
 
 // El curso escolar empieza en Septiembre (mes 8, 0-indexado). MESES: 0=Septiembre...10=Julio.
 function anioYMesDe(indiceMes: number, anioInicio: number, anioFin: number): { anio: number; mes: number } {
@@ -145,6 +146,16 @@ export function HorarioManager() {
     }
   }
 
+  const handleExportarPDF = async (horario: Horario) => {
+    if (!cuadernoActual) return
+    try {
+      await exportHorarioToPDF(horario, cuadernoActual.metadata)
+    } catch (error) {
+      console.error('Error exportando horario a PDF:', error)
+      alert('Error al exportar el horario a PDF. Inténtalo de nuevo.')
+    }
+  }
+
   const handleEditarClick = (horario: Horario) => {
     setHorarioEditando(horario)
     setNuevoNombre(horario.nombre)
@@ -252,6 +263,15 @@ export function HorarioManager() {
             )}
           </div>
           <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => handleExportarPDF(horario)}
+              className="text-muted-foreground hover:text-foreground"
+              title="Descargar este horario en PDF"
+            >
+              <Download className="w-4 h-4" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"

@@ -5,6 +5,7 @@ import { saveAs } from 'file-saver'
 import type { Horario, Semana, Reunion, Nota, CuadernoDocente } from '../types'
 import {
   HorarioPDFDocument,
+  HorariosPDFDocument,
   ReunionPDFDocument,
   NotasPDFDocument,
   SemanaPDFDocument,
@@ -23,6 +24,21 @@ export async function exportHorarioToPDF(horario: Horario, metadata: CuadernoDoc
   } catch (error) {
     console.error('Error generating horario PDF:', error)
     throw new Error('Error al generar el PDF del horario')
+  }
+}
+
+/**
+ * Genera y descarga un único PDF con varios horarios, uno por página
+ */
+export async function exportHorariosToPDF(horarios: Horario[], metadata: CuadernoDocente['metadata']): Promise<void> {
+  try {
+    const doc = <HorariosPDFDocument horarios={horarios} metadata={metadata} />
+    const pdfBlob = await pdf(doc).toBlob()
+    const filename = `horarios-${metadata.centro.replace(/\s+/g, '-')}.pdf`
+    saveAs(pdfBlob, filename)
+  } catch (error) {
+    console.error('Error generating horarios PDF:', error)
+    throw new Error('Error al generar el PDF de horarios')
   }
 }
 

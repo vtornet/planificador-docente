@@ -106,7 +106,10 @@ interface HorarioPDFProps {
   metadata: CuadernoDocente['metadata']
 }
 
-export function HorarioPDFDocument({ horario, metadata }: HorarioPDFProps) {
+// Contenido de una página de horario, sin envoltorio <Document> propio, para
+// poder combinar varios horarios en un mismo PDF (uno por página) además de
+// usarse como documento independiente en HorarioPDFDocument.
+export function HorarioPDFPage({ horario, metadata }: HorarioPDFProps) {
   const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes']
   const config = horario.configHorarios
 
@@ -123,66 +126,88 @@ export function HorarioPDFDocument({ horario, metadata }: HorarioPDFProps) {
   }
 
   return (
-    <Document>
-      <Page size="A4" orientation="landscape" style={styles.page}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>{horario.nombre}</Text>
-          <Text style={styles.subtitle}>
-            {metadata.centro} · {metadata.cursoEscolar}
-          </Text>
-          <Text style={styles.subtitle}>
-            {horario.tipo === 'docente' ? 'Horario Docente' : 'Horario Alumnado'}
-          </Text>
-        </View>
+    <Page size="A4" orientation="landscape" style={styles.page}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.title}>{horario.nombre}</Text>
+        <Text style={styles.subtitle}>
+          {metadata.centro} · {metadata.cursoEscolar}
+        </Text>
+        <Text style={styles.subtitle}>
+          {horario.tipo === 'docente' ? 'Horario Docente' : 'Horario Alumnado'}
+        </Text>
+      </View>
 
-        {/* Tabla de horario */}
-        <View style={styles.section}>
-          <View style={styles.table}>
-            {/* Header row */}
-            <View style={[styles.tableCell, styles.tableHeader]}><Text>Hora</Text></View>
-            {dias.map((dia) => (
-              <View key={dia} style={[styles.tableCell, styles.tableHeader]}>
-                <Text>{dia}</Text>
-              </View>
-            ))}
-          </View>
-
-          {/* Data rows */}
-          {horario.datos.map((fila: CeldaHorario[], idx: number) => (
-            <View key={idx} style={styles.tableRow}>
-              <View style={styles.tableCell}>
-                <Text>{horas[idx]}</Text>
-              </View>
-              {fila.map((celda, cidx) => {
-                const color = celda.color
-                  ? PALETA_ASIGNATURAS.find((c) => c.id === celda.color)
-                  : undefined
-                return (
-                  <View
-                    key={cidx}
-                    style={color ? [styles.tableCell, { backgroundColor: color.bg }] : styles.tableCell}
-                  >
-                    <Text style={color ? { color: color.texto } : undefined}>
-                      {celda.contenido || '-'}
-                    </Text>
-                    {celda.nota && (
-                      <Text style={color ? [styles.tableCellNota, { color: color.texto }] : styles.tableCellNota}>
-                        {celda.nota}
-                      </Text>
-                    )}
-                  </View>
-                )
-              })}
+      {/* Tabla de horario */}
+      <View style={styles.section}>
+        <View style={styles.table}>
+          {/* Header row */}
+          <View style={[styles.tableCell, styles.tableHeader]}><Text>Hora</Text></View>
+          {dias.map((dia) => (
+            <View key={dia} style={[styles.tableCell, styles.tableHeader]}>
+              <Text>{dia}</Text>
             </View>
           ))}
         </View>
 
-        {/* Footer */}
-        <Text style={styles.footer}>
-          Generado el {new Date().toLocaleDateString('es-ES')}
-        </Text>
-      </Page>
+        {/* Data rows */}
+        {horario.datos.map((fila: CeldaHorario[], idx: number) => (
+          <View key={idx} style={styles.tableRow}>
+            <View style={styles.tableCell}>
+              <Text>{horas[idx]}</Text>
+            </View>
+            {fila.map((celda, cidx) => {
+              const color = celda.color
+                ? PALETA_ASIGNATURAS.find((c) => c.id === celda.color)
+                : undefined
+              return (
+                <View
+                  key={cidx}
+                  style={color ? [styles.tableCell, { backgroundColor: color.bg }] : styles.tableCell}
+                >
+                  <Text style={color ? { color: color.texto } : undefined}>
+                    {celda.contenido || '-'}
+                  </Text>
+                  {celda.nota && (
+                    <Text style={color ? [styles.tableCellNota, { color: color.texto }] : styles.tableCellNota}>
+                      {celda.nota}
+                    </Text>
+                  )}
+                </View>
+              )
+            })}
+          </View>
+        ))}
+      </View>
+
+      {/* Footer */}
+      <Text style={styles.footer}>
+        Generado el {new Date().toLocaleDateString('es-ES')}
+      </Text>
+    </Page>
+  )
+}
+
+export function HorarioPDFDocument({ horario, metadata }: HorarioPDFProps) {
+  return (
+    <Document>
+      <HorarioPDFPage horario={horario} metadata={metadata} />
+    </Document>
+  )
+}
+
+interface HorariosPDFProps {
+  horarios: Horario[]
+  metadata: CuadernoDocente['metadata']
+}
+
+// Varios horarios combinados en un único PDF, uno por página.
+export function HorariosPDFDocument({ horarios, metadata }: HorariosPDFProps) {
+  return (
+    <Document>
+      {horarios.map((horario) => (
+        <HorarioPDFPage key={horario.id} horario={horario} metadata={metadata} />
+      ))}
     </Document>
   )
 }
@@ -426,7 +451,7 @@ export function CuadernoCompletoPDF({ cuaderno }: CuadernoCompletoPDFProps) {
 
       {/* Horarios */}
       {cuaderno.horarios.map((horario) => (
-        <HorarioPDFDocument key={horario.id} horario={horario} metadata={cuaderno.metadata} />
+        <HorarioPDFPage key={horario.id} horario={horario} metadata={cuaderno.metadata} />
       ))}
 
       {/* Planificación (primeras semanas) */}

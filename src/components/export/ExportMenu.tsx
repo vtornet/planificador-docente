@@ -12,7 +12,7 @@ import {
 import { Button } from '../ui/button'
 import { Download, FileText, Calendar, Users, BookOpen, FileJson, Loader2 } from 'lucide-react'
 import {
-  exportHorarioToPDF,
+  exportHorariosToPDF,
   exportReunionToPDF,
   exportNotasToPDF,
   exportSemanaToPDF,
@@ -33,9 +33,10 @@ export function ExportMenu() {
     try {
       switch (type) {
         case 'horarios':
-          // Exportar el primer horario (o todos)
+          // Exportar todos los horarios combinados en un PDF (uno por página).
+          // Para exportar uno en concreto, usa el botón de descarga de su tarjeta.
           if (cuadernoActual.horarios.length > 0) {
-            await exportHorarioToPDF(cuadernoActual.horarios[0], cuadernoActual.metadata)
+            await exportHorariosToPDF(cuadernoActual.horarios, cuadernoActual.metadata)
           }
           break
 
@@ -107,7 +108,7 @@ export function ExportMenu() {
 
         <DropdownMenuItem onClick={() => handleExport('horarios')} disabled={!hasHorarios || exporting !== null}>
           <Calendar className="w-4 h-4 mr-2" />
-          <span>Horarios</span>
+          <span>Horarios (todos)</span>
           {!hasHorarios && <span className="ml-auto text-xs text-muted-foreground">(Sin datos)</span>}
         </DropdownMenuItem>
 
