@@ -604,10 +604,11 @@ export function HorarioManager() {
                             Este horario es del <strong>{formatRangoFechas(horario.fechaInicio, horario.fechaFin)}</strong>.
                             Si lo modificas, los cambios se aplican a todas esas semanas.
                           </p>
-                          <div className="flex gap-2 flex-shrink-0">
+                          <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
                             <Button
                               variant="outline"
                               size="sm"
+                              className="w-full sm:w-auto"
                               onClick={() =>
                                 setAvisosPeriodoOcultos((prev) => new Set(prev).add(claveAviso))
                               }
@@ -616,6 +617,7 @@ export function HorarioManager() {
                             </Button>
                             <Button
                               size="sm"
+                              className="w-full sm:w-auto"
                               onClick={() => handleModificarSoloEstaSemana(horario)}
                             >
                               Modificar solo esta semana
