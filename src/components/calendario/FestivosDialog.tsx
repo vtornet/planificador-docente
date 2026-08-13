@@ -4,6 +4,7 @@ import { es } from 'date-fns/locale'
 import { useCuadernoStore } from '../../stores/useCuadernoStore'
 import { TIPOS_FESTIVO, COLOR_VACACIONES } from '../../types/constants'
 import type { TipoFestivo } from '../../types'
+import { parseFechaInput } from '../../utils/fechas'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
@@ -42,7 +43,7 @@ export function FestivosDialog({ open, onOpenChange }: FestivosDialogProps) {
         ...cuadernoActual.configuracion,
         festivos: [
           ...festivos,
-          { id: generateId(), nombre: nombreFestivo.trim(), fecha: new Date(fechaFestivo), tipo: tipoFestivo },
+          { id: generateId(), nombre: nombreFestivo.trim(), fecha: parseFechaInput(fechaFestivo), tipo: tipoFestivo },
         ],
       },
     })
@@ -63,7 +64,7 @@ export function FestivosDialog({ open, onOpenChange }: FestivosDialogProps) {
         ...cuadernoActual.configuracion,
         vacaciones: [
           ...vacaciones,
-          { id: generateId(), nombre: nombreVacacion.trim(), inicio: new Date(inicioVacacion), fin: new Date(finVacacion) },
+          { id: generateId(), nombre: nombreVacacion.trim(), inicio: parseFechaInput(inicioVacacion), fin: parseFechaInput(finVacacion) },
         ],
       },
     })

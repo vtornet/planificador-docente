@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import type { CuadernoDocente, CuadernoMetadata, Horario, Semana, Reunion, Nota, Evento } from '../types'
+import { parseFechaInput } from '../utils/fechas'
 
 interface CuadernoState {
   // Estado
@@ -108,8 +109,8 @@ export const useCuadernoStore = create<CuadernoState>((set, get) => ({
         configuracion: {
           id: 'config',
           cursoEscolarActual: metadata.cursoEscolar,
-          fechaInicioCurso: new Date(`${metadata.cursoEscolar.split('-')[0]}-09-01`),
-          fechaFinCurso: new Date(`${metadata.cursoEscolar.split('-')[1]}-06-30`),
+          fechaInicioCurso: parseFechaInput(`${metadata.cursoEscolar.split('-')[0]}-09-01`),
+          fechaFinCurso: parseFechaInput(`${metadata.cursoEscolar.split('-')[1]}-06-30`),
           festivos: [],
           vacaciones: [],
         },

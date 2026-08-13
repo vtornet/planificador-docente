@@ -1,4 +1,5 @@
 import Dexie, { Table } from 'dexie'
+import { parseFechaInput } from '../utils/fechas'
 
 // Definimos la base de datos directamente sin la interfaz estricta
 class PlafinicadorDB extends Dexie {
@@ -61,8 +62,8 @@ async function ensureConfig(): Promise<void> {
     await db.configuracion.put({
       id: 'config',
       cursoEscolarActual: '2026-2027',
-      fechaInicioCurso: new Date('2026-09-01').getTime(),
-      fechaFinCurso: new Date('2027-06-30').getTime(),
+      fechaInicioCurso: parseFechaInput('2026-09-01').getTime(),
+      fechaFinCurso: parseFechaInput('2027-06-30').getTime(),
       festivos: [],
       vacaciones: [],
     })

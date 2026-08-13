@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { format } from 'date-fns'
 import { useCuadernoStore } from '../../stores/useCuadernoStore'
 import { COLORES_EVENTOS, COLOR_EVENTO_POR_DEFECTO, RECORDATORIOS } from '../../types/constants'
+import { parseFechaInput } from '../../utils/fechas'
 import type { Evento, RecordatorioEvento } from '../../types'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog'
 import { Button } from '../ui/button'
@@ -51,7 +52,7 @@ export function EventoDialog({ open, onOpenChange, evento, fechaInicial }: Event
     const datos = {
       titulo: titulo.trim(),
       descripcion: descripcion.trim() || undefined,
-      fecha: new Date(fecha),
+      fecha: parseFechaInput(fecha),
       todoElDia,
       horaInicio: todoElDia ? undefined : horaInicio,
       horaFin: todoElDia ? undefined : horaFin || undefined,

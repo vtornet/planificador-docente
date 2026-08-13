@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog'
 import { FirmaCanvas } from './FirmaCanvas'
 import type { Reunion } from '../../types'
+import { parseFechaInput } from '../../utils/fechas'
 
 interface ReunionFormProps {
   reunion?: Reunion
@@ -44,7 +45,7 @@ export function ReunionForm({ reunion, onSave, onCancel }: ReunionFormProps) {
 
     const reunionData = {
       titulo: titulo.trim(),
-      fecha: new Date(fecha),
+      fecha: parseFechaInput(fecha),
       tipo,
       asistentes: asistentes
         .split(',')

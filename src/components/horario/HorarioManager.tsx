@@ -12,6 +12,7 @@ import type { Horario, ConfigHorarios } from '../../types'
 import { Calendar, Trash2, Clock, Edit2, ChevronRight, ChevronLeft, Download } from 'lucide-react'
 import { exportHorarioToPDF } from '../../utils/pdf.tsx'
 import { horarioActivoEnRango, horarioAbarcaMasDeLaSemana, dividirHorarioParaSemana, formatRangoFechas } from '../../utils/horarios'
+import { parseFechaInput } from '../../utils/fechas'
 
 // El curso escolar empieza en Septiembre (mes 8, 0-indexado). MESES: 0=Septiembre...10=Julio.
 function anioYMesDe(indiceMes: number, anioInicio: number, anioFin: number): { anio: number; mes: number } {
@@ -121,8 +122,8 @@ export function HorarioManager() {
       nombre: nuevoNombre,
       datos: Array(7).fill(null).map(() => Array(configHorarios.numPeriodos + (configHorarios.recreo ? 1 : 0)).fill(null).map(() => ({ contenido: '' }))),
       configHorarios,
-      fechaInicio: fechaInicio ? new Date(fechaInicio) : undefined,
-      fechaFin: fechaFin ? new Date(fechaFin) : undefined,
+      fechaInicio: fechaInicio ? parseFechaInput(fechaInicio) : undefined,
+      fechaFin: fechaFin ? parseFechaInput(fechaFin) : undefined,
     }
 
     addHorario(nuevoHorario)
@@ -218,8 +219,8 @@ export function HorarioManager() {
       tipo: nuevoTipo,
       datos: nuevosDatos,
       configHorarios,
-      fechaInicio: fechaInicio ? new Date(fechaInicio) : undefined,
-      fechaFin: fechaFin ? new Date(fechaFin) : undefined,
+      fechaInicio: fechaInicio ? parseFechaInput(fechaInicio) : undefined,
+      fechaFin: fechaFin ? parseFechaInput(fechaFin) : undefined,
     })
 
     setShowEditar(false)
