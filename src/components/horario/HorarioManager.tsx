@@ -11,6 +11,7 @@ import { HorarioTable } from './HorarioTable'
 import type { Horario, ConfigHorarios } from '../../types'
 import { Calendar, Trash2, Clock, Edit2, ChevronRight, ChevronLeft, Download } from 'lucide-react'
 import { exportHorarioToPDF } from '../../utils/pdf.tsx'
+import { horarioActivoEnRango, horarioAbarcaMasDeLaSemana, dividirHorarioParaSemana, formatRangoFechas } from '../../utils/horarios'
 
 // El curso escolar empieza en Septiembre (mes 8, 0-indexado). MESES: 0=Septiembre...10=Julio.
 function anioYMesDe(indiceMes: number, anioInicio: number, anioFin: number): { anio: number; mes: number } {
@@ -24,82 +25,6 @@ function semanasDelMes(anio: number, mes: number): { inicio: Date; fin: Date }[]
   const lunes = eachWeekOfInterval({ start: inicioMes, end: finMes }, { weekStartsOn: 1 })
     .filter((l) => l.getMonth() === mes)
   return lunes.map((inicio) => ({ inicio, fin: addDays(inicio, 4) }))
-}
-
-// ¿El horario está vigente en algún punto del rango [desde, hasta]?
-function horarioActivoEnRango(horario: Horario, desde: Date, hasta: Date): boolean {
-  if (!horario.fechaInicio) return false
-  const inicio = new Date(horario.fechaInicio)
-  const fin = horario.fechaFin ? new Date(horario.fechaFin) : null
-  return inicio <= hasta && (fin === null || fin >= desde)
-}
-
-// ¿El horario abarca más semanas que la indicada? (para ofrecer "modificar solo esta semana")
-function horarioAbarcaMasDeLaSemana(horario: Horario, semana: { inicio: Date; fin: Date }): boolean {
-  if (!horario.fechaInicio) return false
-  const inicio = new Date(horario.fechaInicio)
-  const fin = horario.fechaFin ? new Date(horario.fechaFin) : null
-  return inicio < semana.inicio || fin === null || fin > semana.fin
-}
-
-// Separa una semana concreta de un horario más amplio en una copia
-// independiente (con los mismos datos, editable sin afectar al resto).
-function dividirHorarioParaSemana(
-  original: Horario,
-  semana: { inicio: Date; fin: Date }
-): { actualizacionOriginal: Partial<Horario>; nuevos: Omit<Horario, 'id'>[] } {
-  const diaAntes = addDays(semana.inicio, -1)
-  const diaDespues = addDays(semana.fin, 1)
-  const fechaFinOriginal = original.fechaFin ? new Date(original.fechaFin) : null
-
-  const hayAntes = new Date(original.fechaInicio!) < semana.inicio
-  const hayDespues = fechaFinOriginal === null || fechaFinOriginal > semana.fin
-
-  const clonarDatos = () => original.datos.map((fila) => fila.map((celda) => ({ ...celda })))
-
-  const nuevos: Omit<Horario, 'id'>[] = [
-    {
-      tipo: original.tipo,
-      nombre: original.nombre,
-      datos: clonarDatos(),
-      configHorarios: original.configHorarios,
-      fechaInicio: semana.inicio,
-      fechaFin: semana.fin,
-    },
-  ]
-
-  let actualizacionOriginal: Partial<Horario> = {}
-
-  if (hayAntes && hayDespues) {
-    actualizacionOriginal = { fechaFin: diaAntes }
-    nuevos.push({
-      tipo: original.tipo,
-      nombre: original.nombre,
-      datos: clonarDatos(),
-      configHorarios: original.configHorarios,
-      fechaInicio: diaDespues,
-      fechaFin: fechaFinOriginal!,
-    })
-  } else if (hayAntes) {
-    actualizacionOriginal = { fechaFin: diaAntes }
-  } else if (hayDespues) {
-    actualizacionOriginal = { fechaInicio: diaDespues }
-  }
-
-  return { actualizacionOriginal, nuevos }
-}
-
-function formatRangoFechas(fechaInicio?: Date, fechaFin?: Date): string {
-  if (!fechaInicio) return ''
-  const inicio = new Date(fechaInicio)
-  if (!fechaFin) return `Desde el ${format(inicio, "d 'de' MMMM 'de' yyyy", { locale: es })}`
-
-  const fin = new Date(fechaFin)
-  const mismoMes = inicio.getMonth() === fin.getMonth() && inicio.getFullYear() === fin.getFullYear()
-  if (mismoMes) {
-    return `Del ${format(inicio, 'd')} al ${format(fin, "d 'de' MMMM 'de' yyyy", { locale: es })}`
-  }
-  return `Del ${format(inicio, 'd MMM', { locale: es })} al ${format(fin, 'd MMM yyyy', { locale: es })}`
 }
 
 // ¿Coincide esta configuración de intervalos con la predefinida de secundaria

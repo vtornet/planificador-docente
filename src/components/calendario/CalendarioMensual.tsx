@@ -1,19 +1,20 @@
 import { useState, useMemo } from 'react'
 import { Calendar, dateFnsLocalizer, View } from 'react-big-calendar'
-import { format, parse, startOfWeek, getDay, startOfDay } from 'date-fns'
+import { format, parse, startOfWeek, getDay, startOfDay, endOfDay, addDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
 import './CalendarioMensual.css'
 import { useCuadernoStore } from '../../stores/useCuadernoStore'
-import { Dialog, DialogContent } from '../ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog'
 import { Button } from '../ui/button'
 import { VistaSemanal } from './VistaSemanal'
 import { SemanaEditor } from './SemanaEditor'
 import { FestivosDialog } from './FestivosDialog'
 import { EventoDialog } from './EventoDialog'
+import { HorarioSemanaDialog } from './HorarioSemanaDialog'
 import { TIPOS_FESTIVO, COLOR_VACACIONES, COLORES_EVENTOS } from '../../types/constants'
 import type { TipoFestivo, Evento } from '../../types'
-import { Lightbulb, CalendarOff, Plus } from 'lucide-react'
+import { Lightbulb, CalendarOff, Plus, CalendarDays } from 'lucide-react'
 
 const locales = {
   'es': es,
@@ -50,6 +51,9 @@ export function CalendarioMensual() {
   const [showFestivos, setShowFestivos] = useState(false)
   const [eventoEditando, setEventoEditando] = useState<Evento | null>(null)
   const [showNuevoEvento, setShowNuevoEvento] = useState(false)
+  const [selectorEvento, setSelectorEvento] = useState<{ evento: Evento; semana: { inicio: Date; fin: Date } } | null>(null)
+  const [semanaHorario, setSemanaHorario] = useState<{ inicio: Date; fin: Date } | null>(null)
+  const [showHorarioSemana, setShowHorarioSemana] = useState(false)
 
   // Obtener el año escolar actual desde la configuración
   const cursoEscolar = cuadernoActual?.configuracion.cursoEscolarActual || '2026-2027'
@@ -86,7 +90,7 @@ export function CalendarioMensual() {
         id: `festivo-${festivo.id}`,
         title: festivo.nombre,
         start: fecha,
-        end: new Date(fecha.getTime() + 24 * 60 * 60 * 1000),
+        end: endOfDay(fecha),
         resource: { tipo: 'festivo', tipoFestivo: festivo.tipo },
       })
     })
@@ -119,8 +123,17 @@ export function CalendarioMensual() {
         } else {
           end = new Date(start.getTime() + 60 * 60 * 1000)
         }
+        // Si la hora de fin cae ya en el día siguiente (o antes que la de
+        // inicio), lo dejamos dentro del mismo día para que en la vista de
+        // mes ocupe solo una celda, no dos.
+        if (end <= start || end.getDate() !== start.getDate()) {
+          end = endOfDay(start)
+        }
       } else {
-        end = new Date(fecha.getTime() + 24 * 60 * 60 * 1000)
+        // Un evento de todo el día debe ocupar solo la celda de ese día: si
+        // "end" cae en la medianoche del día siguiente, react-big-calendar lo
+        // interpreta como si abarcara también esa siguiente celda.
+        end = endOfDay(fecha)
       }
 
       eventos.push({
@@ -138,7 +151,10 @@ export function CalendarioMensual() {
   const handleSelectEvent = (event: CalendarioEvent) => {
     if (event.resource?.tipo === 'evento') {
       const evento = (cuadernoActual?.eventos || []).find((e) => e.id === event.resource?.eventoId)
-      if (evento) setEventoEditando(evento)
+      if (evento) {
+        const lunes = startOfWeek(startOfDay(new Date(evento.fecha)), { weekStartsOn: 1 })
+        setSelectorEvento({ evento, semana: { inicio: lunes, fin: addDays(lunes, 4) } })
+      }
       return
     }
     setSelectedEvent(event)
@@ -309,6 +325,45 @@ export function CalendarioMensual() {
         evento={eventoEditando || undefined}
       />
 
+      {/* Al hacer click en un evento, elegir entre verlo o ver el horario de clase de esa semana */}
+      <Dialog open={selectorEvento !== null} onOpenChange={() => setSelectorEvento(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{selectorEvento?.evento.titulo}</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">¿Qué quieres ver?</p>
+          <div className="flex flex-col gap-2">
+            <Button
+              onClick={() => {
+                if (selectorEvento) setEventoEditando(selectorEvento.evento)
+                setSelectorEvento(null)
+              }}
+            >
+              Ver evento
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (selectorEvento) {
+                  setSemanaHorario(selectorEvento.semana)
+                  setShowHorarioSemana(true)
+                }
+                setSelectorEvento(null)
+              }}
+            >
+              <CalendarDays className="w-4 h-4" />
+              Ver horario de esta semana
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <HorarioSemanaDialog
+        open={showHorarioSemana}
+        onOpenChange={setShowHorarioSemana}
+        semana={semanaHorario}
+      />
+
       {/* Dialog para crear nueva semana */}
       <Dialog open={!!creatingWeek} onOpenChange={() => setCreatingWeek(null)}>
         <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
@@ -329,7 +384,7 @@ export function CalendarioMensual() {
         </h4>
         <ul className="text-sm text-primary/90 space-y-1">
           <li>• "Nuevo evento" para citas, tareas o recordatorios puntuales (título, hora, color, aviso)</li>
-          <li>• Click en un evento ya creado para editarlo o eliminarlo</li>
+          <li>• Click en un evento ya creado para verlo, o para ver el horario de clase de esa semana</li>
           <li>• Click en un día vacío para crear o editar la planificación semanal de periodos</li>
           <li>• Usa las flechas para navegar entre meses</li>
         </ul>
