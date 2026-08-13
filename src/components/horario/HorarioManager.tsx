@@ -102,6 +102,19 @@ function formatRangoFechas(fechaInicio?: Date, fechaFin?: Date): string {
   return `Del ${format(inicio, 'd MMM', { locale: es })} al ${format(fin, 'd MMM yyyy', { locale: es })}`
 }
 
+// ¿Coincide esta configuración de intervalos con la predefinida de secundaria
+// (la que se usa cuando no se marca "Personalizar intervalos horarios")?
+function esConfigPredefinidaSecundaria(config: ConfigHorarios): boolean {
+  const base = CONFIG_HORARIOS_PREDEFINIDOS.secundaria
+  return (
+    config.numPeriodos === base.numPeriodos &&
+    config.horaInicio === base.horaInicio &&
+    config.duracionPeriodo === base.duracionPeriodo &&
+    !!config.recreo === !!base.recreo &&
+    (!config.recreo || (config.recreo.periodo === base.recreo?.periodo && config.recreo.duracion === base.recreo?.duracion))
+  )
+}
+
 type Vista = 'meses' | 'semanas' | 'semana' | 'sinFecha'
 
 export function HorarioManager() {
@@ -232,20 +245,20 @@ export function HorarioManager() {
     setFechaInicio(horario.fechaInicio ? format(new Date(horario.fechaInicio), 'yyyy-MM-dd') : '')
     setFechaFin(horario.fechaFin ? format(new Date(horario.fechaFin), 'yyyy-MM-dd') : '')
 
-    if (horario.configHorarios) {
-      setConfigPersonalizada(true)
-      setNumPeriodos(horario.configHorarios.numPeriodos)
-      setHoraInicio(horario.configHorarios.horaInicio)
-      setDuracionPeriodo(horario.configHorarios.duracionPeriodo)
-      if (horario.configHorarios.recreo) {
-        setConRecreo(true)
-        setRecreoPeriodo(horario.configHorarios.recreo.periodo)
-        setRecreoDuracion(horario.configHorarios.recreo.duracion)
-      } else {
-        setConRecreo(false)
-      }
+    // "Personalizar intervalos horarios" solo debe aparecer marcado si de verdad
+    // se apartó de la configuración predefinida — configHorarios existe siempre
+    // (no es opcional), así que comprobarlo con "if (horario.configHorarios)"
+    // daba siempre true y marcaba la casilla en todos los horarios.
+    setConfigPersonalizada(!esConfigPredefinidaSecundaria(horario.configHorarios))
+    setNumPeriodos(horario.configHorarios.numPeriodos)
+    setHoraInicio(horario.configHorarios.horaInicio)
+    setDuracionPeriodo(horario.configHorarios.duracionPeriodo)
+    if (horario.configHorarios.recreo) {
+      setConRecreo(true)
+      setRecreoPeriodo(horario.configHorarios.recreo.periodo)
+      setRecreoDuracion(horario.configHorarios.recreo.duracion)
     } else {
-      setConfigPersonalizada(false)
+      setConRecreo(false)
     }
 
     setShowEditar(true)
@@ -263,9 +276,15 @@ export function HorarioManager() {
         }
       : CONFIG_HORARIOS_PREDEFINIDOS.secundaria
 
-    // Si la configuración cambió, necesitamos redimensionar la matriz de datos
-    const nuevosDatos = configPersonalizada
-      ? Array(7).fill(null).map(() => Array(configHorarios.numPeriodos + (configHorarios.recreo ? 1 : 0)).fill(null).map(() => ({ contenido: '' })))
+    // Solo hay que redimensionar (y por tanto vaciar) la matriz de datos si el
+    // Nº de periodos cambia de verdad — no en cualquier guardado del diálogo de
+    // edición (antes se comprobaba con "configPersonalizada", que a su vez
+    // siempre estaba a true al editar, así que se perdían los datos aunque el
+    // usuario solo ampliara las fechas o cambiara el nombre).
+    const totalPeriodosNuevo = configHorarios.numPeriodos + (configHorarios.recreo ? 1 : 0)
+    const totalPeriodosActual = horarioEditando.configHorarios.numPeriodos + (horarioEditando.configHorarios.recreo ? 1 : 0)
+    const nuevosDatos = totalPeriodosNuevo !== totalPeriodosActual
+      ? Array(7).fill(null).map(() => Array(totalPeriodosNuevo).fill(null).map(() => ({ contenido: '' })))
       : horarioEditando.datos
 
     updateHorario(horarioEditando.id, {
