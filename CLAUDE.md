@@ -27,6 +27,19 @@ Aplicación web progresiva (PWA) que permite a los docentes gestionar su planifi
 - ⏳ **FASE 8:** Testing y Polish
 - ⏳ **FASE 9:** Asistente con IA Gratuita
 
+### Lista de Prioridades (Agosto 2026) 🎯
+Pedida explícitamente por el usuario, por orden de prioridad. Dos puntos (marcados) los añadí yo al pedirme la lista, el resto ya estaban anotados en "Tareas Pendientes Importantes". Se van marcando `[x]` según se completan, sin borrarlas (para no perder el orden de prioridad acordado ni el motivo de cada una).
+
+- [x] **1. Investigar el desajuste de zona horaria en comparación de fechas** *(añadido por mí)* — ✅ Hecho (Agosto 2026). Ver "DESAJUSTE DE ZONA HORARIA EN FECHAS" más abajo.
+- [ ] **2. Festivos también en Horarios** — pintarlos y, probablemente, bloquear la edición en días festivos (ya funciona en Calendario, no en Horarios). Ver "FESTIVOS Y VACACIONES".
+- [ ] **3. Celdas de recreo editables en Calendario** — en `VistaSemanal.tsx`/`SemanaEditor.tsx` se pueden editar como cualquier otra, sin aviso ni bloqueo (en Horarios esto ya está resuelto).
+- [ ] **4. Botón de cerrar (X) en los modales** — `dialog.tsx` solo se cierra con click fuera o los botones de cada formulario, sin una X visible. Arreglo en el componente base, corrige todos los diálogos a la vez.
+- [ ] **5. Reducir el peso del bundle (3,8 MB)** — code-splitting con `import()` dinámico; Vite avisa en cada build.
+- [ ] **6. Formalizar un framework de test** *(añadido por mí)* — Playwright se instala/desinstala con `npx` cada sesión para verificar y no queda nada reutilizable en el repo; instalarlo de verdad como dependencia (ya previsto, sin implementar, en "Testing Strategy" más abajo).
+- [ ] **7. Eventos en el PDF y eventos recurrentes** — quedaron fuera a propósito al construir la agenda (ver "AGENDA FUNCIONAL").
+- [ ] **8. Crear BBDD (¿MongoDB en Railway?)** — decisión de arquitectura grande, rompe el offline-first tal cual está hoy; necesita conversación de alcance antes de tocar código.
+- [ ] **9. Asistente con IA (Fase 9)** — feature grande y nueva, sin dependencias que la bloqueen.
+
 ### Tareas Pendientes Importantes 📌
 - **MEJORA VISUAL:** ✅ Hecho (Agosto 2026). Se migraron los 4 módulos (Horarios, Calendario, Reuniones, Notas) y el shell (Sidebar/Header/BottomNav) a los tokens del sistema de diseño (`bg-card`, `text-foreground`, `bg-primary`...), y se implementó el modo oscuro (toggle en el header, persistido en `localStorage`). Verificado visualmente con capturas en claro y oscuro en las 4 secciones y en diálogos/formularios.
 - **BUILD ROTO (RESUELTO):** `npm run build` fallaba por tipos faltantes de `file-saver`, un tipo `CeldaHorario` sin importar en `pdfTemplates.tsx`, y el límite de precaché de Workbox (2 MiB) superado por el bundle (3.76 MB). Corregido: `@types/file-saver` instalado, import arreglado, `maximumFileSizeToCacheInBytes` ampliado en `vite.config.ts`.
