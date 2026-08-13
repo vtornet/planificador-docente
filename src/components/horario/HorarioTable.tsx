@@ -135,7 +135,7 @@ export function HorarioTable({ horario, onGuardar, preguntarAlcance, onDuplicate
                         {celda?.nota && (
                           <div className="mt-0.5 flex items-start gap-1 text-xs opacity-80 italic">
                             <StickyNote className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                            <span className="line-clamp-2 break-words">{celda.nota}</span>
+                            <span className="line-clamp-2 break-words whitespace-pre-wrap">{celda.nota}</span>
                           </div>
                         )}
                       </div>
