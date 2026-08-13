@@ -76,6 +76,7 @@ export function HorarioSemanaDialog({ open, onOpenChange, semana }: HorarioSeman
                     horario={horario}
                     onGuardar={(datos, alcance) => handleGuardarDatosHorario(horario, datos, alcance)}
                     preguntarAlcance={preguntarAlcance}
+                    semana={semana || undefined}
                   />
                 </div>
               )

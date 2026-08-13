@@ -5,6 +5,7 @@ import { useCuadernoStore } from '../../stores/useCuadernoStore'
 import { TIPOS_FESTIVO, COLOR_VACACIONES } from '../../types/constants'
 import type { TipoFestivo } from '../../types'
 import { parseFechaInput } from '../../utils/fechas'
+import { festivosNacionalesParaCursoEscolar } from '../../types/festivosOficiales'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
@@ -51,6 +52,28 @@ export function FestivosDialog({ open, onOpenChange }: FestivosDialogProps) {
     setFechaFestivo('')
   }
 
+  const festivosNacionalesFaltantes = cuadernoActual
+    ? festivosNacionalesParaCursoEscolar(cuadernoActual.metadata.cursoEscolar).filter(
+        (sugerido) =>
+          !festivos.some(
+            (f) => f.tipo === 'nacional' && new Date(f.fecha).getTime() === sugerido.fecha.getTime()
+          )
+      )
+    : []
+
+  const handleCargarFestivosNacionales = () => {
+    if (!cuadernoActual || festivosNacionalesFaltantes.length === 0) return
+    updateCuaderno({
+      configuracion: {
+        ...cuadernoActual.configuracion,
+        festivos: [
+          ...festivos,
+          ...festivosNacionalesFaltantes.map((f) => ({ ...f, id: generateId(), origen: 'automatico' as const })),
+        ],
+      },
+    })
+  }
+
   const handleEliminarFestivo = (id: string) => {
     updateCuaderno({
       configuracion: { ...cuadernoActual.configuracion, festivos: festivos.filter((f) => f.id !== id) },
@@ -93,6 +116,17 @@ export function FestivosDialog({ open, onOpenChange }: FestivosDialogProps) {
           {/* Festivos */}
           <div>
             <h4 className="text-sm font-semibold text-foreground mb-2">Festivos</h4>
+            {festivosNacionalesFaltantes.length > 0 && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleCargarFestivosNacionales}
+                className="mb-3"
+              >
+                Cargar festivos nacionales ({festivosNacionalesFaltantes.length})
+              </Button>
+            )}
             <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto_auto] gap-2 mb-3">
               <Input
                 value={nombreFestivo}
@@ -138,6 +172,7 @@ export function FestivosDialog({ open, onOpenChange }: FestivosDialogProps) {
                       <span className="text-sm text-foreground truncate">{festivo.nombre}</span>
                       <span className="text-xs text-muted-foreground flex-shrink-0">
                         {format(new Date(festivo.fecha), "d 'de' MMMM", { locale: es })}
+                        {festivo.origen === 'automatico' && ' · automático'}
                       </span>
                     </div>
                     <button

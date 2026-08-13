@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react'
-import { DIAS_SEMANA, PALETA_ASIGNATURAS } from '../../types/constants'
+import { addDays, format } from 'date-fns'
+import { DIAS_SEMANA, PALETA_ASIGNATURAS, COLOR_VACACIONES } from '../../types/constants'
 import type { CeldaHorario, Horario } from '../../types'
 import { cn } from '../../utils/cn'
+import { useCuadernoStore } from '../../stores/useCuadernoStore'
+import { esDiaFestivo, esDiaVacaciones } from '../../utils/festivos'
 import { UserCircle, GraduationCap, Copy, StickyNote, Save } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog'
@@ -12,14 +15,30 @@ interface HorarioTableProps {
   onGuardar: (datos: CeldaHorario[][], alcance?: 'periodo' | 'semana') => void
   preguntarAlcance?: boolean
   onDuplicate?: (horario: Omit<Horario, 'id'>) => void
+  // Semana concreta que se está viendo (lunes a viernes). Si se indica, los
+  // días festivos/de vacaciones de esa semana se marcan y no se pueden
+  // editar. Sin ella (ej. horarios sin fecha asignada) la tabla es la
+  // plantilla genérica de siempre, sin festivos.
+  semana?: { inicio: Date; fin: Date }
   className?: string
 }
 
-export function HorarioTable({ horario, onGuardar, preguntarAlcance, onDuplicate, className }: HorarioTableProps) {
+export function HorarioTable({ horario, onGuardar, preguntarAlcance, onDuplicate, semana, className }: HorarioTableProps) {
+  const cuadernoActual = useCuadernoStore((s) => s.cuadernoActual)
+  const festivos = cuadernoActual?.configuracion.festivos || []
+  const vacaciones = cuadernoActual?.configuracion.vacaciones || []
+
   const [celdaEditando, setCeldaEditando] = useState<{ fila: number; columna: number } | null>(null)
   const [datos, setDatos] = useState<CeldaHorario[][]>(horario.datos)
   const [dirty, setDirty] = useState(false)
   const [mostrarPreguntaAlcance, setMostrarPreguntaAlcance] = useState(false)
+
+  const diasSemana = semana
+    ? DIAS_SEMANA.map((_, idx) => {
+        const fecha = addDays(semana.inicio, idx)
+        return { fecha, esFestivo: esDiaFestivo(fecha, festivos), esVacaciones: esDiaVacaciones(fecha, vacaciones) }
+      })
+    : null
 
   // Mientras haya cambios sin guardar, no se sincroniza con lo que llegue del
   // padre (evita perder el borrador si se actualiza el horario por otra vía).
@@ -30,6 +49,8 @@ export function HorarioTable({ horario, onGuardar, preguntarAlcance, onDuplicate
   const periodos = generarPeriodos(horario.configHorarios)
 
   const handleCeldaClick = (fila: number, columna: number) => {
+    const dia = diasSemana?.[columna]
+    if (dia && (dia.esFestivo || dia.esVacaciones)) return
     setCeldaEditando({ fila, columna })
   }
 
@@ -83,14 +104,30 @@ export function HorarioTable({ horario, onGuardar, preguntarAlcance, onDuplicate
               <th className="border border-border p-2 text-left text-sm font-semibold text-foreground w-20">
                 Hora
               </th>
-              {DIAS_SEMANA.map((dia) => (
-                <th
-                  key={dia}
-                  className="border border-border p-2 text-center text-sm font-semibold text-foreground w-[140px]"
-                >
-                  {dia}
-                </th>
-              ))}
+              {DIAS_SEMANA.map((dia, idx) => {
+                const diaInfo = diasSemana?.[idx]
+                return (
+                  <th
+                    key={dia}
+                    className="border border-border p-2 text-center text-sm font-semibold text-foreground w-[140px]"
+                  >
+                    <div>{dia}</div>
+                    {diaInfo && (
+                      <div className="text-xs font-normal text-muted-foreground">{format(diaInfo.fecha, 'dd/MM')}</div>
+                    )}
+                    {diaInfo?.esFestivo && (
+                      <div className="text-xs font-medium mt-0.5" style={{ color: '#ef4444' }}>
+                        Festivo
+                      </div>
+                    )}
+                    {diaInfo?.esVacaciones && (
+                      <div className="text-xs font-medium mt-0.5" style={{ color: COLOR_VACACIONES }}>
+                        Vacaciones
+                      </div>
+                    )}
+                  </th>
+                )
+              })}
             </tr>
           </thead>
           <tbody>
@@ -116,14 +153,20 @@ export function HorarioTable({ horario, onGuardar, preguntarAlcance, onDuplicate
                   const claseColor = celda?.color
                     ? PALETA_ASIGNATURAS.find((c) => c.id === celda.color)?.clase
                     : undefined
+                  const diaNoLectivo = diasSemana?.[columna]?.esFestivo || diasSemana?.[columna]?.esVacaciones
 
                   return (
                     <td
                       key={columna}
                       onClick={() => handleCeldaClick(fila, columna)}
+                      title={diaNoLectivo ? 'Día no lectivo, no se puede editar' : undefined}
                       className={cn(
-                        'border border-border p-1 align-top min-h-[60px] cursor-pointer transition-colors',
-                        claseColor ? cn(claseColor, 'hover:brightness-95 dark:hover:brightness-125') : 'hover:bg-accent/50'
+                        'border border-border p-1 align-top min-h-[60px] transition-colors',
+                        diaNoLectivo
+                          ? 'bg-muted/60 cursor-not-allowed'
+                          : claseColor
+                            ? cn(claseColor, 'cursor-pointer hover:brightness-95 dark:hover:brightness-125')
+                            : 'cursor-pointer hover:bg-accent/50'
                       )}
                     >
                       <div className="p-1 min-h-[50px] overflow-hidden">

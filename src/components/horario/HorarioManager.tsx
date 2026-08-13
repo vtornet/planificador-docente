@@ -319,6 +319,7 @@ export function HorarioManager() {
             onGuardar={(datos, alcance) => handleGuardarDatosHorario(horario, datos, alcance)}
             preguntarAlcance={preguntarAlcance}
             onDuplicate={addHorario}
+            semana={vista === 'semana' && semanaSeleccionada ? semanaSeleccionada : undefined}
           />
         </CardContent>
       </Card>

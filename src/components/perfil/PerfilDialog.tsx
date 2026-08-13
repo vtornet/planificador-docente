@@ -4,20 +4,24 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { X } from 'lucide-react'
+import { COMUNIDADES_AUTONOMAS, festivoAutonomicoParaCursoEscolar } from '../../types/festivosOficiales'
 
 interface PerfilDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
+const generateId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+
 export function PerfilDialog({ open, onOpenChange }: PerfilDialogProps) {
-  const { cuadernoActual, updateMetadata } = useCuadernoStore()
+  const { cuadernoActual, updateMetadata, updateCuaderno } = useCuadernoStore()
 
   const [centro, setCentro] = useState('')
   const [docente, setDocente] = useState('')
   const [cursoEscolar, setCursoEscolar] = useState('')
   const [cursos, setCursos] = useState<string[]>([])
   const [nuevoCurso, setNuevoCurso] = useState('')
+  const [comunidadAutonoma, setComunidadAutonoma] = useState('')
 
   useEffect(() => {
     if (open && cuadernoActual) {
@@ -25,6 +29,7 @@ export function PerfilDialog({ open, onOpenChange }: PerfilDialogProps) {
       setDocente(cuadernoActual.metadata.docente)
       setCursoEscolar(cuadernoActual.metadata.cursoEscolar)
       setCursos(cuadernoActual.metadata.cursos || [])
+      setComunidadAutonoma(cuadernoActual.metadata.comunidadAutonoma || '')
       setNuevoCurso('')
     }
   }, [open, cuadernoActual])
@@ -42,12 +47,39 @@ export function PerfilDialog({ open, onOpenChange }: PerfilDialogProps) {
   }
 
   const handleGuardar = () => {
+    const comunidadAnterior = cuadernoActual?.metadata.comunidadAutonoma
+    const comunidadNueva = comunidadAutonoma || undefined
+
     updateMetadata({
       centro: centro.trim(),
       docente: docente.trim(),
       cursoEscolar: cursoEscolar.trim(),
       cursos,
+      comunidadAutonoma: comunidadNueva,
     })
+
+    // Si cambia la comunidad autónoma, sustituir el festivo autonómico
+    // cargado automáticamente por el de la nueva comunidad (los festivos
+    // añadidos a mano, o el resto de tipos, no se tocan).
+    if (cuadernoActual && comunidadNueva !== comunidadAnterior) {
+      const festivosSinAutonomicoAutomatico = (cuadernoActual.configuracion.festivos || []).filter(
+        (f) => !(f.tipo === 'autonomico' && f.origen === 'automatico')
+      )
+      const nuevoFestivoAutonomico = comunidadNueva
+        ? festivoAutonomicoParaCursoEscolar(comunidadNueva, cuadernoActual.metadata.cursoEscolar).map((f) => ({
+            ...f,
+            id: generateId(),
+            origen: 'automatico' as const,
+          }))
+        : []
+      updateCuaderno({
+        configuracion: {
+          ...cuadernoActual.configuracion,
+          festivos: [...festivosSinAutonomicoAutomatico, ...nuevoFestivoAutonomico],
+        },
+      })
+    }
+
     onOpenChange(false)
   }
 
@@ -89,6 +121,27 @@ export function PerfilDialog({ open, onOpenChange }: PerfilDialogProps) {
               onChange={(e) => setCursoEscolar(e.target.value)}
               placeholder="Ej: 2026-2027"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1">
+              Comunidad autónoma
+            </label>
+            <p className="text-xs text-muted-foreground mb-2">
+              Al elegirla, se carga automáticamente su festivo autonómico en Calendario.
+            </p>
+            <select
+              value={comunidadAutonoma}
+              onChange={(e) => setComunidadAutonoma(e.target.value)}
+              className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+            >
+              <option value="">Sin especificar</option>
+              {COMUNIDADES_AUTONOMAS.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nombre}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>

@@ -6,6 +6,7 @@ interface CuadernoMetadata {
   centro: string
   docente: string
   cursos?: string[] // Ej: ["1º ESO A", "2º ESO B"] - usado como desplegable al crear horarios
+  comunidadAutonoma?: string // id de COMUNIDADES_AUTONOMAS - para cargar el festivo autonómico correspondiente
   creado: Date
   actualizado: Date
 }
@@ -132,6 +133,11 @@ interface Festivo {
   nombre: string
   fecha: Date
   tipo: TipoFestivo
+  // 'automatico': cargado por defecto (nacional al crear el cuaderno, o
+  // autonómico al elegir comunidad en el Perfil) - se puede sustituir sin
+  // avisar. Sin definir (festivos añadidos a mano, o de antes de este campo)
+  // se trata igual que 'manual': nunca se toca automáticamente.
+  origen?: 'automatico' | 'manual'
 }
 
 interface Vacacion {
