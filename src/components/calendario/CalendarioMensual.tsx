@@ -231,17 +231,17 @@ export function CalendarioMensual() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <h2 className="text-2xl font-bold text-foreground tracking-tight">Calendario Escolar</h2>
-        <div className="flex items-center gap-2">
-          <div className="text-sm text-muted-foreground bg-muted px-3 py-1 rounded-full">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+          <div className="text-sm text-muted-foreground bg-muted px-3 py-1 rounded-full self-start sm:self-auto">
             Curso {cursoEscolar}
           </div>
-          <Button variant="outline" size="sm" onClick={() => setShowFestivos(true)}>
+          <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => setShowFestivos(true)}>
             <CalendarOff className="w-4 h-4" />
             Festivos y vacaciones
           </Button>
-          <Button size="sm" onClick={() => setShowNuevoEvento(true)}>
+          <Button size="sm" className="w-full sm:w-auto" onClick={() => setShowNuevoEvento(true)}>
             <Plus className="w-4 h-4" />
             Nuevo evento
           </Button>
