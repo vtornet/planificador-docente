@@ -10,7 +10,6 @@ import { Input } from '../ui/input'
 import { HorarioTable } from './HorarioTable'
 import type { Horario, ConfigHorarios } from '../../types'
 import { Calendar, Trash2, Clock, Edit2, ChevronRight, ChevronLeft, Download } from 'lucide-react'
-import { exportHorarioToPDF } from '../../utils/pdf.tsx'
 import { horarioActivoEnRango, horarioAbarcaMasDeLaSemana, dividirHorarioParaSemana, formatRangoFechas } from '../../utils/horarios'
 import { parseFechaInput } from '../../utils/fechas'
 
@@ -157,6 +156,7 @@ export function HorarioManager() {
   const handleExportarPDF = async (horario: Horario) => {
     if (!cuadernoActual) return
     try {
+      const { exportHorarioToPDF } = await import('../../utils/pdf.tsx')
       await exportHorarioToPDF(horario, cuadernoActual.metadata)
     } catch (error) {
       console.error('Error exportando horario a PDF:', error)

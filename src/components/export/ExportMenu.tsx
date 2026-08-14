@@ -11,13 +11,6 @@ import {
 } from '../ui/dropdown-menu'
 import { Button } from '../ui/button'
 import { Download, FileText, Calendar, Users, BookOpen, FileJson, Loader2 } from 'lucide-react'
-import {
-  exportHorariosToPDF,
-  exportReunionToPDF,
-  exportNotasToPDF,
-  exportSemanaToPDF,
-  exportCuadernoCompletoToPDF,
-} from '../../utils/pdf.tsx'
 import { exportCuadernoToJSON } from '../../utils/export'
 
 type ExportType = 'horarios' | 'planificacion' | 'reuniones' | 'notas' | 'completo' | 'json'
@@ -32,39 +25,49 @@ export function ExportMenu() {
     setExporting(type)
     try {
       switch (type) {
-        case 'horarios':
+        case 'horarios': {
           // Exportar todos los horarios combinados en un PDF (uno por página).
           // Para exportar uno en concreto, usa el botón de descarga de su tarjeta.
           if (cuadernoActual.horarios.length > 0) {
+            const { exportHorariosToPDF } = await import('../../utils/pdf.tsx')
             await exportHorariosToPDF(cuadernoActual.horarios, cuadernoActual.metadata)
           }
           break
+        }
 
-        case 'planificacion':
+        case 'planificacion': {
           // Exportar la primera semana (o todas)
           if (cuadernoActual.planificacion.semanal.length > 0) {
+            const { exportSemanaToPDF } = await import('../../utils/pdf.tsx')
             await exportSemanaToPDF(cuadernoActual.planificacion.semanal[0], cuadernoActual.metadata)
           }
           break
+        }
 
-        case 'reuniones':
+        case 'reuniones': {
           // Exportar la primera reunión (o todas)
           if (cuadernoActual.reuniones.length > 0) {
+            const { exportReunionToPDF } = await import('../../utils/pdf.tsx')
             await exportReunionToPDF(cuadernoActual.reuniones[0], cuadernoActual.metadata)
           }
           break
+        }
 
-        case 'notas':
+        case 'notas': {
           // Exportar todas las notas
           if (cuadernoActual.notas.length > 0) {
+            const { exportNotasToPDF } = await import('../../utils/pdf.tsx')
             await exportNotasToPDF(cuadernoActual.notas, cuadernoActual.metadata)
           }
           break
+        }
 
-        case 'completo':
+        case 'completo': {
           // Exportar todo el cuaderno
+          const { exportCuadernoCompletoToPDF } = await import('../../utils/pdf.tsx')
           await exportCuadernoCompletoToPDF(cuadernoActual)
           break
+        }
 
         case 'json':
           // Exportar a JSON

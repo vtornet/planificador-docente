@@ -1,10 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, lazy, Suspense } from 'react'
 import { Layout } from './components/layout/Layout'
 import { useCuadernoStore } from './stores/useCuadernoStore'
-import { HorarioManager } from './components/horario/HorarioManager'
-import { CalendarioMensual } from './components/calendario/CalendarioMensual'
-import { ReunionList } from './components/reuniones/ReunionList'
-import { NotasList } from './components/notas/NotasList'
 import { initDB, getCuadernos } from './db/db'
 import { Button } from './components/ui/button'
 import { Input } from './components/ui/input'
@@ -19,20 +15,17 @@ function cursoEscolarPorDefecto(): string {
   return hoy.getMonth() >= 7 ? `${anio}-${anio + 1}` : `${anio - 1}-${anio}`
 }
 
-function HorariosView() {
-  return <HorarioManager />
-}
+const HorarioManager = lazy(() => import('./components/horario/HorarioManager').then((m) => ({ default: m.HorarioManager })))
+const CalendarioMensual = lazy(() => import('./components/calendario/CalendarioMensual').then((m) => ({ default: m.CalendarioMensual })))
+const ReunionList = lazy(() => import('./components/reuniones/ReunionList').then((m) => ({ default: m.ReunionList })))
+const NotasList = lazy(() => import('./components/notas/NotasList').then((m) => ({ default: m.NotasList })))
 
-function CalendarioView() {
-  return <CalendarioMensual />
-}
-
-function ReunionesView() {
-  return <ReunionList />
-}
-
-function NotasView() {
-  return <NotasList />
+function VistaCargando() {
+  return (
+    <div className="flex items-center justify-center py-24">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+    </div>
+  )
 }
 
 function App() {
@@ -157,13 +150,17 @@ function App() {
   }
 
   const viewComponent = {
-    horario: <HorariosView />,
-    calendario: <CalendarioView />,
-    reuniones: <ReunionesView />,
-    notas: <NotasView />,
+    horario: <HorarioManager />,
+    calendario: <CalendarioMensual />,
+    reuniones: <ReunionList />,
+    notas: <NotasList />,
   }[view]
 
-  return <Layout>{viewComponent}</Layout>
+  return (
+    <Layout>
+      <Suspense fallback={<VistaCargando />}>{viewComponent}</Suspense>
+    </Layout>
+  )
 }
 
 export default App
