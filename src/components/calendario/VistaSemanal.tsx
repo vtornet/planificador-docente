@@ -44,6 +44,7 @@ export function VistaSemanal({ semana, onClose }: VistaSemanalProps) {
   }
 
   const handleCeldaClick = (diaIndex: number, periodoIndex: number) => {
+    if (periodosHorarios[periodoIndex]?.esRecreo) return
     setEditandoCelda({ diaIndex, periodoIndex })
   }
 
@@ -154,16 +155,23 @@ export function VistaSemanal({ semana, onClose }: VistaSemanalProps) {
                       const isEditando =
                         editandoCelda?.diaIndex === diaIndex &&
                         editandoCelda?.periodoIndex === periodoIndex
+                      // El recreo bloquea de verdad la edición; festivo/vacaciones aquí
+                      // (a diferencia de Horarios) solo se marcan visualmente por ahora,
+                      // se sigue pudiendo planificar contenido ese día si hace falta.
+                      const bloqueada = periodo.esRecreo
+                      const muted = dia.esFestivo || dia.esVacaciones || bloqueada
 
                       return (
                         <td
                           key={diaIndex}
                           onClick={() =>
-                            !isEditando && handleCeldaClick(diaIndex, periodoIndex)
+                            !isEditando && !bloqueada && handleCeldaClick(diaIndex, periodoIndex)
                           }
+                          title={bloqueada ? 'Recreo, no se puede editar' : undefined}
                           className={cn(
-                            'border border-border p-1 align-top min-h-[60px] cursor-pointer hover:bg-accent/50 transition-colors',
-                            (dia.esFestivo || dia.esVacaciones) && 'bg-muted/60'
+                            'border border-border p-1 align-top min-h-[60px] transition-colors',
+                            muted && 'bg-muted/60',
+                            bloqueada ? 'cursor-not-allowed' : 'cursor-pointer hover:bg-accent/50'
                           )}
                         >
                           {isEditando ? (
@@ -190,11 +198,11 @@ export function VistaSemanal({ semana, onClose }: VistaSemanalProps) {
                             />
                           ) : (
                             <div className="text-sm text-foreground whitespace-pre-wrap p-2 min-h-[50px]">
-                              {getCeldaContenido(diaIndex, periodoIndex) || (
+                              {getCeldaContenido(diaIndex, periodoIndex) || (bloqueada ? null : (
                                 <span className="text-muted-foreground/50 italic">
                                   Click para editar
                                 </span>
-                              )}
+                              ))}
                             </div>
                           )}
                         </td>

@@ -227,29 +227,37 @@ export function SemanaEditor({
                         )}
                       </div>
                     </td>
-                    {DIAS_SEMANA.map((_, diaIndex) => (
-                      <td
-                        key={diaIndex}
-                        className={cn(
-                          'border border-border p-1 align-top min-h-[60px]',
-                          (dias[diaIndex]?.esFestivo || dias[diaIndex]?.esVacaciones) && 'bg-muted/60'
-                        )}
-                      >
-                        <input
-                          type="text"
-                          value={getCeldaContenido(diaIndex, periodoIndex)}
-                          onChange={(e) =>
-                            handleCeldaChange(
-                              diaIndex,
-                              periodoIndex,
-                              e.target.value
-                            )
-                          }
-                          className="w-full min-h-[50px] p-2 text-sm resize-none bg-transparent text-foreground border-0 focus:ring-2 focus:ring-ring rounded"
-                          placeholder="Click para editar..."
-                        />
-                      </td>
-                    ))}
+                    {DIAS_SEMANA.map((_, diaIndex) => {
+                      // El recreo bloquea de verdad la edición; festivo/vacaciones aquí
+                      // (a diferencia de Horarios) solo se marcan visualmente por ahora.
+                      const bloqueada = periodo.esRecreo
+                      const muted = dias[diaIndex]?.esFestivo || dias[diaIndex]?.esVacaciones || bloqueada
+                      return (
+                        <td
+                          key={diaIndex}
+                          title={bloqueada ? 'Recreo, no se puede editar' : undefined}
+                          className={cn(
+                            'border border-border p-1 align-top min-h-[60px]',
+                            muted && 'bg-muted/60'
+                          )}
+                        >
+                          <input
+                            type="text"
+                            value={getCeldaContenido(diaIndex, periodoIndex)}
+                            onChange={(e) =>
+                              handleCeldaChange(
+                                diaIndex,
+                                periodoIndex,
+                                e.target.value
+                              )
+                            }
+                            disabled={bloqueada}
+                            className="w-full min-h-[50px] p-2 text-sm resize-none bg-transparent text-foreground border-0 focus:ring-2 focus:ring-ring rounded disabled:cursor-not-allowed"
+                            placeholder={bloqueada ? '' : 'Click para editar...'}
+                          />
+                        </td>
+                      )
+                    })}
                   </tr>
                 ))}
               </tbody>

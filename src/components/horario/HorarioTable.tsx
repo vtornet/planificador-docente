@@ -51,6 +51,7 @@ export function HorarioTable({ horario, onGuardar, preguntarAlcance, onDuplicate
   const handleCeldaClick = (fila: number, columna: number) => {
     const dia = diasSemana?.[columna]
     if (dia && (dia.esFestivo || dia.esVacaciones)) return
+    if (periodos[fila]?.esRecreo) return
     setCeldaEditando({ fila, columna })
   }
 
@@ -154,15 +155,16 @@ export function HorarioTable({ horario, onGuardar, preguntarAlcance, onDuplicate
                     ? PALETA_ASIGNATURAS.find((c) => c.id === celda.color)?.clase
                     : undefined
                   const diaNoLectivo = diasSemana?.[columna]?.esFestivo || diasSemana?.[columna]?.esVacaciones
+                  const noEditable = diaNoLectivo || periodo.esRecreo
 
                   return (
                     <td
                       key={columna}
                       onClick={() => handleCeldaClick(fila, columna)}
-                      title={diaNoLectivo ? 'Día no lectivo, no se puede editar' : undefined}
+                      title={diaNoLectivo ? 'Día no lectivo, no se puede editar' : periodo.esRecreo ? 'Recreo, no se puede editar' : undefined}
                       className={cn(
                         'border border-border p-1 align-top min-h-[60px] transition-colors',
-                        diaNoLectivo
+                        noEditable
                           ? 'bg-muted/60 cursor-not-allowed'
                           : claseColor
                             ? cn(claseColor, 'cursor-pointer hover:brightness-95 dark:hover:brightness-125')
@@ -171,9 +173,9 @@ export function HorarioTable({ horario, onGuardar, preguntarAlcance, onDuplicate
                     >
                       <div className="p-1 min-h-[50px] overflow-hidden">
                         <div className="text-sm truncate">
-                          {celda?.contenido || (
+                          {celda?.contenido || (noEditable ? null : (
                             <span className="text-muted-foreground/50 italic">Click para editar</span>
-                          )}
+                          ))}
                         </div>
                         {celda?.nota && (
                           <div className="mt-0.5 flex items-start gap-1 text-xs opacity-80 italic">
