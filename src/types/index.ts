@@ -68,16 +68,27 @@ interface Periodo {
 // día, en eventos de todo el día). 'ninguno' desactiva la notificación.
 type RecordatorioEvento = 'ninguno' | 'momento' | '10min' | '30min' | '1hora' | '1dia'
 
+// La recurrencia se guarda en un único evento "maestro" (fecha = primera
+// ocurrencia); las ocurrencias siguientes se calculan al vuelo (ver
+// utils/recurrencia.ts), no existen como registros aparte. Por eso editar o
+// eliminar un evento recurrente afecta a todas sus ocurrencias, no a una
+// suelta — no hay excepciones por ocurrencia individual.
+interface RecurrenciaEvento {
+  frecuencia: 'diaria' | 'semanal' | 'mensual'
+  hasta: Date // última fecha (inclusive) en la que puede caer una ocurrencia
+}
+
 interface Evento {
   id: string
   titulo: string
   descripcion?: string
-  fecha: Date // día del evento
+  fecha: Date // día del evento (primera ocurrencia si es recurrente)
   todoElDia: boolean
   horaInicio?: string // "HH:mm", solo si !todoElDia
   horaFin?: string // "HH:mm", opcional
   color: string // id de COLORES_EVENTOS
   recordatorio: RecordatorioEvento
+  recurrencia?: RecurrenciaEvento
   creado: Date
 }
 
@@ -177,6 +188,7 @@ export type {
   Nota,
   Evento,
   RecordatorioEvento,
+  RecurrenciaEvento,
   Configuracion,
   Festivo,
   TipoFestivo,

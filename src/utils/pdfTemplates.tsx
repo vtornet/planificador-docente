@@ -9,8 +9,9 @@ import {
   StyleSheet,
   Font,
 } from '@react-pdf/renderer'
-import type { Horario, Semana, Reunion, Nota, CuadernoDocente, CeldaHorario } from '../types'
+import type { Horario, Semana, Reunion, Nota, CuadernoDocente, CeldaHorario, Evento } from '../types'
 import { PALETA_ASIGNATURAS } from '../types/constants'
+import { fechasOcurrencias } from './recurrencia'
 
 // Intentar registrar fuentes (opcional, si no existen usa fuentes por defecto)
 try {
@@ -400,6 +401,76 @@ export function SemanaPDFDocument({ semana, metadata }: SemanaPDFProps) {
         )}
 
         {/* Footer */}
+        <Text style={styles.footer}>
+          Generado el {new Date().toLocaleDateString('es-ES')}
+        </Text>
+      </Page>
+    </Document>
+  )
+}
+
+// ============== AGENDA (EVENTOS) PDF ==============
+
+interface AgendaPDFProps {
+  cuaderno: CuadernoDocente
+}
+
+export function AgendaPDFDocument({ cuaderno }: AgendaPDFProps) {
+  const { metadata, configuracion, eventos = [] } = cuaderno
+  const inicioCurso = new Date(configuracion.fechaInicioCurso)
+  const finCurso = new Date(configuracion.fechaFinCurso)
+
+  // Expandir cada evento (incluidos los recurrentes) en sus ocurrencias
+  // dentro del curso escolar, y ordenarlas todas juntas cronológicamente.
+  const ocurrencias: { fecha: Date; evento: Evento }[] = []
+  eventos.forEach((evento) => {
+    fechasOcurrencias(evento).forEach((fecha) => {
+      if (fecha >= inicioCurso && fecha <= finCurso) {
+        ocurrencias.push({ fecha, evento })
+      }
+    })
+  })
+  ocurrencias.sort((a, b) => a.fecha.getTime() - b.fecha.getTime())
+
+  return (
+    <Document>
+      <Page size="A4" style={styles.page}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Agenda</Text>
+          <Text style={styles.subtitle}>
+            {metadata.centro} · {metadata.cursoEscolar}
+          </Text>
+        </View>
+
+        {ocurrencias.length === 0 ? (
+          <Text>No hay eventos en la agenda para este curso escolar.</Text>
+        ) : (
+          <View>
+            <View style={[styles.tableRow, styles.tableHeader]} fixed>
+              <Text style={[styles.tableCell, { flex: 1.3 }]}>Fecha</Text>
+              <Text style={[styles.tableCell, { flex: 1 }]}>Hora</Text>
+              <Text style={[styles.tableCell, { flex: 2.7 }]}>Evento</Text>
+            </View>
+            {ocurrencias.map(({ fecha, evento }, idx) => (
+              <View key={idx} style={styles.tableRow} wrap={false}>
+                <Text style={[styles.tableCell, { flex: 1.3 }]}>
+                  {fecha.toLocaleDateString('es-ES', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })}
+                </Text>
+                <Text style={[styles.tableCell, { flex: 1 }]}>
+                  {evento.todoElDia ? 'Todo el día' : evento.horaInicio || '-'}
+                </Text>
+                <View style={[styles.tableCell, { flex: 2.7 }]}>
+                  <Text>
+                    {evento.titulo}
+                    {evento.recurrencia ? ' (recurrente)' : ''}
+                  </Text>
+                  {evento.descripcion && <Text style={styles.tableCellNota}>{evento.descripcion}</Text>}
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+
         <Text style={styles.footer}>
           Generado el {new Date().toLocaleDateString('es-ES')}
         </Text>

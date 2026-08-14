@@ -10,10 +10,10 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu'
 import { Button } from '../ui/button'
-import { Download, FileText, Calendar, Users, BookOpen, FileJson, Loader2 } from 'lucide-react'
+import { Download, FileText, Calendar, CalendarClock, Users, BookOpen, FileJson, Loader2 } from 'lucide-react'
 import { exportCuadernoToJSON } from '../../utils/export'
 
-type ExportType = 'horarios' | 'planificacion' | 'reuniones' | 'notas' | 'completo' | 'json'
+type ExportType = 'horarios' | 'planificacion' | 'reuniones' | 'notas' | 'agenda' | 'completo' | 'json'
 
 export function ExportMenu() {
   const { cuadernoActual } = useCuadernoStore()
@@ -62,6 +62,15 @@ export function ExportMenu() {
           break
         }
 
+        case 'agenda': {
+          // Exportar los eventos de la agenda (expandiendo recurrencias)
+          if ((cuadernoActual.eventos || []).length > 0) {
+            const { exportEventosToPDF } = await import('../../utils/pdf.tsx')
+            await exportEventosToPDF(cuadernoActual)
+          }
+          break
+        }
+
         case 'completo': {
           // Exportar todo el cuaderno
           const { exportCuadernoCompletoToPDF } = await import('../../utils/pdf.tsx')
@@ -88,6 +97,7 @@ export function ExportMenu() {
   const hasPlanificacion = cuadernoActual.planificacion.semanal.length > 0
   const hasReuniones = cuadernoActual.reuniones.length > 0
   const hasNotas = cuadernoActual.notas.length > 0
+  const hasEventos = (cuadernoActual.eventos || []).length > 0
 
   return (
     <DropdownMenu>
@@ -131,6 +141,12 @@ export function ExportMenu() {
           <FileText className="w-4 h-4 mr-2" />
           <span>Notas</span>
           {!hasNotas && <span className="ml-auto text-xs text-muted-foreground">(Sin datos)</span>}
+        </DropdownMenuItem>
+
+        <DropdownMenuItem onClick={() => handleExport('agenda')} disabled={!hasEventos || exporting !== null}>
+          <CalendarClock className="w-4 h-4 mr-2" />
+          <span>Agenda (eventos)</span>
+          {!hasEventos && <span className="ml-auto text-xs text-muted-foreground">(Sin datos)</span>}
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />

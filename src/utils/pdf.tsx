@@ -10,6 +10,7 @@ import {
   NotasPDFDocument,
   SemanaPDFDocument,
   CuadernoCompletoPDF,
+  AgendaPDFDocument,
 } from './pdfTemplates'
 
 /**
@@ -100,6 +101,22 @@ export async function exportCuadernoCompletoToPDF(cuaderno: CuadernoDocente): Pr
   } catch (error) {
     console.error('Error generating cuaderno completo PDF:', error)
     throw new Error('Error al generar el PDF completo')
+  }
+}
+
+/**
+ * Genera y descarga un PDF con la agenda de eventos del curso escolar,
+ * expandiendo las ocurrencias de los eventos recurrentes dentro de ese rango.
+ */
+export async function exportEventosToPDF(cuaderno: CuadernoDocente): Promise<void> {
+  try {
+    const doc = <AgendaPDFDocument cuaderno={cuaderno} />
+    const pdfBlob = await pdf(doc).toBlob()
+    const filename = `agenda-${cuaderno.metadata.centro.replace(/\s+/g, '-')}-${cuaderno.metadata.cursoEscolar}.pdf`
+    saveAs(pdfBlob, filename)
+  } catch (error) {
+    console.error('Error generating agenda PDF:', error)
+    throw new Error('Error al generar el PDF de la agenda')
   }
 }
 

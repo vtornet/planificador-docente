@@ -13,6 +13,7 @@ import { FestivosDialog } from './FestivosDialog'
 import { EventoDialog } from './EventoDialog'
 import { HorarioSemanaDialog } from './HorarioSemanaDialog'
 import { TIPOS_FESTIVO, COLOR_VACACIONES, COLORES_EVENTOS } from '../../types/constants'
+import { fechasOcurrencias } from '../../utils/recurrencia'
 import type { TipoFestivo, Evento } from '../../types'
 import { Lightbulb, CalendarOff, Plus, CalendarDays } from 'lucide-react'
 
@@ -106,42 +107,47 @@ export function CalendarioMensual() {
       })
     })
 
-    // Eventos de la agenda (título, hora, todo el día, color, recordatorio)
+    // Eventos de la agenda (título, hora, todo el día, color, recordatorio).
+    // Si el evento es recurrente, se expande en una entrada por cada
+    // ocurrencia dentro de su rango (acotado por recurrencia.hasta) — todas
+    // comparten el mismo eventoId, así que clicar cualquiera abre el mismo
+    // evento "maestro" para editar/eliminar la serie completa.
     eventosAgenda.forEach((evento) => {
-      const fecha = new Date(evento.fecha)
-      let start = fecha
-      let end = fecha
+      fechasOcurrencias(evento).forEach((fecha, idx) => {
+        let start = fecha
+        let end = fecha
 
-      if (!evento.todoElDia && evento.horaInicio) {
-        const [hIni, mIni] = evento.horaInicio.split(':').map(Number)
-        start = new Date(fecha)
-        start.setHours(hIni, mIni, 0, 0)
-        if (evento.horaFin) {
-          const [hFin, mFin] = evento.horaFin.split(':').map(Number)
-          end = new Date(fecha)
-          end.setHours(hFin, mFin, 0, 0)
+        if (!evento.todoElDia && evento.horaInicio) {
+          const [hIni, mIni] = evento.horaInicio.split(':').map(Number)
+          start = new Date(fecha)
+          start.setHours(hIni, mIni, 0, 0)
+          if (evento.horaFin) {
+            const [hFin, mFin] = evento.horaFin.split(':').map(Number)
+            end = new Date(fecha)
+            end.setHours(hFin, mFin, 0, 0)
+          } else {
+            end = new Date(start.getTime() + 60 * 60 * 1000)
+          }
+          // Si la hora de fin cae ya en el día siguiente (o antes que la de
+          // inicio), lo dejamos dentro del mismo día para que en la vista de
+          // mes ocupe solo una celda, no dos.
+          if (end <= start || end.getDate() !== start.getDate()) {
+            end = endOfDay(start)
+          }
         } else {
-          end = new Date(start.getTime() + 60 * 60 * 1000)
+          // Un evento de todo el día debe ocupar solo la celda de ese día: si
+          // "end" cae en la medianoche del día siguiente, react-big-calendar lo
+          // interpreta como si abarcara también esa siguiente celda.
+          end = endOfDay(fecha)
         }
-        // Si la hora de fin cae ya en el día siguiente (o antes que la de
-        // inicio), lo dejamos dentro del mismo día para que en la vista de
-        // mes ocupe solo una celda, no dos.
-        if (end <= start || end.getDate() !== start.getDate()) {
-          end = endOfDay(start)
-        }
-      } else {
-        // Un evento de todo el día debe ocupar solo la celda de ese día: si
-        // "end" cae en la medianoche del día siguiente, react-big-calendar lo
-        // interpreta como si abarcara también esa siguiente celda.
-        end = endOfDay(fecha)
-      }
 
-      eventos.push({
-        id: `evento-${evento.id}`,
-        title: evento.todoElDia ? evento.titulo : `${evento.horaInicio} ${evento.titulo}`,
-        start,
-        end,
-        resource: { tipo: 'evento', eventoId: evento.id, color: evento.color },
+        eventos.push({
+          id: `evento-${evento.id}-${idx}`,
+          title: evento.todoElDia ? evento.titulo : `${evento.horaInicio} ${evento.titulo}`,
+          start,
+          end,
+          resource: { tipo: 'evento', eventoId: evento.id, color: evento.color },
+        })
       })
     })
 
@@ -152,7 +158,11 @@ export function CalendarioMensual() {
     if (event.resource?.tipo === 'evento') {
       const evento = (cuadernoActual?.eventos || []).find((e) => e.id === event.resource?.eventoId)
       if (evento) {
-        const lunes = startOfWeek(startOfDay(new Date(evento.fecha)), { weekStartsOn: 1 })
+        // Usar la fecha de la ocurrencia pulsada (no siempre la del evento
+        // "maestro"), para que "ver horario de esta semana" muestre la
+        // semana correcta en un evento recurrente clicado varias semanas
+        // después de su primera ocurrencia.
+        const lunes = startOfWeek(startOfDay(event.start), { weekStartsOn: 1 })
         setSelectorEvento({ evento, semana: { inicio: lunes, fin: addDays(lunes, 4) } })
       }
       return

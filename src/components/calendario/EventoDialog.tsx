@@ -3,7 +3,7 @@ import { format } from 'date-fns'
 import { useCuadernoStore } from '../../stores/useCuadernoStore'
 import { COLORES_EVENTOS, COLOR_EVENTO_POR_DEFECTO, RECORDATORIOS } from '../../types/constants'
 import { parseFechaInput } from '../../utils/fechas'
-import type { Evento, RecordatorioEvento } from '../../types'
+import type { Evento, RecordatorioEvento, RecurrenciaEvento } from '../../types'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
@@ -29,6 +29,8 @@ export function EventoDialog({ open, onOpenChange, evento, fechaInicial }: Event
   const [horaFin, setHoraFin] = useState('')
   const [color, setColor] = useState<string>(COLOR_EVENTO_POR_DEFECTO)
   const [recordatorio, setRecordatorio] = useState<RecordatorioEvento>('ninguno')
+  const [repetir, setRepetir] = useState<'nunca' | RecurrenciaEvento['frecuencia']>('nunca')
+  const [repetirHasta, setRepetirHasta] = useState('')
 
   useEffect(() => {
     if (!open) return
@@ -40,10 +42,23 @@ export function EventoDialog({ open, onOpenChange, evento, fechaInicial }: Event
     setHoraFin(evento?.horaFin || '')
     setColor(evento?.color || COLOR_EVENTO_POR_DEFECTO)
     setRecordatorio(evento?.recordatorio || 'ninguno')
+    setRepetir(evento?.recurrencia?.frecuencia || 'nunca')
+    setRepetirHasta(evento?.recurrencia ? format(new Date(evento.recurrencia.hasta), 'yyyy-MM-dd') : '')
   }, [open, evento, fechaInicial])
 
   const handleGuardar = () => {
     if (!titulo.trim() || !fecha) return
+
+    if (repetir !== 'nunca') {
+      if (!repetirHasta) {
+        alert('Elige hasta cuándo se repite el evento')
+        return
+      }
+      if (parseFechaInput(repetirHasta) < parseFechaInput(fecha)) {
+        alert('La fecha de "Repetir hasta" no puede ser anterior a la del evento')
+        return
+      }
+    }
 
     if (recordatorio !== 'ninguno' && typeof Notification !== 'undefined' && Notification.permission === 'default') {
       Notification.requestPermission()
@@ -58,6 +73,8 @@ export function EventoDialog({ open, onOpenChange, evento, fechaInicial }: Event
       horaFin: todoElDia ? undefined : horaFin || undefined,
       color,
       recordatorio,
+      recurrencia:
+        repetir !== 'nunca' ? { frecuencia: repetir, hasta: parseFechaInput(repetirHasta) } : undefined,
     }
 
     if (evento) {
@@ -70,7 +87,10 @@ export function EventoDialog({ open, onOpenChange, evento, fechaInicial }: Event
 
   const handleEliminar = () => {
     if (!evento) return
-    if (confirm('¿Eliminar este evento?')) {
+    const mensaje = evento.recurrencia
+      ? '¿Eliminar este evento? Se eliminarán todas sus repeticiones, no solo esta.'
+      : '¿Eliminar este evento?'
+    if (confirm(mensaje)) {
       deleteEvento(evento.id)
       onOpenChange(false)
     }
@@ -125,6 +145,33 @@ export function EventoDialog({ open, onOpenChange, evento, fechaInicial }: Event
               </>
             )}
           </div>
+
+          <div className={cn('grid gap-4', repetir === 'nunca' ? 'grid-cols-1' : 'grid-cols-2')}>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1">Repetir</label>
+              <select
+                value={repetir}
+                onChange={(e) => setRepetir(e.target.value as typeof repetir)}
+                className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="nunca">No se repite</option>
+                <option value="diaria">Cada día</option>
+                <option value="semanal">Cada semana</option>
+                <option value="mensual">Cada mes</option>
+              </select>
+            </div>
+            {repetir !== 'nunca' && (
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">Repetir hasta *</label>
+                <Input type="date" value={repetirHasta} onChange={(e) => setRepetirHasta(e.target.value)} />
+              </div>
+            )}
+          </div>
+          {repetir !== 'nunca' && (
+            <p className="text-xs text-muted-foreground -mt-2">
+              Editar o eliminar este evento afecta a todas sus repeticiones, no solo a una.
+            </p>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">Color</label>

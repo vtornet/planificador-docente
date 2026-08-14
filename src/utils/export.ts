@@ -64,6 +64,7 @@ function prepareCuadernoForExport(cuaderno: CuadernoDocente): any {
       ...e,
       fecha: dateToISO(e.fecha),
       creado: dateToISO(e.creado),
+      recurrencia: e.recurrencia ? { ...e.recurrencia, hasta: dateToISO(e.recurrencia.hasta) } : undefined,
     })),
     configuracion: {
       ...cuaderno.configuracion,
@@ -125,6 +126,7 @@ function restoreCuadernoFromImport(data: any): CuadernoDocente {
       ...e,
       fecha: isoToDate(e.fecha)!,
       creado: isoToDate(e.creado)!,
+      recurrencia: e.recurrencia ? { ...e.recurrencia, hasta: isoToDate(e.recurrencia.hasta)! } : undefined,
     })),
     configuracion: {
       ...data.configuracion,

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useCuadernoStore } from '../stores/useCuadernoStore'
 import { fechaHoraEvento, fechaRecordatorio } from '../utils/recordatorios'
+import { fechasOcurrencias } from '../utils/recurrencia'
 
 // Comprueba periódicamente si algún evento con recordatorio debe notificarse
 // ahora. Solo funciona mientras la app esté abierta (no hay servidor de push
@@ -19,25 +20,31 @@ export function useRecordatoriosEventos() {
       eventos.forEach((evento) => {
         if (evento.recordatorio === 'ninguno') return
 
-        // La clave incluye los campos relevantes: si el usuario edita la fecha,
-        // hora o el propio recordatorio, vuelve a ser elegible para notificar.
-        const clave = `${evento.id}:${new Date(evento.fecha).toISOString()}:${evento.horaInicio || ''}:${evento.recordatorio}`
-        if (yaNotificados.current.has(clave)) return
+        // Un evento recurrente puede tener muchas ocurrencias: cada una
+        // necesita su propio recordatorio y su propia clave de "ya avisado"
+        // (si solo se comprobara evento.fecha, únicamente la primera
+        // ocurrencia llegaría a notificarse).
+        fechasOcurrencias(evento).forEach((fechaOcurrencia) => {
+          // La clave incluye los campos relevantes: si el usuario edita la
+          // fecha, hora o el propio recordatorio, vuelve a ser elegible.
+          const clave = `${evento.id}:${fechaOcurrencia.toISOString()}:${evento.horaInicio || ''}:${evento.recordatorio}`
+          if (yaNotificados.current.has(clave)) return
 
-        const disparo = fechaRecordatorio(evento)
-        const inicio = fechaHoraEvento(evento)
-        if (!disparo) return
+          const disparo = fechaRecordatorio(evento, fechaOcurrencia)
+          const inicio = fechaHoraEvento(evento, fechaOcurrencia)
+          if (!disparo) return
 
-        if (ahora >= disparo && ahora < inicio) {
-          yaNotificados.current.add(clave)
-          if (Notification.permission === 'granted') {
-            new Notification(evento.titulo, {
-              body: evento.todoElDia ? 'Hoy · Todo el día' : `Hoy a las ${evento.horaInicio}`,
-              icon: '/icons/icon-192x192.png',
-              tag: evento.id,
-            })
+          if (ahora >= disparo && ahora < inicio) {
+            yaNotificados.current.add(clave)
+            if (Notification.permission === 'granted') {
+              new Notification(evento.titulo, {
+                body: evento.todoElDia ? 'Hoy · Todo el día' : `Hoy a las ${evento.horaInicio}`,
+                icon: '/icons/icon-192x192.png',
+                tag: evento.id,
+              })
+            }
           }
-        }
+        })
       })
     }
 
