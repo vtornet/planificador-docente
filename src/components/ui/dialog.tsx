@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { createPortal } from 'react-dom'
+import { X } from 'lucide-react'
 import { cn } from '../../utils/cn'
 
 interface DialogContextValue {
@@ -71,6 +72,14 @@ const DialogContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTML
             )}
             {...props}
           >
+            <button
+              type="button"
+              onClick={() => setIsOpen(false)}
+              aria-label="Cerrar"
+              className="absolute right-3 top-3 rounded-sm p-2 text-muted-foreground opacity-70 transition-opacity hover:opacity-100 hover:text-foreground hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <X className="h-4 w-4" />
+            </button>
             {children}
           </div>
         </div>
