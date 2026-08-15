@@ -3,7 +3,11 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { nodePolyfills } from 'vite-plugin-node-polyfills'
 
-const base = process.env.GITHUB_PAGES ? '/planificador-docente/' : '/'
+// Con dominio propio (docenza.app), GitHub Pages sirve la app en la raíz del
+// dominio, no en una subruta — a diferencia de antes (vtornet.github.io/
+// planificador-docente/), donde hacía falta el prefijo. Ya no depende de
+// ninguna variable de entorno de build.
+const base = '/'
 
 export default defineConfig({
   base,
