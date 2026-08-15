@@ -1,10 +1,13 @@
 import { useState, useMemo } from 'react'
 import { useCuadernoStore } from '../../stores/useCuadernoStore'
+import { useAuthStore } from '../../stores/useAuthStore'
+import { TRIAL_LIMIT_PER_MODULE } from '../../constants/trial'
 import { CATEGORIAS_NOTAS } from '../../types/constants'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Card, CardContent } from '../ui/card'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog'
+import { PaywallDialog } from '../paywall/PaywallDialog'
 import { NotaEditor } from './NotaEditor'
 import { Search, Grid, List, Trash2, Edit, FileText } from 'lucide-react'
 
@@ -12,7 +15,9 @@ const VISTAS = ['grid', 'list'] as const
 
 export function NotasList() {
   const { cuadernoActual, deleteNota } = useCuadernoStore()
+  const hasPaid = useAuthStore((s) => s.hasPaid)
   const [showCrear, setShowCrear] = useState(false)
+  const [showPaywall, setShowPaywall] = useState(false)
   const [editingNota, setEditingNota] = useState<string | null>(null)
   const [vista, setVista] = useState<(typeof VISTAS)[number]>('grid')
   const [filtroCategoria, setFiltroCategoria] = useState<string>('todos')
@@ -20,6 +25,11 @@ export function NotasList() {
   const [filtroTag, setFiltroTag] = useState<string | null>(null)
 
   const notas = cuadernoActual?.notas || []
+  const enTope = !hasPaid && notas.length >= TRIAL_LIMIT_PER_MODULE
+  const handleClickNueva = () => {
+    if (enTope) setShowPaywall(true)
+    else setShowCrear(true)
+  }
 
   // Obtener todos los tags únicos
   const todosTags = useMemo(() => {
@@ -107,10 +117,8 @@ export function NotasList() {
         <p className="text-muted-foreground mb-6">
           Crea tu primera nota para empezar a organizar tus ideas
         </p>
+        <Button onClick={handleClickNueva}>Crear nota</Button>
         <Dialog open={showCrear} onOpenChange={setShowCrear}>
-          <DialogTrigger asChild>
-            <Button>Crear nota</Button>
-          </DialogTrigger>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Nueva Nota</DialogTitle>
@@ -123,6 +131,7 @@ export function NotasList() {
             />
           </DialogContent>
         </Dialog>
+        <PaywallDialog open={showPaywall} onOpenChange={setShowPaywall} modulo="notas" />
       </div>
     )
   }
@@ -131,13 +140,11 @@ export function NotasList() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <h2 className="text-2xl font-bold text-foreground tracking-tight">Notas</h2>
+        <Button onClick={handleClickNueva}>+ Nueva Nota</Button>
         <Dialog open={showCrear || !!editingNota} onOpenChange={(open) => {
           setShowCrear(open)
           if (!open) setEditingNota(null)
         }}>
-          <DialogTrigger asChild>
-            <Button>+ Nueva Nota</Button>
-          </DialogTrigger>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingNota ? 'Editar Nota' : 'Nueva Nota'}</DialogTitle>
@@ -164,6 +171,7 @@ export function NotasList() {
             )}
           </DialogContent>
         </Dialog>
+        <PaywallDialog open={showPaywall} onOpenChange={setShowPaywall} modulo="notas" />
       </div>
 
       {/* Filtros y búsqueda */}

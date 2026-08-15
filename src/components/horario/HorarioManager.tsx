@@ -2,12 +2,15 @@ import { useMemo, useState } from 'react'
 import { format, startOfMonth, endOfMonth, eachWeekOfInterval, addDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { useCuadernoStore } from '../../stores/useCuadernoStore'
+import { useAuthStore } from '../../stores/useAuthStore'
+import { TRIAL_LIMIT_PER_MODULE } from '../../constants/trial'
 import { CONFIG_HORARIOS_PREDEFINIDOS, MESES } from '../../types/constants'
 import { Button } from '../ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog'
 import { Input } from '../ui/input'
 import { HorarioTable } from './HorarioTable'
+import { PaywallDialog } from '../paywall/PaywallDialog'
 import type { Horario, ConfigHorarios } from '../../types'
 import { Calendar, Trash2, Clock, Edit2, ChevronRight, ChevronLeft, Download } from 'lucide-react'
 import { horarioActivoEnRango, horarioAbarcaMasDeLaSemana, dividirHorarioParaSemana, formatRangoFechas } from '../../utils/horarios'
@@ -44,6 +47,7 @@ type Vista = 'meses' | 'semanas' | 'semana' | 'sinFecha'
 
 export function HorarioManager() {
   const { cuadernoActual, addHorario, updateHorario, deleteHorario } = useCuadernoStore()
+  const hasPaid = useAuthStore((s) => s.hasPaid)
   const horarios = cuadernoActual?.horarios || []
 
   // Navegación
@@ -53,6 +57,7 @@ export function HorarioManager() {
 
   // Diálogos crear/editar
   const [showCrear, setShowCrear] = useState(false)
+  const [showPaywall, setShowPaywall] = useState(false)
   const [showEditar, setShowEditar] = useState(false)
   const [horarioEditando, setHorarioEditando] = useState<Horario | null>(null)
   const [nuevoNombre, setNuevoNombre] = useState('')
@@ -91,6 +96,10 @@ export function HorarioManager() {
   }, [anioInicio, anioFin])
 
   const handleAbrirCrear = (rango?: { inicio: Date; fin: Date }) => {
+    if (!hasPaid && horarios.length >= TRIAL_LIMIT_PER_MODULE) {
+      setShowPaywall(true)
+      return
+    }
     setNuevoNombre('')
     setNuevoTipo('docente')
     setConfigPersonalizada(false)
@@ -367,6 +376,8 @@ export function HorarioManager() {
         </nav>
         <Button onClick={() => handleAbrirCrear()}>+ Nuevo horario</Button>
       </div>
+
+      <PaywallDialog open={showPaywall} onOpenChange={setShowPaywall} modulo="horarios" />
 
       <Dialog open={showCrear} onOpenChange={setShowCrear}>
         <DialogContent className="max-w-lg">

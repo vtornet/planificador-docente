@@ -5,6 +5,15 @@ import { parseFechaInput } from '../utils/fechas'
 class PlafinicadorDB extends Dexie {
   cuadernos!: Table<{
     id: string
+    // Id del usuario de Supabase dueño de este cuaderno. Opcional y sin
+    // índice propio (no hace falta reindexar Dexie por un campo que se
+    // filtra en memoria sobre, como mucho, unas pocas decenas de filas):
+    // separa los cuadernos de distintas cuentas que hayan iniciado sesión en
+    // el mismo navegador. Los cuadernos creados antes de esta migración no
+    // tienen este campo — se tratan como "sin dueño" y se le siguen
+    // mostrando a quien inicie sesión primero, hasta que los reclame
+    // explícitamente (ver Fase E, ClaimLocalDataDialog).
+    userId?: string
     metadata: {
       cursoEscolar: string
       centro: string

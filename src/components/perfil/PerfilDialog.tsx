@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useCuadernoStore } from '../../stores/useCuadernoStore'
+import { useAuthStore } from '../../stores/useAuthStore'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
-import { X } from 'lucide-react'
+import { X, LogOut } from 'lucide-react'
 import { COMUNIDADES_AUTONOMAS, festivoAutonomicoParaCursoEscolar } from '../../types/festivosOficiales'
 
 interface PerfilDialogProps {
@@ -15,6 +16,7 @@ const generateId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9
 
 export function PerfilDialog({ open, onOpenChange }: PerfilDialogProps) {
   const { cuadernoActual, updateMetadata, updateCuaderno } = useCuadernoStore()
+  const { user, signOut } = useAuthStore()
 
   const [centro, setCentro] = useState('')
   const [docente, setDocente] = useState('')
@@ -186,6 +188,22 @@ export function PerfilDialog({ open, onOpenChange }: PerfilDialogProps) {
                 ))}
               </div>
             )}
+          </div>
+
+          <div className="pt-4 border-t border-border flex items-center justify-between gap-3">
+            <div className="text-sm text-muted-foreground truncate">{user?.email}</div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                onOpenChange(false)
+                signOut()
+              }}
+            >
+              <LogOut className="w-4 h-4" />
+              Cerrar sesión
+            </Button>
           </div>
         </div>
         <DialogFooter>

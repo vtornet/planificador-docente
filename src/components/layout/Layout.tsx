@@ -6,6 +6,8 @@ import { useCuadernoStore } from '../../stores/useCuadernoStore'
 import { perfilCompleto } from '../../utils/perfil'
 import { CompletarPerfilScreen } from '../perfil/CompletarPerfilScreen'
 import { useRecordatoriosEventos } from '../../hooks/useRecordatoriosEventos'
+import { useCheckoutReturn } from '../../hooks/useCheckoutReturn'
+import { CheckoutStatusBanner } from './CheckoutStatusBanner'
 
 interface LayoutProps {
   children: React.ReactNode
@@ -14,6 +16,7 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const { cuadernoActual, isLoading, error } = useCuadernoStore()
   useRecordatoriosEventos()
+  const estadoCheckout = useCheckoutReturn()
 
   if (isLoading) {
     return (
@@ -51,6 +54,7 @@ export function Layout({ children }: LayoutProps) {
       <Sidebar />
       <div className="md:ml-64 pb-16 md:pb-0">
         <AppHeader />
+        <CheckoutStatusBanner estado={estadoCheckout} />
         <main className="p-4 md:p-6">{children}</main>
       </div>
       <BottomNav />

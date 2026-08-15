@@ -25,7 +25,7 @@ function isoToDate(iso: string | Date | undefined): Date | undefined {
  * Prepara un cuaderno para exportación JSON
  * Convierte Date objects a ISO strings
  */
-function prepareCuadernoForExport(cuaderno: CuadernoDocente): any {
+export function prepareCuadernoForExport(cuaderno: CuadernoDocente): any {
   return {
     ...cuaderno,
     metadata: {
@@ -33,7 +33,11 @@ function prepareCuadernoForExport(cuaderno: CuadernoDocente): any {
       creado: dateToISO(cuaderno.metadata.creado),
       actualizado: dateToISO(cuaderno.metadata.actualizado),
     },
-    horarios: cuaderno.horarios.map((h) => ({ ...h })),
+    horarios: cuaderno.horarios.map((h) => ({
+      ...h,
+      fechaInicio: dateToISO(h.fechaInicio),
+      fechaFin: dateToISO(h.fechaFin),
+    })),
     planificacion: {
       mensual: cuaderno.planificacion.mensual.map((m) => ({ ...m })),
       semanal: cuaderno.planificacion.semanal.map((s) => ({
@@ -87,7 +91,7 @@ function prepareCuadernoForExport(cuaderno: CuadernoDocente): any {
  * Restaura un cuaderno desde JSON importado
  * Convierte ISO strings a Date objects
  */
-function restoreCuadernoFromImport(data: any): CuadernoDocente {
+export function restoreCuadernoFromImport(data: any): CuadernoDocente {
   return {
     ...data,
     metadata: {
@@ -95,7 +99,11 @@ function restoreCuadernoFromImport(data: any): CuadernoDocente {
       creado: isoToDate(data.metadata.creado)!,
       actualizado: isoToDate(data.metadata.actualizado)!,
     },
-    horarios: data.horarios || [],
+    horarios: (data.horarios || []).map((h: any) => ({
+      ...h,
+      fechaInicio: isoToDate(h.fechaInicio),
+      fechaFin: isoToDate(h.fechaFin),
+    })),
     planificacion: {
       mensual: data.planificacion?.mensual || [],
       semanal: (data.planificacion?.semanal || []).map((s: any) => ({

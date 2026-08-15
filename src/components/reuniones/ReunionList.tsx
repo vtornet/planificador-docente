@@ -2,10 +2,13 @@ import { useState, useMemo } from 'react'
 import { format, isWithinInterval, startOfMonth, endOfMonth } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { useCuadernoStore } from '../../stores/useCuadernoStore'
+import { useAuthStore } from '../../stores/useAuthStore'
+import { TRIAL_LIMIT_PER_MODULE } from '../../constants/trial'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Card, CardContent } from '../ui/card'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog'
+import { PaywallDialog } from '../paywall/PaywallDialog'
 import { ReunionForm } from './ReunionForm'
 import { Users, Calendar, FileText, Trash2, Pencil } from 'lucide-react'
 
@@ -20,13 +23,20 @@ const TIPOS_FILTRO = [
 
 export function ReunionList() {
   const { cuadernoActual, deleteReunion } = useCuadernoStore()
+  const hasPaid = useAuthStore((s) => s.hasPaid)
   const [showCrear, setShowCrear] = useState(false)
+  const [showPaywall, setShowPaywall] = useState(false)
   const [editingReunion, setEditingReunion] = useState<string | null>(null)
   const [filtroTipo, setFiltroTipo] = useState<string>('todos')
   const [busqueda, setBusqueda] = useState('')
   const [filtroMes, setFiltroMes] = useState<string | null>(null)
 
   const reuniones = cuadernoActual?.reuniones || []
+  const enTope = !hasPaid && reuniones.length >= TRIAL_LIMIT_PER_MODULE
+  const handleClickNueva = () => {
+    if (enTope) setShowPaywall(true)
+    else setShowCrear(true)
+  }
 
   // Filtrar reuniones
   const reunionesFiltradas = useMemo(() => {
@@ -97,10 +107,8 @@ export function ReunionList() {
         <p className="text-muted-foreground mb-6">
           Crea tu primera reunión para empezar a documentar las actas
         </p>
+        <Button onClick={handleClickNueva}>Crear reunión</Button>
         <Dialog open={showCrear} onOpenChange={setShowCrear}>
-          <DialogTrigger asChild>
-            <Button>Crear reunión</Button>
-          </DialogTrigger>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Nueva Reunión</DialogTitle>
@@ -113,6 +121,7 @@ export function ReunionList() {
             />
           </DialogContent>
         </Dialog>
+        <PaywallDialog open={showPaywall} onOpenChange={setShowPaywall} modulo="reuniones" />
       </div>
     )
   }
@@ -121,13 +130,11 @@ export function ReunionList() {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <h2 className="text-2xl font-bold text-foreground tracking-tight">Reuniones</h2>
+        <Button onClick={handleClickNueva}>+ Nueva Reunión</Button>
         <Dialog open={showCrear || !!editingReunion} onOpenChange={(open) => {
           setShowCrear(open)
           if (!open) setEditingReunion(null)
         }}>
-          <DialogTrigger asChild>
-            <Button>+ Nueva Reunión</Button>
-          </DialogTrigger>
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingReunion ? 'Editar Reunión' : 'Nueva Reunión'}</DialogTitle>
@@ -154,6 +161,7 @@ export function ReunionList() {
             )}
           </DialogContent>
         </Dialog>
+        <PaywallDialog open={showPaywall} onOpenChange={setShowPaywall} modulo="reuniones" />
       </div>
 
       {/* Filtros */}

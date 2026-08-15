@@ -2,6 +2,8 @@ import { create } from 'zustand'
 import type { CuadernoDocente, CuadernoMetadata, Horario, Semana, Reunion, Nota, Evento } from '../types'
 import { parseFechaInput } from '../utils/fechas'
 import { festivosNacionalesParaCursoEscolar } from '../types/festivosOficiales'
+import { useAuthStore } from './useAuthStore'
+import { TRIAL_LIMIT_PER_MODULE } from '../constants/trial'
 
 interface CuadernoState {
   // Estado
@@ -53,6 +55,7 @@ async function saveCuadernoAsync(cuaderno: CuadernoDocente) {
     const { saveCuaderno } = await import('../db/db')
     await saveCuaderno({
       id: cuaderno.id,
+      userId: useAuthStore.getState().user?.id,
       metadata: {
         cursoEscolar: cuaderno.metadata.cursoEscolar,
         centro: cuaderno.metadata.centro,
@@ -65,6 +68,17 @@ async function saveCuadernoAsync(cuaderno: CuadernoDocente) {
   } catch (e) {
     console.error('Error guardando cuaderno:', e)
   }
+  sincronizarConSupabase(cuaderno)
+}
+
+// Segunda pata de la persistencia, siempre después de Dexie y siempre
+// fire-and-forget: Dexie es la fuente de verdad offline, Supabase es la
+// sincronización best-effort por encima. Import dinámico para no incluir
+// @supabase/supabase-js en el chunk principal fuera de cuando hace falta.
+function sincronizarConSupabase(cuaderno: CuadernoDocente) {
+  import('../sync/syncCuaderno')
+    .then(({ syncCuadernoToSupabase }) => syncCuadernoToSupabase(cuaderno))
+    .catch((e) => console.error('Error sincronizando con Supabase:', e))
 }
 
 export const useCuadernoStore = create<CuadernoState>((set, get) => ({
@@ -123,6 +137,7 @@ export const useCuadernoStore = create<CuadernoState>((set, get) => ({
       const { saveCuaderno } = await import('../db/db')
       await saveCuaderno({
         id: nuevoCuaderno.id,
+        userId: useAuthStore.getState().user?.id,
         metadata: {
           cursoEscolar: nuevoCuaderno.metadata.cursoEscolar,
           centro: nuevoCuaderno.metadata.centro,
@@ -133,6 +148,7 @@ export const useCuadernoStore = create<CuadernoState>((set, get) => ({
         data: nuevoCuaderno,
       })
       set({ cuadernoActual: nuevoCuaderno, isLoading: false })
+      sincronizarConSupabase(nuevoCuaderno)
     } catch (e) {
       set({ error: 'Error al crear cuaderno', isLoading: false })
     }
@@ -148,6 +164,7 @@ export const useCuadernoStore = create<CuadernoState>((set, get) => ({
       const { saveCuaderno } = await import('../db/db')
       await saveCuaderno({
         id: actualizado.id,
+        userId: useAuthStore.getState().user?.id,
         metadata: {
           cursoEscolar: actualizado.metadata.cursoEscolar,
           centro: actualizado.metadata.centro,
@@ -158,6 +175,7 @@ export const useCuadernoStore = create<CuadernoState>((set, get) => ({
         data: actualizado,
       })
       set({ cuadernoActual: actualizado })
+      sincronizarConSupabase(actualizado)
     } catch (e) {
       set({ error: 'Error al guardar cambios' })
     }
@@ -181,6 +199,12 @@ export const useCuadernoStore = create<CuadernoState>((set, get) => ({
     const { cuadernoActual } = get()
     if (!cuadernoActual) {
       console.error('No hay cuaderno actual')
+      return
+    }
+    // Respaldo del límite de prueba: la UI ya debería impedir llegar aquí
+    // (ver PaywallDialog), pero el trigger de Postgres es la aplicación real
+    // — esto solo evita una escritura local que luego el servidor rechazaría.
+    if (!useAuthStore.getState().hasPaid && cuadernoActual.horarios.length >= TRIAL_LIMIT_PER_MODULE) {
       return
     }
 
@@ -225,6 +249,12 @@ export const useCuadernoStore = create<CuadernoState>((set, get) => ({
   addSemana: (semana) => {
     const { cuadernoActual } = get()
     if (!cuadernoActual) return
+    if (
+      !useAuthStore.getState().hasPaid &&
+      cuadernoActual.planificacion.semanal.length >= TRIAL_LIMIT_PER_MODULE
+    ) {
+      return
+    }
 
     const actualizado = {
       ...cuadernoActual,
@@ -308,6 +338,9 @@ export const useCuadernoStore = create<CuadernoState>((set, get) => ({
   addReunion: (reunion) => {
     const { cuadernoActual } = get()
     if (!cuadernoActual) return
+    if (!useAuthStore.getState().hasPaid && cuadernoActual.reuniones.length >= TRIAL_LIMIT_PER_MODULE) {
+      return
+    }
 
     const nuevaReunion: Reunion = {
       ...reunion,
@@ -352,6 +385,9 @@ export const useCuadernoStore = create<CuadernoState>((set, get) => ({
   addNota: (nota) => {
     const { cuadernoActual } = get()
     if (!cuadernoActual) return
+    if (!useAuthStore.getState().hasPaid && cuadernoActual.notas.length >= TRIAL_LIMIT_PER_MODULE) {
+      return
+    }
 
     const ahora = new Date()
     const nuevaNota: Nota = {
@@ -398,6 +434,9 @@ export const useCuadernoStore = create<CuadernoState>((set, get) => ({
   addEvento: (evento) => {
     const { cuadernoActual } = get()
     if (!cuadernoActual) return
+    if (!useAuthStore.getState().hasPaid && (cuadernoActual.eventos || []).length >= TRIAL_LIMIT_PER_MODULE) {
+      return
+    }
 
     const nuevoEvento: Evento = { ...evento, id: generateId(), creado: new Date() }
     const actualizado = {

@@ -5,8 +5,11 @@ import { es } from 'date-fns/locale'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
 import './CalendarioMensual.css'
 import { useCuadernoStore } from '../../stores/useCuadernoStore'
+import { useAuthStore } from '../../stores/useAuthStore'
+import { TRIAL_LIMIT_PER_MODULE } from '../../constants/trial'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog'
 import { Button } from '../ui/button'
+import { PaywallDialog } from '../paywall/PaywallDialog'
 import { VistaSemanal } from './VistaSemanal'
 import { SemanaEditor } from './SemanaEditor'
 import { FestivosDialog } from './FestivosDialog'
@@ -45,6 +48,7 @@ interface CalendarioEvent {
 
 export function CalendarioMensual() {
   const { cuadernoActual } = useCuadernoStore()
+  const hasPaid = useAuthStore((s) => s.hasPaid)
   const [calendarView, setCalendarView] = useState<View>('month')
   const [date, setDate] = useState(new Date())
   const [selectedEvent, setSelectedEvent] = useState<CalendarioEvent | null>(null)
@@ -52,6 +56,7 @@ export function CalendarioMensual() {
   const [showFestivos, setShowFestivos] = useState(false)
   const [eventoEditando, setEventoEditando] = useState<Evento | null>(null)
   const [showNuevoEvento, setShowNuevoEvento] = useState(false)
+  const [paywallModulo, setPaywallModulo] = useState<'eventos' | 'semanas' | null>(null)
   const [selectorEvento, setSelectorEvento] = useState<{ evento: Evento; semana: { inicio: Date; fin: Date } } | null>(null)
   const [semanaHorario, setSemanaHorario] = useState<{ inicio: Date; fin: Date } | null>(null)
   const [showHorarioSemana, setShowHorarioSemana] = useState(false)
@@ -194,6 +199,8 @@ export function CalendarioMensual() {
         end: new Date(semanaExistente.fechaFin),
         resource: { tipo: 'semana', semanaId: semanaExistente.id },
       })
+    } else if (!hasPaid && (cuadernoActual?.planificacion?.semanal.length || 0) >= TRIAL_LIMIT_PER_MODULE) {
+      setPaywallModulo('semanas')
     } else {
       // Crear nueva semana
       setCreatingWeek(lunes)
@@ -251,7 +258,17 @@ export function CalendarioMensual() {
             <CalendarOff className="w-4 h-4" />
             Festivos y vacaciones
           </Button>
-          <Button size="sm" className="w-full sm:w-auto" onClick={() => setShowNuevoEvento(true)}>
+          <Button
+            size="sm"
+            className="w-full sm:w-auto"
+            onClick={() => {
+              if (!hasPaid && (cuadernoActual?.eventos || []).length >= TRIAL_LIMIT_PER_MODULE) {
+                setPaywallModulo('eventos')
+              } else {
+                setShowNuevoEvento(true)
+              }
+            }}
+          >
             <Plus className="w-4 h-4" />
             Nuevo evento
           </Button>
@@ -320,6 +337,12 @@ export function CalendarioMensual() {
       <VistaSemanalDialog />
 
       <FestivosDialog open={showFestivos} onOpenChange={setShowFestivos} />
+
+      <PaywallDialog
+        open={paywallModulo !== null}
+        onOpenChange={(open) => !open && setPaywallModulo(null)}
+        modulo={paywallModulo || ''}
+      />
 
       <EventoDialog
         open={showNuevoEvento}
