@@ -8,6 +8,7 @@ import { CompletarPerfilScreen } from '../perfil/CompletarPerfilScreen'
 import { useRecordatoriosEventos } from '../../hooks/useRecordatoriosEventos'
 import { useCheckoutReturn } from '../../hooks/useCheckoutReturn'
 import { CheckoutStatusBanner } from './CheckoutStatusBanner'
+import { AsistenteChat } from '../ai/AsistenteChat'
 
 interface LayoutProps {
   children: React.ReactNode
@@ -58,6 +59,7 @@ export function Layout({ children }: LayoutProps) {
         <main className="p-4 md:p-6">{children}</main>
       </div>
       <BottomNav />
+      <AsistenteChat />
     </div>
   )
 }

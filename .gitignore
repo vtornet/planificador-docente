@@ -22,6 +22,9 @@ dist-ssr
 /playwright-report/
 /blob-report/
 
+# Estado local de la CLI de Supabase (vinculación al proyecto, cachés)
+supabase/.temp/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

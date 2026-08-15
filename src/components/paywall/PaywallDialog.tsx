@@ -9,9 +9,13 @@ interface PaywallDialogProps {
   onOpenChange: (open: boolean) => void
   // Nombre del módulo en plural, para el mensaje (ej. "horarios", "notas").
   modulo: string
+  // 'limite' (por defecto): se ha alcanzado el tope de la prueba gratuita en
+  // ese módulo. 'exclusivo': la funcionalidad no está disponible en absoluto
+  // durante la prueba (ej. el asistente de IA), no es un tope que se supera.
+  modo?: 'limite' | 'exclusivo'
 }
 
-export function PaywallDialog({ open, onOpenChange, modulo }: PaywallDialogProps) {
+export function PaywallDialog({ open, onOpenChange, modulo, modo = 'limite' }: PaywallDialogProps) {
   const [cargando, setCargando] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -39,12 +43,16 @@ export function PaywallDialog({ open, onOpenChange, modulo }: PaywallDialogProps
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-primary" />
-            Has llegado al límite de la prueba
+            {modo === 'exclusivo' ? 'Funcionalidad de la suscripción' : 'Has llegado al límite de la prueba'}
           </DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground">
-          Durante la prueba gratuita puedes crear 1 elemento en {modulo}. Suscríbete para
-          desbloquear todos los módulos sin límite, con sincronización entre tus dispositivos.
+          {modo === 'exclusivo' ? (
+            <>{modulo} está disponible solo con la suscripción. Suscríbete para desbloquearlo, junto con todos los módulos sin límite y sincronización entre tus dispositivos.</>
+          ) : (
+            <>Durante la prueba gratuita puedes crear 1 elemento en {modulo}. Suscríbete para
+            desbloquear todos los módulos sin límite, con sincronización entre tus dispositivos.</>
+          )}
         </p>
         {error && (
           <p className="text-sm text-destructive" role="alert">
