@@ -42,9 +42,10 @@
 }
 
 .ProseMirror img {
-  max-width: 100%;
+  max-width: min(100%, 380px);
   height: auto;
   border-radius: 4px;
+  cursor: zoom-in;
 }
 
 .ProseMirror a {
