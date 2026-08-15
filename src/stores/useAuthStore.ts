@@ -7,12 +7,18 @@ interface AuthState {
   hasPaid: boolean
   isLoading: boolean
   error: string | null
+  // true mientras la sesión viene de un enlace de "restablecer contraseña"
+  // (evento PASSWORD_RECOVERY de Supabase) — con esto activo, App.tsx
+  // muestra ResetPasswordScreen en vez de la app normal, aunque `user` ya
+  // esté relleno (el enlace de recuperación sí crea una sesión temporal).
+  passwordRecovery: boolean
 
   initAuth: () => Promise<void>
   signUp: (email: string, password: string) => Promise<{ needsConfirmation: boolean }>
   signIn: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
   requestPasswordReset: (email: string) => Promise<void>
+  completarNuevaPassword: (password: string) => Promise<void>
   refreshProfile: () => Promise<void>
 }
 
@@ -21,6 +27,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   hasPaid: false,
   isLoading: true,
   error: null,
+  passwordRecovery: false,
 
   // Se llama una única vez al arrancar la app (App.tsx), antes de cualquier
   // otra cosa relacionada con el cuaderno — igual que initDB() para Dexie.
@@ -37,8 +44,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       // Mantiene el store al día si el token se refresca, o si la sesión
       // cambia en otra pestaña (login/logout compartido vía localStorage).
-      supabase.auth.onAuthStateChange((_event, session) => {
+      supabase.auth.onAuthStateChange((event, session) => {
         set({ user: session?.user ?? null })
+        if (event === 'PASSWORD_RECOVERY') {
+          set({ passwordRecovery: true })
+        }
         if (session?.user) {
           get().refreshProfile()
         } else {
@@ -89,6 +99,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ error: error.message })
       throw error
     }
+  },
+
+  // Se llama desde ResetPasswordScreen, con la sesión temporal que ya creó
+  // el enlace del email. Al terminar, se desactiva passwordRecovery — la
+  // sesión pasa a ser una sesión normal y App.tsx deja de mostrar esa
+  // pantalla.
+  completarNuevaPassword: async (password) => {
+    set({ error: null })
+    const { error } = await supabase.auth.updateUser({ password })
+    if (error) {
+      set({ error: error.message })
+      throw error
+    }
+    set({ passwordRecovery: false })
   },
 
   // Vuelve a leer el estado de pago — se llama tras iniciar sesión y tras

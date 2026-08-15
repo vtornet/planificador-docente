@@ -3,6 +3,7 @@ import { Layout } from './components/layout/Layout'
 import { useCuadernoStore } from './stores/useCuadernoStore'
 import { useAuthStore } from './stores/useAuthStore'
 import { AuthScreen } from './components/auth/AuthScreen'
+import { ResetPasswordScreen } from './components/auth/ResetPasswordScreen'
 import { ClaimLocalDataDialog } from './components/auth/ClaimLocalDataDialog'
 import { initDB, getCuadernos } from './db/db'
 import { Button } from './components/ui/button'
@@ -33,7 +34,7 @@ function VistaCargando() {
 
 function App() {
   const { cuadernoActual, view, createCuaderno, loadCuaderno } = useCuadernoStore()
-  const { user, isLoading: authIsLoading, initAuth } = useAuthStore()
+  const { user, isLoading: authIsLoading, initAuth, passwordRecovery } = useAuthStore()
   const [isLoading, setIsLoading] = useState(true)
   const [cuadernosExistentes, setCuadernosExistentes] = useState<any[]>([])
   // null = todavía no se ha comprobado; [] = comprobado, nada que reclamar (o
@@ -122,6 +123,14 @@ function App() {
         </div>
       </div>
     )
+  }
+
+  // El enlace de "restablecer contraseña" del email también crea una sesión
+  // temporal (user pasa a estar relleno), así que esta comprobación va antes
+  // de "!user" — si no, se saltaría directa a la app normal sin dar opción
+  // a poner la contraseña nueva.
+  if (passwordRecovery) {
+    return <ResetPasswordScreen />
   }
 
   if (!user) {

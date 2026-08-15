@@ -33,7 +33,7 @@ export function Sidebar({ className }: SidebarProps) {
           <div>
             <h2 className="text-lg font-bold tracking-tight">Docenza</h2>
             <p className="text-xs text-slate-400">
-              {cuadernoActual.metadata.cursoEscolar}
+              Planificador de {cuadernoActual.metadata.docente}
             </p>
           </div>
         </div>
@@ -71,7 +71,7 @@ export function Sidebar({ className }: SidebarProps) {
             {cuadernoActual.metadata.centro}
           </p>
           <p className="text-xs text-slate-500">
-            {cuadernoActual.metadata.docente}
+            {cuadernoActual.metadata.cursoEscolar}
           </p>
         </div>
       </div>

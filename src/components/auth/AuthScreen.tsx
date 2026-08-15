@@ -3,6 +3,7 @@ import { useAuthStore } from '../../stores/useAuthStore'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { cn } from '../../utils/cn'
+import { Eye, EyeOff } from 'lucide-react'
 import docenzaIcon from '../../assets/docenza-icon.png'
 
 type Modo = 'login' | 'registro'
@@ -13,6 +14,7 @@ export function AuthScreen() {
   const [modo, setModo] = useState<Modo>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [mostrarPassword, setMostrarPassword] = useState(false)
   const [enviando, setEnviando] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [mensaje, setMensaje] = useState<string | null>(null)
@@ -112,14 +114,25 @@ export function AuthScreen() {
           </div>
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">Contraseña</label>
-            <Input
-              type="password"
-              autoComplete={modo === 'login' ? 'current-password' : 'new-password'}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              minLength={6}
-            />
+            <div className="relative">
+              <Input
+                type={mostrarPassword ? 'text' : 'password'}
+                autoComplete={modo === 'login' ? 'current-password' : 'new-password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                minLength={6}
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setMostrarPassword((v) => !v)}
+                aria-label={mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                {mostrarPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
 
           {error && (

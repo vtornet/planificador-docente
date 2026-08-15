@@ -93,7 +93,15 @@ export function AsistenteChat() {
         <div className="fixed bottom-36 right-4 md:bottom-20 z-30 w-[calc(100vw-2rem)] max-w-sm h-[28rem] max-h-[70vh] bg-card border border-border rounded-2xl shadow-[var(--shadow-strong)] flex flex-col overflow-hidden animate-scale-in">
           <div className="px-4 py-3 border-b border-border flex items-center gap-2 bg-primary/5">
             <Sparkles className="w-4 h-4 text-primary flex-shrink-0" />
-            <span className="font-medium text-foreground text-sm">Asistente · {label}</span>
+            <span className="font-medium text-foreground text-sm flex-1">Asistente · {label}</span>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              aria-label="Cerrar asistente"
+              className="p-1 rounded-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
 
           <div ref={listaRef} className="flex-1 overflow-y-auto p-3 space-y-2">
