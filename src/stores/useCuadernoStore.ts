@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import type { CuadernoDocente, CuadernoMetadata, Horario, Semana, Reunion, Nota, Evento } from '../types'
 import { parseFechaInput } from '../utils/fechas'
-import { festivosNacionalesParaCursoEscolar } from '../types/festivosOficiales'
+import { festivosNacionalesParaCursoEscolar, festivoAutonomicoParaCursoEscolar } from '../types/festivosOficiales'
 import { useAuthStore } from './useAuthStore'
 import { TRIAL_LIMIT_PER_MODULE } from '../constants/trial'
 
@@ -126,7 +126,15 @@ export const useCuadernoStore = create<CuadernoState>((set, get) => ({
           cursoEscolarActual: metadata.cursoEscolar,
           fechaInicioCurso: parseFechaInput(`${metadata.cursoEscolar.split('-')[0]}-09-01`),
           fechaFinCurso: parseFechaInput(`${metadata.cursoEscolar.split('-')[1]}-06-30`),
-          festivos: festivosNacionalesParaCursoEscolar(metadata.cursoEscolar).map((f) => ({
+          festivos: [
+            ...festivosNacionalesParaCursoEscolar(metadata.cursoEscolar),
+            // Si se eligió comunidad autónoma al crear el cuaderno (antes solo
+            // se podía elegir después, desde Perfil), su festivo se carga ya
+            // desde el principio, igual que los nacionales.
+            ...(metadata.comunidadAutonoma
+              ? festivoAutonomicoParaCursoEscolar(metadata.comunidadAutonoma, metadata.cursoEscolar)
+              : []),
+          ].map((f) => ({
             ...f,
             id: generateId(),
             origen: 'automatico' as const,

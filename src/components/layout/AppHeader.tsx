@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { useCuadernoStore } from '../../stores/useCuadernoStore'
 import { cn } from '../../utils/cn'
-import { Calendar, CalendarDays, Users, FileText, Moon, Sun, UserCircle, Upload } from 'lucide-react'
+import { Calendar, CalendarDays, Users, FileText, Moon, Sun, UserCircle, Upload, HelpCircle } from 'lucide-react'
 import { ExportMenu } from '../export/ExportMenu'
 import { ImportDialog } from '../export/ImportDialog'
 import { Button } from '../ui/button'
 import { useTheme } from '../../hooks/useTheme'
 import { PerfilDialog } from '../perfil/PerfilDialog'
+import { AyudaDialog } from '../ayuda/AyudaDialog'
 
 interface AppHeaderProps {
   className?: string
@@ -24,6 +25,7 @@ export function AppHeader({ className }: AppHeaderProps) {
   const { theme, toggleTheme } = useTheme()
   const [showPerfil, setShowPerfil] = useState(false)
   const [showImportar, setShowImportar] = useState(false)
+  const [showAyuda, setShowAyuda] = useState(false)
 
   if (!cuadernoActual) return null
 
@@ -55,6 +57,15 @@ export function AppHeader({ className }: AppHeaderProps) {
           <Button
             variant="ghost"
             size="icon"
+            onClick={() => setShowAyuda(true)}
+            aria-label="Ayuda"
+            title="Ayuda"
+          >
+            <HelpCircle className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => setShowPerfil(true)}
             aria-label="Perfil"
             title="Perfil"
@@ -83,6 +94,7 @@ export function AppHeader({ className }: AppHeaderProps) {
       </div>
       <PerfilDialog open={showPerfil} onOpenChange={setShowPerfil} />
       <ImportDialog open={showImportar} onOpenChange={setShowImportar} />
+      <AyudaDialog open={showAyuda} onOpenChange={setShowAyuda} />
     </header>
   )
 }

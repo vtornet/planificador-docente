@@ -6,6 +6,8 @@ import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { X, LogOut } from 'lucide-react'
 import { COMUNIDADES_AUTONOMAS, festivoAutonomicoParaCursoEscolar } from '../../types/festivosOficiales'
+import { TerminosUso } from '../legal/TerminosUso'
+import { PoliticaPrivacidad } from '../legal/PoliticaPrivacidad'
 
 interface PerfilDialogProps {
   open: boolean
@@ -24,6 +26,8 @@ export function PerfilDialog({ open, onOpenChange }: PerfilDialogProps) {
   const [cursos, setCursos] = useState<string[]>([])
   const [nuevoCurso, setNuevoCurso] = useState('')
   const [comunidadAutonoma, setComunidadAutonoma] = useState('')
+  const [showTerminos, setShowTerminos] = useState(false)
+  const [showPrivacidad, setShowPrivacidad] = useState(false)
 
   useEffect(() => {
     if (open && cuadernoActual) {
@@ -205,6 +209,15 @@ export function PerfilDialog({ open, onOpenChange }: PerfilDialogProps) {
               Cerrar sesión
             </Button>
           </div>
+
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <button type="button" onClick={() => setShowTerminos(true)} className="underline hover:text-foreground">
+              Términos de Uso
+            </button>
+            <button type="button" onClick={() => setShowPrivacidad(true)} className="underline hover:text-foreground">
+              Política de Privacidad
+            </button>
+          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
@@ -213,6 +226,9 @@ export function PerfilDialog({ open, onOpenChange }: PerfilDialogProps) {
           <Button onClick={handleGuardar}>Guardar</Button>
         </DialogFooter>
       </DialogContent>
+
+      <TerminosUso open={showTerminos} onOpenChange={setShowTerminos} />
+      <PoliticaPrivacidad open={showPrivacidad} onOpenChange={setShowPrivacidad} />
     </Dialog>
   )
 }

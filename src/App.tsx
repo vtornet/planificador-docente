@@ -9,6 +9,7 @@ import { initDB, getCuadernos } from './db/db'
 import { Button } from './components/ui/button'
 import { Input } from './components/ui/input'
 import { useTheme } from './hooks/useTheme'
+import { COMUNIDADES_AUTONOMAS } from './types/festivosOficiales'
 import docenzaIcon from './assets/docenza-icon.png'
 
 function cursoEscolarPorDefecto(): string {
@@ -44,6 +45,7 @@ function App() {
   const [centro, setCentro] = useState('')
   const [docente, setDocente] = useState('')
   const [cursoEscolar, setCursoEscolar] = useState(cursoEscolarPorDefecto())
+  const [comunidadAutonoma, setComunidadAutonoma] = useState('')
   useTheme() // aplica el tema guardado también en las pantallas previas al Layout
 
   useEffect(() => {
@@ -210,6 +212,24 @@ function App() {
               onChange={(e) => setCursoEscolar(e.target.value)}
               placeholder="Curso escolar (ej: 2026-2027)"
             />
+            <div>
+              <select
+                value={comunidadAutonoma}
+                onChange={(e) => setComunidadAutonoma(e.target.value)}
+                className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="">Comunidad autónoma (opcional)</option>
+                {COMUNIDADES_AUTONOMAS.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nombre}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground mt-1">
+                Se usa para cargar automáticamente el festivo de tu comunidad en el calendario. Puedes
+                cambiarla más adelante desde Perfil.
+              </p>
+            </div>
             <Button
               size="lg"
               className="w-full"
@@ -219,6 +239,7 @@ function App() {
                   cursoEscolar: cursoEscolar.trim(),
                   centro: centro.trim(),
                   docente: docente.trim(),
+                  comunidadAutonoma: comunidadAutonoma || undefined,
                   creado: new Date(),
                   actualizado: new Date(),
                 })

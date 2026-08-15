@@ -4,6 +4,8 @@ import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { cn } from '../../utils/cn'
 import { Eye, EyeOff } from 'lucide-react'
+import { PoliticaPrivacidad } from '../legal/PoliticaPrivacidad'
+import { TerminosUso } from '../legal/TerminosUso'
 import docenzaIcon from '../../assets/docenza-icon.png'
 
 type Modo = 'login' | 'registro'
@@ -18,6 +20,8 @@ export function AuthScreen() {
   const [enviando, setEnviando] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [mensaje, setMensaje] = useState<string | null>(null)
+  const [showPrivacidad, setShowPrivacidad] = useState(false)
+  const [showTerminos, setShowTerminos] = useState(false)
 
   const cambiarModo = (nuevoModo: Modo) => {
     setModo(nuevoModo)
@@ -162,7 +166,22 @@ export function AuthScreen() {
             </button>
           )}
         </form>
+
+        <p className="text-xs text-muted-foreground mt-6">
+          Al continuar, aceptas los{' '}
+          <button type="button" onClick={() => setShowTerminos(true)} className="underline hover:text-foreground">
+            Términos de Uso
+          </button>{' '}
+          y la{' '}
+          <button type="button" onClick={() => setShowPrivacidad(true)} className="underline hover:text-foreground">
+            Política de Privacidad
+          </button>
+          .
+        </p>
       </div>
+
+      <TerminosUso open={showTerminos} onOpenChange={setShowTerminos} />
+      <PoliticaPrivacidad open={showPrivacidad} onOpenChange={setShowPrivacidad} />
     </div>
   )
 }
