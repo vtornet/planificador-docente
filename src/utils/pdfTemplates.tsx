@@ -98,6 +98,10 @@ const styles = StyleSheet.create({
     fontSize: 8,
     color: '#999',
   },
+  notaImagen: {
+    width: 300,
+    marginVertical: 8,
+  },
 })
 
 // ============== HORARIO PDF ==============
@@ -326,46 +330,95 @@ export function ReunionesPDFDocument({ reuniones, metadata }: ReunionesPDFProps)
 
 // ============== NOTAS PDF ==============
 
+interface NotaPDFProps {
+  nota: Nota
+  metadata: CuadernoDocente['metadata']
+}
+
 interface NotasPDFProps {
   notas: Nota[]
   metadata: CuadernoDocente['metadata']
 }
 
+// Divide el HTML de la nota en segmentos de texto e imágenes, para poder
+// insertar cada <img> (son data: URL en base64, ver TiptapEditor) como
+// <Image> de @react-pdf/renderer en su posición aproximada dentro del
+// contenido — antes se recortaba todo el HTML a texto plano con una simple
+// regex y las imágenes desaparecían del PDF sin dejar rastro.
+function ContenidoNota({ html }: { html: string }) {
+  const partes = html.split(/(<img[^>]*>)/gi)
+  return (
+    <>
+      {partes.map((parte, idx) => {
+        const imagen = parte.match(/<img[^>]*\ssrc=["']([^"']+)["']/i)
+        if (imagen) {
+          return <Image key={idx} src={imagen[1]} style={styles.notaImagen} />
+        }
+        const texto = parte.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+        if (!texto) return null
+        return (
+          <Text key={idx} style={styles.text}>
+            {texto}
+          </Text>
+        )
+      })}
+    </>
+  )
+}
+
+// Contenido de una página de nota, sin <Document> propio, para poder
+// reutilizarlo suelto (NotaPDFDocument/NotasPDFDocument) o dentro de
+// CuadernoCompletoPDF sin anidar <Document> dentro de <Document> (mismo
+// patrón ya aplicado en HorarioPDFPage/ReunionPDFPage).
+export function NotaPDFPage({ nota, metadata }: NotaPDFProps) {
+  return (
+    <Page size="A4" style={styles.page}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.title}>{nota.titulo}</Text>
+        <Text style={styles.subtitle}>
+          {metadata.centro} · {metadata.cursoEscolar}
+        </Text>
+        <Text style={styles.subtitle}>
+          Categoría: {nota.categoria}
+        </Text>
+      </View>
+
+      {/* Contenido */}
+      <View style={styles.section}>
+        <ContenidoNota html={nota.contenido} />
+      </View>
+
+      {/* Tags */}
+      {nota.tags && nota.tags.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.label}>Etiquetas:</Text>
+          <Text>{nota.tags.join(', ')}</Text>
+        </View>
+      )}
+
+      {/* Footer */}
+      <Text style={styles.footer}>
+        Actualizada el {new Date(nota.actualizado).toLocaleDateString('es-ES')}
+      </Text>
+    </Page>
+  )
+}
+
+export function NotaPDFDocument({ nota, metadata }: NotaPDFProps) {
+  return (
+    <Document>
+      <NotaPDFPage nota={nota} metadata={metadata} />
+    </Document>
+  )
+}
+
+// Varias notas combinadas en un único PDF, una por página.
 export function NotasPDFDocument({ notas, metadata }: NotasPDFProps) {
   return (
     <Document>
       {notas.map((nota) => (
-        <Page key={nota.id} size="A4" style={styles.page}>
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.title}>{nota.titulo}</Text>
-            <Text style={styles.subtitle}>
-              {metadata.centro} · {metadata.cursoEscolar}
-            </Text>
-            <Text style={styles.subtitle}>
-              Categoría: {nota.categoria}
-            </Text>
-          </View>
-
-          {/* Contenido */}
-          <View style={styles.section}>
-            {/* Nota: El contenido HTML se simplifica a texto plano */}
-            <Text>{nota.contenido.replace(/<[^>]+>/g, '')}</Text>
-          </View>
-
-          {/* Tags */}
-          {nota.tags && nota.tags.length > 0 && (
-            <View style={styles.section}>
-              <Text style={styles.label}>Etiquetas:</Text>
-              <Text>{nota.tags.join(', ')}</Text>
-            </View>
-          )}
-
-          {/* Footer */}
-          <Text style={styles.footer}>
-            Actualizada el {new Date(nota.actualizado).toLocaleDateString('es-ES')}
-          </Text>
-        </Page>
+        <NotaPDFPage key={nota.id} nota={nota} metadata={metadata} />
       ))}
     </Document>
   )
@@ -562,9 +615,9 @@ export function CuadernoCompletoPDF({ cuaderno }: CuadernoCompletoPDFProps) {
       ))}
 
       {/* Notas */}
-      {cuaderno.notas.length > 0 && (
-        <NotasPDFDocument notas={cuaderno.notas} metadata={cuaderno.metadata} />
-      )}
+      {cuaderno.notas.map((nota) => (
+        <NotaPDFPage key={nota.id} nota={nota} metadata={cuaderno.metadata} />
+      ))}
     </Document>
   )
 }

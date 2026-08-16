@@ -8,6 +8,7 @@ import {
   HorariosPDFDocument,
   ReunionPDFDocument,
   ReunionesPDFDocument,
+  NotaPDFDocument,
   NotasPDFDocument,
   SemanaPDFDocument,
   CuadernoCompletoPDF,
@@ -57,6 +58,21 @@ export async function exportReunionToPDF(reunion: Reunion, metadata: CuadernoDoc
   } catch (error) {
     console.error('Error generating reunion PDF:', error)
     throw new Error('Error al generar el PDF de la reunión')
+  }
+}
+
+/**
+ * Genera y descarga un PDF de una única nota
+ */
+export async function exportNotaToPDF(nota: Nota, metadata: CuadernoDocente['metadata']): Promise<void> {
+  try {
+    const doc = <NotaPDFDocument nota={nota} metadata={metadata} />
+    const pdfBlob = await pdf(doc).toBlob()
+    const filename = `nota-${nota.titulo.replace(/\s+/g, '-')}.pdf`
+    saveAs(pdfBlob, filename)
+  } catch (error) {
+    console.error('Error generating nota PDF:', error)
+    throw new Error('Error al generar el PDF de la nota')
   }
 }
 

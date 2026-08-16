@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog'
 import { PaywallDialog } from '../paywall/PaywallDialog'
 import { NotaEditor } from './NotaEditor'
 import { NotaViewer } from './NotaViewer'
-import { Search, Grid, List, Trash2, Edit, FileText } from 'lucide-react'
+import { Search, Grid, List, Trash2, Edit, FileText, Download } from 'lucide-react'
 
 const VISTAS = ['grid', 'list'] as const
 
@@ -74,6 +74,17 @@ export function NotasList() {
   const handleEliminar = (id: string, titulo: string) => {
     if (confirm(`¿Eliminar la nota "${titulo}"?`)) {
       deleteNota(id)
+    }
+  }
+
+  const handleExportarPDF = async (nota: (typeof notas)[number]) => {
+    if (!cuadernoActual) return
+    try {
+      const { exportNotaToPDF } = await import('../../utils/pdf.tsx')
+      await exportNotaToPDF(nota, cuadernoActual.metadata)
+    } catch (error) {
+      console.error('Error exportando nota a PDF:', error)
+      alert('Error al exportar la nota a PDF. Inténtalo de nuevo.')
     }
   }
 
@@ -286,17 +297,31 @@ export function NotasList() {
             >
               <CardContent className="pt-6">
                 <div className="space-y-3">
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-start justify-between gap-2">
                     <h3 className="font-semibold text-foreground line-clamp-1">
                       {nota.titulo}
                     </h3>
-                    <span
-                      className={`px-2 py-1 text-xs font-medium rounded ${getCategoriaColor(
-                        nota.categoria
-                      )}`}
-                    >
-                      {getCategoriaEmoji(nota.categoria)}
-                    </span>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <span
+                        className={`px-2 py-1 text-xs font-medium rounded ${getCategoriaColor(
+                          nota.categoria
+                        )}`}
+                      >
+                        {getCategoriaEmoji(nota.categoria)}
+                      </span>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="w-7 h-7 text-muted-foreground hover:text-foreground"
+                        title="Descargar esta nota en PDF"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleExportarPDF(nota)
+                        }}
+                      >
+                        <Download size={14} />
+                      </Button>
+                    </div>
                   </div>
 
                   <p className="text-sm text-muted-foreground line-clamp-3">
@@ -386,6 +411,17 @@ export function NotasList() {
                   </div>
 
                   <div className="flex flex-col gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      title="Descargar esta nota en PDF"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleExportarPDF(nota)
+                      }}
+                    >
+                      <Download size={16} />
+                    </Button>
                     <Button
                       size="sm"
                       variant="outline"

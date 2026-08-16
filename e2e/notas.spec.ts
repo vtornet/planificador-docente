@@ -44,4 +44,31 @@ test.describe('Notas', () => {
     await expect(page.getByRole('heading', { name: 'Editar Nota' })).toBeVisible()
     await expect(page.locator('.ProseMirror')).toHaveText('Contenido de la nota.')
   })
+
+  test('el icono de descarga de una nota exporta solo esa nota a PDF, imagen incluida', async ({ page, testUser }) => {
+    await crearCuaderno(page, testUser)
+    await irASeccion(page, 'Notas')
+
+    await page.getByRole('button', { name: 'Crear nota' }).click()
+    const titulo = 'Nota con imagen para exportar E2E'
+    await page.getByPlaceholder('Ej: Proyecto de fin de curso').fill(titulo)
+    await page.locator('.ProseMirror').click()
+    await page.keyboard.type('Texto de la nota.')
+
+    const [fileChooser] = await Promise.all([
+      page.waitForEvent('filechooser'),
+      page.getByTitle('Subir imagen desde el dispositivo').click(),
+    ])
+    await fileChooser.setFiles('public/icons/icon-192x192.png')
+    await expect(page.locator('.ProseMirror img')).toBeVisible()
+
+    await page.getByRole('button', { name: 'Guardar' }).click()
+    await expect(page.getByText(titulo)).toBeVisible()
+
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.getByTitle('Descargar esta nota en PDF').first().click(),
+    ])
+    expect(download.suggestedFilename()).toMatch(/^nota-.*\.pdf$/)
+  })
 })
