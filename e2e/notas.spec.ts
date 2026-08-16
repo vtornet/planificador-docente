@@ -71,4 +71,32 @@ test.describe('Notas', () => {
     ])
     expect(download.suggestedFilename()).toMatch(/^nota-.*\.pdf$/)
   })
+
+  test('una imagen subida a una nota se ve en el modo Ver, no solo el texto', async ({ page, testUser }) => {
+    await crearCuaderno(page, testUser)
+    await irASeccion(page, 'Notas')
+
+    await page.getByRole('button', { name: 'Crear nota' }).click()
+    const titulo = 'Nota con imagen para ver E2E'
+    await page.getByPlaceholder('Ej: Proyecto de fin de curso').fill(titulo)
+    await page.locator('.ProseMirror').click()
+    await page.keyboard.type('Texto antes de la imagen.')
+
+    const [fileChooser] = await Promise.all([
+      page.waitForEvent('filechooser'),
+      page.getByTitle('Subir imagen desde el dispositivo').click(),
+    ])
+    await fileChooser.setFiles('public/icons/icon-192x192.png')
+    await expect(page.locator('.ProseMirror img')).toBeVisible()
+
+    await page.getByRole('button', { name: 'Guardar' }).click()
+    await expect(page.getByText(titulo)).toBeVisible()
+
+    // Las imágenes se guardan como data: URL — el parser de HTML de Tiptap las
+    // descarta salvo que el nodo Image tenga allowBase64 activado (ver
+    // TiptapEditor.tsx). Sin ese ajuste, el modo Ver mostraba el texto pero no
+    // la imagen porque el contenido se reconstruye desde el HTML guardado.
+    await page.getByText(titulo).click()
+    await expect(page.locator('.ProseMirror img')).toBeVisible()
+  })
 })

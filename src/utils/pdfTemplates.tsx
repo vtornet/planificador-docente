@@ -136,7 +136,7 @@ export function HorarioPDFPage({ horario, metadata }: HorarioPDFProps) {
       <View style={styles.header}>
         <Text style={styles.title}>{horario.nombre}</Text>
         <Text style={styles.subtitle}>
-          {metadata.centro} · {metadata.cursoEscolar}
+          {metadata.centro} · {metadata.docente} · {metadata.cursoEscolar}
         </Text>
         <Text style={styles.subtitle}>
           {horario.tipo === 'docente' ? 'Horario Docente' : 'Horario Alumnado'}
@@ -235,7 +235,7 @@ export function ReunionPDFPage({ reunion, metadata }: ReunionPDFProps) {
       <View style={styles.header}>
         <Text style={styles.title}>{reunion.titulo}</Text>
         <Text style={styles.subtitle}>
-          {metadata.centro} · {metadata.cursoEscolar}
+          {metadata.centro} · {metadata.docente} · {metadata.cursoEscolar}
         </Text>
         <Text style={styles.subtitle}>
           {new Date(reunion.fecha).toLocaleDateString('es-ES', {
@@ -377,7 +377,7 @@ export function NotaPDFPage({ nota, metadata }: NotaPDFProps) {
       <View style={styles.header}>
         <Text style={styles.title}>{nota.titulo}</Text>
         <Text style={styles.subtitle}>
-          {metadata.centro} · {metadata.cursoEscolar}
+          {metadata.centro} · {metadata.docente} · {metadata.cursoEscolar}
         </Text>
         <Text style={styles.subtitle}>
           Categoría: {nota.categoria}
@@ -441,7 +441,7 @@ export function SemanaPDFDocument({ semana, metadata }: SemanaPDFProps) {
         <View style={styles.header}>
           <Text style={styles.title}>Semana {semana.numeroSemana}</Text>
           <Text style={styles.subtitle}>
-            {metadata.centro} · {metadata.cursoEscolar}
+            {metadata.centro} · {metadata.docente} · {metadata.cursoEscolar}
           </Text>
           <Text style={styles.subtitle}>
             {new Date(semana.fechaInicio).toLocaleDateString('es-ES')} - {' '}
@@ -517,7 +517,7 @@ export function AgendaPDFDocument({ cuaderno }: AgendaPDFProps) {
         <View style={styles.header}>
           <Text style={styles.title}>Agenda</Text>
           <Text style={styles.subtitle}>
-            {metadata.centro} · {metadata.cursoEscolar}
+            {metadata.centro} · {metadata.docente} · {metadata.cursoEscolar}
           </Text>
         </View>
 

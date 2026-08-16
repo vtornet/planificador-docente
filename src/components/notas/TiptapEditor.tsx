@@ -83,7 +83,13 @@ export function TiptapEditor({
       Link.configure({
         openOnClick: false,
       }),
-      Image,
+      // allowBase64: las imágenes subidas desde el dispositivo se guardan como
+      // data: URL (ver archivoAImagenComprimida más abajo) — sin esto, el
+      // parser de HTML de Tiptap las descarta en silencio al reconstruir el
+      // documento desde `content` (afecta a leer una nota guardada, tanto en
+      // modo Ver como al reabrirla para Editar; insertarla en caliente vía el
+      // botón de subir sí funcionaba, porque eso no pasa por el parser).
+      Image.configure({ allowBase64: true }),
       Table.configure({
         resizable: true,
       }),
