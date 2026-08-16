@@ -1,8 +1,9 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures'
+import { iniciarSesion } from './helpers'
 
 test.describe('Onboarding', () => {
-  test('el botón de crear cuaderno está deshabilitado hasta rellenar los 3 campos', async ({ page }) => {
-    await page.goto('/')
+  test('el botón de crear cuaderno está deshabilitado hasta rellenar los 3 campos', async ({ page, testUser }) => {
+    await iniciarSesion(page, testUser)
 
     // El campo "Curso escolar" viene precargado con una sugerencia por
     // defecto, así que el botón se habilita en cuanto Centro y Docente
@@ -24,8 +25,8 @@ test.describe('Onboarding', () => {
     await expect(botonCrear).toBeEnabled()
   })
 
-  test('crear un cuaderno lleva directo a la vista de Horarios', async ({ page }) => {
-    await page.goto('/')
+  test('crear un cuaderno lleva directo a la vista de Horarios', async ({ page, testUser }) => {
+    await iniciarSesion(page, testUser)
 
     await page.getByPlaceholder('Centro (ej: IES Mi Instituto)').fill('IES Prueba E2E')
     await page.getByPlaceholder('Tu nombre').fill('Docente de Prueba')

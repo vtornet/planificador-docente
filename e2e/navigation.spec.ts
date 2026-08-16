@@ -1,9 +1,9 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures'
 import { crearCuaderno } from './helpers'
 
 test.describe('Navegación (desktop, Sidebar)', () => {
-  test('las 4 secciones se cargan y muestran el título correcto en el header', async ({ page }) => {
-    await crearCuaderno(page)
+  test('las 4 secciones se cargan y muestran el título correcto en el header', async ({ page, testUser }) => {
+    await crearCuaderno(page, testUser)
 
     const secciones: { boton: string; titulo: string }[] = [
       { boton: 'Calendario', titulo: 'Planificación' },
@@ -24,8 +24,8 @@ test.describe('Navegación (desktop, Sidebar)', () => {
 test.describe('Navegación (móvil, BottomNav)', () => {
   test.use({ viewport: { width: 390, height: 844 } })
 
-  test('las 4 secciones son accesibles desde la barra inferior', async ({ page }) => {
-    await crearCuaderno(page)
+  test('las 4 secciones son accesibles desde la barra inferior', async ({ page, testUser }) => {
+    await crearCuaderno(page, testUser)
 
     const bottomNav = page.locator('nav').filter({ hasText: 'Planificar' })
 

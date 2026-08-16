@@ -86,9 +86,17 @@ function App() {
 
         // Conciliar con Supabase antes de decidir qué cuaderno mostrar, para
         // que un dispositivo nuevo (o uno que estuvo offline) ya tenga los
-        // datos del otro dispositivo disponibles localmente.
-        const { reconcileCuadernosConSupabase } = await import('./sync/syncCuaderno')
-        await reconcileCuadernosConSupabase()
+        // datos del otro dispositivo disponibles localmente. En su propio
+        // try/catch a propósito: si falla (típicamente sin conexión), no debe
+        // impedir cargar los cuadernos ya guardados en Dexie más abajo — igual
+        // que el resto de sync en esta app, es una mejora "mejor esfuerzo",
+        // nunca un requisito para poder usar la app offline.
+        try {
+          const { reconcileCuadernosConSupabase } = await import('./sync/syncCuaderno')
+          await reconcileCuadernosConSupabase()
+        } catch (error) {
+          console.error('No se pudo conciliar con Supabase (¿sin conexión?):', error)
+        }
 
         // Cargar cuadernos existentes — solo los del usuario que ha iniciado
         // sesión. Si dos cuentas distintas han usado este mismo navegador,

@@ -1,9 +1,9 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures'
 import { crearCuaderno, irASeccion } from './helpers'
 
 test.describe('Notas', () => {
-  test('crear una nota con el editor de texto rico y verla en la lista', async ({ page }) => {
-    await crearCuaderno(page)
+  test('crear una nota con el editor de texto rico y verla en la lista', async ({ page, testUser }) => {
+    await crearCuaderno(page, testUser)
     await irASeccion(page, 'Notas')
 
     await page.getByRole('button', { name: 'Crear nota' }).click()

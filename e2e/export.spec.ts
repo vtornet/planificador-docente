@@ -1,9 +1,9 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures'
 import { crearCuaderno, irASeccion } from './helpers'
 
 test.describe('Exportación', () => {
-  test('la opción "Agenda" está deshabilitada sin eventos y exporta un PDF al crear uno', async ({ page }) => {
-    await crearCuaderno(page)
+  test('la opción "Agenda" está deshabilitada sin eventos y exporta un PDF al crear uno', async ({ page, testUser }) => {
+    await crearCuaderno(page, testUser)
 
     await page.getByRole('button', { name: 'Exportar' }).click()
     await expect(page.getByRole('menuitem', { name: 'Agenda (eventos)' })).toBeDisabled()
@@ -23,8 +23,8 @@ test.describe('Exportación', () => {
     expect(download.suggestedFilename()).toMatch(/^agenda-.*\.pdf$/)
   })
 
-  test('exportar el PDF completo del cuaderno descarga un archivo', async ({ page }) => {
-    await crearCuaderno(page)
+  test('exportar el PDF completo del cuaderno descarga un archivo', async ({ page, testUser }) => {
+    await crearCuaderno(page, testUser)
 
     await page.getByRole('button', { name: 'Exportar' }).click()
     const [download] = await Promise.all([
@@ -35,8 +35,8 @@ test.describe('Exportación', () => {
     expect(download.suggestedFilename()).toMatch(/^docenza-completo-.*\.pdf$/)
   })
 
-  test('exportar el backup en JSON descarga un archivo', async ({ page }) => {
-    await crearCuaderno(page)
+  test('exportar el backup en JSON descarga un archivo', async ({ page, testUser }) => {
+    await crearCuaderno(page, testUser)
 
     await page.getByRole('button', { name: 'Exportar' }).click()
     const [download] = await Promise.all([

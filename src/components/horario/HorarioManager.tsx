@@ -60,6 +60,7 @@ export function HorarioManager() {
   const [showPaywall, setShowPaywall] = useState(false)
   const [showEditar, setShowEditar] = useState(false)
   const [horarioEditando, setHorarioEditando] = useState<Horario | null>(null)
+  const [horarioEliminando, setHorarioEliminando] = useState<Horario | null>(null)
   const [nuevoNombre, setNuevoNombre] = useState('')
   const [nuevoTipo, setNuevoTipo] = useState<'docente' | 'alumnado'>('docente')
   const [fechaInicio, setFechaInicio] = useState('')
@@ -156,10 +157,36 @@ export function HorarioManager() {
     }
   }
 
-  const handleDelete = (id: string) => {
-    if (confirm('¿Eliminar este horario?')) {
-      deleteHorario(id)
+  // Si el horario abarca más semanas que la que se está viendo, pregunta el
+  // alcance (mismo criterio y mismo diálogo que "Guardar cambios", ver
+  // HorarioTable.tsx) en vez de borrar directamente todo el periodo.
+  const handleDelete = (horario: Horario) => {
+    if (vista === 'semana' && semanaSeleccionada && horarioAbarcaMasDeLaSemana(horario, semanaSeleccionada)) {
+      setHorarioEliminando(horario)
+      return
     }
+    if (confirm('¿Eliminar este horario?')) {
+      deleteHorario(horario.id)
+    }
+  }
+
+  // "Todo el periodo": borra el horario entero, como siempre. "Solo esta
+  // semana": reutiliza la misma división que separa una semana en una copia
+  // independiente (dividirHorarioParaSemana), pero descarta esa copia en vez
+  // de guardarla — el original queda recortado para excluir la semana, y el
+  // resto del periodo (antes y/o después) sigue intacto.
+  const confirmarEliminar = (alcance: 'periodo' | 'semana') => {
+    if (!horarioEliminando) return
+
+    if (alcance === 'periodo' || !semanaSeleccionada) {
+      deleteHorario(horarioEliminando.id)
+    } else {
+      const { actualizacionOriginal, nuevos } = dividirHorarioParaSemana(horarioEliminando, semanaSeleccionada)
+      updateHorario(horarioEliminando.id, actualizacionOriginal)
+      nuevos.slice(1).forEach((nuevo) => addHorario(nuevo))
+    }
+
+    setHorarioEliminando(null)
   }
 
   const handleExportarPDF = async (horario: Horario) => {
@@ -313,7 +340,7 @@ export function HorarioManager() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => handleDelete(horario.id)}
+                onClick={() => handleDelete(horario)}
                 className="text-destructive hover:text-destructive hover:bg-destructive/10"
                 title="Eliminar horario"
               >
@@ -452,6 +479,34 @@ export function HorarioManager() {
           />
           <DialogFooter>
             <Button onClick={handleGuardarEdicion}>Guardar cambios</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={horarioEliminando !== null} onOpenChange={(open) => !open && setHorarioEliminando(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>¿Eliminar todo el periodo o solo esta semana?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Este horario abarca varias semanas. Elige si se elimina por completo o solo la semana
+            que estás viendo ahora mismo (el resto del periodo seguirá intacto).
+          </p>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              className="w-full sm:w-auto"
+              onClick={() => confirmarEliminar('semana')}
+            >
+              Solo esta semana
+            </Button>
+            <Button
+              variant="destructive"
+              className="w-full sm:w-auto"
+              onClick={() => confirmarEliminar('periodo')}
+            >
+              Todo el periodo
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

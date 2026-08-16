@@ -1,9 +1,9 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures'
 import { crearCuaderno, irASeccion } from './helpers'
 
 test.describe('Reuniones', () => {
-  test('crear una reunión y verla en la lista', async ({ page }) => {
-    await crearCuaderno(page)
+  test('crear una reunión y verla en la lista', async ({ page, testUser }) => {
+    await crearCuaderno(page, testUser)
     await irASeccion(page, 'Reuniones')
 
     await page.getByRole('button', { name: 'Crear reunión' }).click()

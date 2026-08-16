@@ -1,9 +1,9 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures'
 import { crearCuaderno, irASeccion } from './helpers'
 
 test.describe('Calendario', () => {
-  test('crear un evento y verlo en el calendario del mes actual', async ({ page }) => {
-    await crearCuaderno(page)
+  test('crear un evento y verlo en el calendario del mes actual', async ({ page, testUser }) => {
+    await crearCuaderno(page, testUser)
     await irASeccion(page, 'Calendario')
     await expect(page.getByRole('heading', { name: 'Calendario Escolar' })).toBeVisible()
 
@@ -18,8 +18,8 @@ test.describe('Calendario', () => {
     await expect(page.getByText(titulo)).toBeVisible()
   })
 
-  test('un evento semanal recurrente se expande en varias ocurrencias', async ({ page }) => {
-    await crearCuaderno(page)
+  test('un evento semanal recurrente se expande en varias ocurrencias', async ({ page, testUser }) => {
+    await crearCuaderno(page, testUser)
     await irASeccion(page, 'Calendario')
 
     await page.getByRole('button', { name: 'Nuevo evento' }).click()

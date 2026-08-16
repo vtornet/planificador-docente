@@ -1,18 +1,40 @@
 import type { Page } from '@playwright/test'
 import { expect } from '@playwright/test'
+import type { TestUser } from './testUser'
 
 /**
- * Completa el onboarding (crear cuaderno nuevo) y deja la app en la vista de
- * Horarios. Cada test de Playwright arranca con un browser context nuevo, así
- * que IndexedDB está siempre vacía al empezar — no hace falta limpiar nada.
+ * Inicia sesión con una usuaria de prueba (ver e2e/fixtures.ts) y espera a
+ * que la app pase la puerta de login. No asume qué pantalla viene después
+ * (onboarding para una cuenta nueva sin cuadernos, o la app ya cargada si el
+ * test reutiliza sesión) — cada llamador espera lo que necesite a continuación.
+ */
+export async function iniciarSesion(page: Page, testUser: TestUser) {
+  await page.goto('/')
+
+  await page.getByPlaceholder('tu@email.com').fill(testUser.email)
+  await page.getByPlaceholder('••••••••').fill(testUser.password)
+  // "Iniciar sesión" también es el texto de la pestaña (modo por defecto, ya
+  // activa) además del botón de enviar — se acota al <form> para no ambigüar
+  // entre los dos.
+  await page.locator('form').getByRole('button', { name: 'Iniciar sesión' }).click()
+
+  await expect(page.getByPlaceholder('tu@email.com')).not.toBeVisible()
+}
+
+/**
+ * Inicia sesión y completa el onboarding (crear cuaderno nuevo), dejando la
+ * app en la vista de Horarios. Cada test de Playwright arranca con un browser
+ * context nuevo (IndexedDB vacía) y una cuenta Supabase efímera propia (ver
+ * fixtures.ts), así que no hace falta limpiar nada entre tests.
  */
 export async function crearCuaderno(
   page: Page,
+  testUser: TestUser,
   datos: { centro?: string; docente?: string; cursoEscolar?: string } = {}
 ) {
   const { centro = 'IES Prueba E2E', docente = 'Docente de Prueba', cursoEscolar = '2026-2027' } = datos
 
-  await page.goto('/')
+  await iniciarSesion(page, testUser)
 
   await page.getByPlaceholder('Centro (ej: IES Mi Instituto)').fill(centro)
   await page.getByPlaceholder('Tu nombre').fill(docente)
