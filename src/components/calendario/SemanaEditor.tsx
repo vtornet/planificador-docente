@@ -10,6 +10,8 @@ import { Textarea } from '../ui/textarea'
 import { Button } from '../ui/button'
 import { CONFIG_HORARIOS_PREDEFINIDOS } from '../../types/constants'
 import { esDiaFestivo, esDiaVacaciones } from '../../utils/festivos'
+import { horarioActivoEnRango } from '../../utils/horarios'
+import type { Horario, ConfigHorarios } from '../../types'
 import { cn } from '../../utils/cn'
 
 interface SemanaEditorProps {
@@ -29,6 +31,19 @@ export function SemanaEditor({
   const festivos = cuadernoActual?.configuracion.festivos || []
   const vacaciones = cuadernoActual?.configuracion.vacaciones || []
 
+  // Horario vigente esa semana (si existe), para prellenar la planificación con
+  // su estructura real de periodos y las asignaturas de cada celda. Solo se usa
+  // al crear una semana nueva (!semana) — una semana ya guardada mantiene sus
+  // propios datos, editados o no, sin recalcularse a partir del horario.
+  const inicioSemanaNueva = fechaInicio || startOfWeek(new Date(), { weekStartsOn: 1 })
+  const finSemanaNueva = addDays(inicioSemanaNueva, 4)
+  const horariosVigentes = (cuadernoActual?.horarios || []).filter((h) =>
+    horarioActivoEnRango(h, inicioSemanaNueva, finSemanaNueva)
+  )
+  const horarioVigente: Horario | undefined =
+    horariosVigentes.find((h) => h.tipo === 'docente') || horariosVigentes[0]
+  const configHorariosBase = horarioVigente?.configHorarios || CONFIG_HORARIOS_PREDEFINIDOS.secundaria
+
   const [numeroSemana, setNumeroSemana] = useState(semana?.numeroSemana || 1)
   const [observaciones, setObservaciones] = useState(semana?.observaciones || '')
   const [dias, setDias] = useState(() => {
@@ -36,10 +51,9 @@ export function SemanaEditor({
       return semana.dias
     }
 
-    // Crear estructura base para una nueva semana
-    const configHorarios = CONFIG_HORARIOS_PREDEFINIDOS.secundaria
-    const numPeriodos = configHorarios.numPeriodos +
-      (configHorarios.recreo ? 1 : 0)
+    // Crear estructura base para una nueva semana, tomando el nº de periodos y,
+    // si hay horario vigente, el contenido ya asignado en él (datos[periodo][día]).
+    const numPeriodos = configHorariosBase.numPeriodos + (configHorariosBase.recreo ? 1 : 0)
 
     return DIAS_SEMANA.map((_, diaIndex) => {
       const fecha = addDays(fechaInicio || new Date(), diaIndex)
@@ -47,15 +61,14 @@ export function SemanaEditor({
         fecha,
         esFestivo: esDiaFestivo(fecha, festivos),
         esVacaciones: esDiaVacaciones(fecha, vacaciones),
-        periodos: Array.from({ length: numPeriodos }, () => ({
-          contenido: '',
+        periodos: Array.from({ length: numPeriodos }, (_, periodoIndex) => ({
+          contenido: horarioVigente?.datos[periodoIndex]?.[diaIndex]?.contenido || '',
         })),
       }
     })
   })
 
-  const configHorarios = CONFIG_HORARIOS_PREDEFINIDOS.secundaria
-  const periodosHorarios = generarPeriodos(configHorarios)
+  const periodosHorarios = generarPeriodos(configHorariosBase)
 
   const handleGuardar = () => {
     if (semana) {
@@ -134,6 +147,11 @@ export function SemanaEditor({
               {format(new Date(semana.fechaFin), 'dd/MM/yyyy')}</>
             )}
           </p>
+          {!semana && horarioVigente && (
+            <p className="text-xs text-primary mt-1">
+              Precargada desde el horario "{horarioVigente.nombre}" — puedes editar cualquier celda libremente.
+            </p>
+          )}
         </div>
 
         <div className="flex items-center gap-4">
@@ -318,7 +336,7 @@ export function SemanaEditor({
   )
 }
 
-function generarPeriodos(config: typeof CONFIG_HORARIOS_PREDEFINIDOS.secundaria) {
+function generarPeriodos(config: ConfigHorarios) {
   const periodos: { inicio: string; fin: string; esRecreo?: boolean }[] = []
   let [hora, minuto] = config.horaInicio.split(':').map(Number)
 

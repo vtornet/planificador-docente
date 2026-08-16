@@ -278,6 +278,7 @@ export function CalendarioMensual() {
       <div className="bg-card border border-border rounded-xl shadow-[var(--shadow-soft)] p-4">
         <Calendar
           localizer={localizer}
+          culture="es"
           events={events}
           view={calendarView}
           date={date}

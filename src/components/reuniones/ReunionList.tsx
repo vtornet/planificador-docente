@@ -10,7 +10,7 @@ import { Card, CardContent } from '../ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog'
 import { PaywallDialog } from '../paywall/PaywallDialog'
 import { ReunionForm } from './ReunionForm'
-import { Users, Calendar, FileText, Trash2, Pencil } from 'lucide-react'
+import { Users, Calendar, FileText, Trash2, Pencil, Download } from 'lucide-react'
 
 const TIPOS_FILTRO = [
   { value: 'todos', label: 'Todas' },
@@ -77,6 +77,17 @@ export function ReunionList() {
   const handleEliminar = (id: string, titulo: string) => {
     if (confirm(`¿Eliminar la reunión "${titulo}"?`)) {
       deleteReunion(id)
+    }
+  }
+
+  const handleExportarPDF = async (reunion: (typeof reuniones)[number]) => {
+    if (!cuadernoActual) return
+    try {
+      const { exportReunionToPDF } = await import('../../utils/pdf.tsx')
+      await exportReunionToPDF(reunion, cuadernoActual.metadata)
+    } catch (error) {
+      console.error('Error exportando reunión a PDF:', error)
+      alert('Error al exportar la reunión a PDF. Inténtalo de nuevo.')
     }
   }
 
@@ -254,6 +265,17 @@ export function ReunionList() {
                     )}
                   </div>
                   <div className="flex flex-col gap-2 ml-4">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      title="Descargar esta reunión en PDF"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleExportarPDF(reunion)
+                      }}
+                    >
+                      <Download size={16} />
+                    </Button>
                     <Button
                       size="sm"
                       variant="outline"

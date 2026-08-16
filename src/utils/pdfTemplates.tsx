@@ -220,80 +220,106 @@ interface ReunionPDFProps {
   metadata: CuadernoDocente['metadata']
 }
 
+// Contenido de una página de reunión, sin <Document> propio, para poder
+// reutilizarlo tanto suelto (ReunionPDFDocument/ReunionesPDFDocument) como
+// dentro de CuadernoCompletoPDF sin anidar <Document> dentro de <Document>
+// (mismo patrón ya aplicado en HorarioPDFPage).
+export function ReunionPDFPage({ reunion, metadata }: ReunionPDFProps) {
+  return (
+    <Page size="A4" style={styles.page}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.title}>{reunion.titulo}</Text>
+        <Text style={styles.subtitle}>
+          {metadata.centro} · {metadata.cursoEscolar}
+        </Text>
+        <Text style={styles.subtitle}>
+          {new Date(reunion.fecha).toLocaleDateString('es-ES', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+          })}
+        </Text>
+      </View>
+
+      {/* Información de la reunión */}
+      <View style={styles.section}>
+        <View style={styles.text}>
+          <Text style={styles.label}>Tipo:</Text>
+          <Text>{reunion.tipo.toUpperCase()}</Text>
+        </View>
+        <View style={styles.text}>
+          <Text style={styles.label}>Asistentes:</Text>
+          <Text>{reunion.asistentes.join(', ')}</Text>
+        </View>
+      </View>
+
+      {/* Asuntos tratados */}
+      {reunion.asuntosTratados && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Asuntos Tratados</Text>
+          <Text>{reunion.asuntosTratados}</Text>
+        </View>
+      )}
+
+      {/* Acuerdos */}
+      {reunion.acuerdos && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Acuerdos</Text>
+          <Text>{reunion.acuerdos}</Text>
+        </View>
+      )}
+
+      {/* Firmas */}
+      {reunion.firmas && reunion.firmas.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Firmas</Text>
+          {reunion.firmas.map((firma, idx) => (
+            <View key={idx} style={{ marginBottom: 10 }}>
+              <Text>{firma.nombre}</Text>
+              <Text style={{ fontSize: 8, color: '#666' }}>
+                {new Date(firma.fecha).toLocaleDateString('es-ES')}
+              </Text>
+              {firma.imagen && firma.imagen.startsWith('data:') && (
+                <Image
+                  src={firma.imagen}
+                  style={{ width: 100, height: 50, marginTop: 5 }}
+                />
+              )}
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* Footer */}
+      <Text style={styles.footer}>
+        Generado el {new Date().toLocaleDateString('es-ES')}
+      </Text>
+    </Page>
+  )
+}
+
 export function ReunionPDFDocument({ reunion, metadata }: ReunionPDFProps) {
   return (
     <Document>
-      <Page size="A4" style={styles.page}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>{reunion.titulo}</Text>
-          <Text style={styles.subtitle}>
-            {metadata.centro} · {metadata.cursoEscolar}
-          </Text>
-          <Text style={styles.subtitle}>
-            {new Date(reunion.fecha).toLocaleDateString('es-ES', {
-              weekday: 'long',
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-            })}
-          </Text>
-        </View>
+      <ReunionPDFPage reunion={reunion} metadata={metadata} />
+    </Document>
+  )
+}
 
-        {/* Información de la reunión */}
-        <View style={styles.section}>
-          <View style={styles.text}>
-            <Text style={styles.label}>Tipo:</Text>
-            <Text>{reunion.tipo.toUpperCase()}</Text>
-          </View>
-          <View style={styles.text}>
-            <Text style={styles.label}>Asistentes:</Text>
-            <Text>{reunion.asistentes.join(', ')}</Text>
-          </View>
-        </View>
+interface ReunionesPDFProps {
+  reuniones: Reunion[]
+  metadata: CuadernoDocente['metadata']
+}
 
-        {/* Asuntos tratados */}
-        {reunion.asuntosTratados && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Asuntos Tratados</Text>
-            <Text>{reunion.asuntosTratados}</Text>
-          </View>
-        )}
-
-        {/* Acuerdos */}
-        {reunion.acuerdos && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Acuerdos</Text>
-            <Text>{reunion.acuerdos}</Text>
-          </View>
-        )}
-
-        {/* Firmas */}
-        {reunion.firmas && reunion.firmas.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Firmas</Text>
-            {reunion.firmas.map((firma, idx) => (
-              <View key={idx} style={{ marginBottom: 10 }}>
-                <Text>{firma.nombre}</Text>
-                <Text style={{ fontSize: 8, color: '#666' }}>
-                  {new Date(firma.fecha).toLocaleDateString('es-ES')}
-                </Text>
-                {firma.imagen && firma.imagen.startsWith('data:') && (
-                  <Image
-                    src={firma.imagen}
-                    style={{ width: 100, height: 50, marginTop: 5 }}
-                  />
-                )}
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* Footer */}
-        <Text style={styles.footer}>
-          Generado el {new Date().toLocaleDateString('es-ES')}
-        </Text>
-      </Page>
+// Varias reuniones combinadas en un único PDF, una por página.
+export function ReunionesPDFDocument({ reuniones, metadata }: ReunionesPDFProps) {
+  return (
+    <Document>
+      {reuniones.map((reunion) => (
+        <ReunionPDFPage key={reunion.id} reunion={reunion} metadata={metadata} />
+      ))}
     </Document>
   )
 }
@@ -532,7 +558,7 @@ export function CuadernoCompletoPDF({ cuaderno }: CuadernoCompletoPDFProps) {
 
       {/* Reuniones */}
       {cuaderno.reuniones.map((reunion) => (
-        <ReunionPDFDocument key={reunion.id} reunion={reunion} metadata={cuaderno.metadata} />
+        <ReunionPDFPage key={reunion.id} reunion={reunion} metadata={cuaderno.metadata} />
       ))}
 
       {/* Notas */}

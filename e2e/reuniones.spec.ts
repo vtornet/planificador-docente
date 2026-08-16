@@ -16,4 +16,22 @@ test.describe('Reuniones', () => {
     await expect(page.getByRole('heading', { name: 'Nueva Reunión' })).not.toBeVisible()
     await expect(page.getByText(titulo)).toBeVisible()
   })
+
+  test('el icono de descarga de una reunión exporta solo esa reunión a PDF', async ({ page, testUser }) => {
+    await crearCuaderno(page, testUser)
+    await irASeccion(page, 'Reuniones')
+
+    await page.getByRole('button', { name: 'Crear reunión' }).click()
+    const titulo = 'Reunión para exportar E2E'
+    await page.getByPlaceholder('Ej: Claustro mensual de septiembre').fill(titulo)
+    await page.getByRole('button', { name: 'Guardar' }).click()
+    await expect(page.getByText(titulo)).toBeVisible()
+
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.getByRole('button', { name: 'Descargar esta reunión en PDF' }).click(),
+    ])
+
+    expect(download.suggestedFilename()).toMatch(/^reunion-.*\.pdf$/)
+  })
 })

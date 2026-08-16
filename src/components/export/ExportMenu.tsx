@@ -45,10 +45,11 @@ export function ExportMenu() {
         }
 
         case 'reuniones': {
-          // Exportar la primera reunión (o todas)
+          // Exportar todas las reuniones combinadas en un PDF (una por página).
+          // Para exportar una en concreto, usa el botón de descarga de su tarjeta.
           if (cuadernoActual.reuniones.length > 0) {
-            const { exportReunionToPDF } = await import('../../utils/pdf.tsx')
-            await exportReunionToPDF(cuadernoActual.reuniones[0], cuadernoActual.metadata)
+            const { exportReunionesToPDF } = await import('../../utils/pdf.tsx')
+            await exportReunionesToPDF(cuadernoActual.reuniones, cuadernoActual.metadata)
           }
           break
         }
@@ -133,7 +134,7 @@ export function ExportMenu() {
 
         <DropdownMenuItem onClick={() => handleExport('reuniones')} disabled={!hasReuniones || exporting !== null}>
           <Users className="w-4 h-4 mr-2" />
-          <span>Reuniones</span>
+          <span>Reuniones (todas)</span>
           {!hasReuniones && <span className="ml-auto text-xs text-muted-foreground">(Sin datos)</span>}
         </DropdownMenuItem>
 

@@ -7,6 +7,7 @@ import {
   HorarioPDFDocument,
   HorariosPDFDocument,
   ReunionPDFDocument,
+  ReunionesPDFDocument,
   NotasPDFDocument,
   SemanaPDFDocument,
   CuadernoCompletoPDF,
@@ -121,18 +122,17 @@ export async function exportEventosToPDF(cuaderno: CuadernoDocente): Promise<voi
 }
 
 /**
- * Genera un PDF de todas las reuniones
+ * Genera y descarga un único PDF con varias reuniones, una por página
  */
 export async function exportReunionesToPDF(reuniones: Reunion[], metadata: CuadernoDocente['metadata']): Promise<void> {
   try {
-    // Generar un PDF con todas las reuniones una detrás de otra
-    // Por ahora, exportamos una por una en archivos separados
-    for (const reunion of reuniones) {
-      await exportReunionToPDF(reunion, metadata)
-    }
+    const doc = <ReunionesPDFDocument reuniones={reuniones} metadata={metadata} />
+    const pdfBlob = await pdf(doc).toBlob()
+    const filename = `reuniones-${metadata.centro.replace(/\s+/g, '-')}.pdf`
+    saveAs(pdfBlob, filename)
   } catch (error) {
     console.error('Error generating reuniones PDF:', error)
-    throw new Error('Error al generar los PDFs de reuniones')
+    throw new Error('Error al generar el PDF de reuniones')
   }
 }
 

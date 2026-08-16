@@ -9,6 +9,7 @@ import { Card, CardContent } from '../ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog'
 import { PaywallDialog } from '../paywall/PaywallDialog'
 import { NotaEditor } from './NotaEditor'
+import { NotaViewer } from './NotaViewer'
 import { Search, Grid, List, Trash2, Edit, FileText } from 'lucide-react'
 
 const VISTAS = ['grid', 'list'] as const
@@ -19,6 +20,7 @@ export function NotasList() {
   const [showCrear, setShowCrear] = useState(false)
   const [showPaywall, setShowPaywall] = useState(false)
   const [editingNota, setEditingNota] = useState<string | null>(null)
+  const [viewingNota, setViewingNota] = useState<string | null>(null)
   const [vista, setVista] = useState<(typeof VISTAS)[number]>('grid')
   const [filtroCategoria, setFiltroCategoria] = useState<string>('todos')
   const [busqueda, setBusqueda] = useState('')
@@ -171,6 +173,27 @@ export function NotasList() {
             )}
           </DialogContent>
         </Dialog>
+        <Dialog open={!!viewingNota} onOpenChange={(open) => !open && setViewingNota(null)}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="sr-only">Ver nota</DialogTitle>
+            </DialogHeader>
+            {(() => {
+              const notaViendo = notas.find((n) => n.id === viewingNota)
+              if (!notaViendo) return null
+              return (
+                <NotaViewer
+                  nota={notaViendo}
+                  onCerrar={() => setViewingNota(null)}
+                  onEditar={() => {
+                    setEditingNota(notaViendo.id)
+                    setViewingNota(null)
+                  }}
+                />
+              )
+            })()}
+          </DialogContent>
+        </Dialog>
         <PaywallDialog open={showPaywall} onOpenChange={setShowPaywall} modulo="notas" />
       </div>
 
@@ -259,7 +282,7 @@ export function NotasList() {
             <Card
               key={nota.id}
               className="hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => setEditingNota(nota.id)}
+              onClick={() => setViewingNota(nota.id)}
             >
               <CardContent className="pt-6">
                 <div className="space-y-3">
@@ -316,7 +339,7 @@ export function NotasList() {
             <Card
               key={nota.id}
               className="hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => setEditingNota(nota.id)}
+              onClick={() => setViewingNota(nota.id)}
             >
               <CardContent className="pt-6">
                 <div className="flex items-start justify-between gap-4">
