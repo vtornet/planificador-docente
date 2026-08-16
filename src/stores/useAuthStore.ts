@@ -16,6 +16,7 @@ interface AuthState {
   initAuth: () => Promise<void>
   signUp: (email: string, password: string) => Promise<{ needsConfirmation: boolean }>
   signIn: (email: string, password: string) => Promise<void>
+  signInWithGoogle: () => Promise<void>
   signOut: () => Promise<void>
   requestPasswordReset: (email: string) => Promise<void>
   completarNuevaPassword: (password: string) => Promise<void>
@@ -92,6 +93,19 @@ export const useAuthStore = create<AuthState>((set, get) => {
       }
       set({ user: data.user })
       await get().refreshProfile()
+    },
+
+    // Redirige el navegador a Google (comportamiento por defecto de
+    // signInWithOAuth, no hace falta gestionarlo a mano). La sesión llega al
+    // volver, procesada por el onAuthStateChange ya suscrito arriba — no hay
+    // "vuelta" que gestionar aquí explícitamente.
+    signInWithGoogle: async () => {
+      set({ error: null })
+      const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' })
+      if (error) {
+        set({ error: error.message })
+        throw error
+      }
     },
 
     signOut: async () => {
