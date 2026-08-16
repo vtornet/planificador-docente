@@ -3,8 +3,9 @@ import { useAuthStore } from '../../stores/useAuthStore'
 import { useCuadernoStore } from '../../stores/useCuadernoStore'
 import { supabase } from '../../lib/supabaseClient'
 import { PaywallDialog } from '../paywall/PaywallDialog'
+import { ExportarAHorarioDialog } from './ExportarAHorarioDialog'
 import { Button } from '../ui/button'
-import { Sparkles, X, Send } from 'lucide-react'
+import { Sparkles, X, Send, CalendarPlus, Check } from 'lucide-react'
 import { cn } from '../../utils/cn'
 
 interface Mensaje {
@@ -33,6 +34,8 @@ export function AsistenteChat() {
   const [input, setInput] = useState('')
   const [enviando, setEnviando] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [exportandoIdx, setExportandoIdx] = useState<number | null>(null)
+  const [exportadoIdx, setExportadoIdx] = useState<number | null>(null)
   const listaRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -78,6 +81,11 @@ export function AsistenteChat() {
     }
   }
 
+  const handleExportado = (idx: number) => {
+    setExportadoIdx(idx)
+    setTimeout(() => setExportadoIdx((actual) => (actual === idx ? null : actual)), 4000)
+  }
+
   return (
     <>
       <Button
@@ -111,14 +119,32 @@ export function AsistenteChat() {
               </p>
             )}
             {mensajes.map((m, idx) => (
-              <div
-                key={idx}
-                className={cn(
-                  'max-w-[85%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap',
-                  m.role === 'user' ? 'ml-auto bg-primary text-primary-foreground' : 'bg-muted text-foreground'
+              <div key={idx} className={cn('max-w-[85%]', m.role === 'user' ? 'ml-auto' : '')}>
+                <div
+                  className={cn(
+                    'rounded-lg px-3 py-2 text-sm whitespace-pre-wrap',
+                    m.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'
+                  )}
+                >
+                  {m.content}
+                </div>
+                {m.role === 'assistant' && (
+                  <div className="mt-1">
+                    {exportadoIdx === idx ? (
+                      <span className="inline-flex items-center gap-1 text-xs text-primary">
+                        <Check className="w-3 h-3" /> Guardado en el horario
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setExportandoIdx(idx)}
+                        className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        <CalendarPlus className="w-3 h-3" /> Exportar a un horario
+                      </button>
+                    )}
+                  </div>
                 )}
-              >
-                {m.content}
               </div>
             ))}
             {enviando && <div className="bg-muted text-muted-foreground rounded-lg px-3 py-2 text-sm w-fit">Pensando…</div>}
@@ -156,6 +182,15 @@ export function AsistenteChat() {
         modulo="El asistente de IA"
         modo="exclusivo"
       />
+
+      {exportandoIdx !== null && (
+        <ExportarAHorarioDialog
+          open={exportandoIdx !== null}
+          onOpenChange={(open) => !open && setExportandoIdx(null)}
+          texto={mensajes[exportandoIdx]?.content || ''}
+          onExportado={() => handleExportado(exportandoIdx)}
+        />
+      )}
     </>
   )
 }
