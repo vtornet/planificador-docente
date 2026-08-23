@@ -21,7 +21,13 @@ export async function crearUsuarioPrueba(opts: { suscripcion?: 'active' | 'trial
   const { suscripcion = 'active' } = opts
   const admin = getSupabaseAdmin()
   const email = `e2e-${randomUUID()}@docenza-e2e.test`
-  const password = 'PruebaE2E123!'
+  // Generada por cuenta, no fija: evita tener una contraseña en texto plano
+  // en el repositorio (GitGuardian la marcó como "Generic Password" el
+  // 23-08-2026, aunque no protegía nada de valor real — cuentas efímeras con
+  // email aleatorio, borradas al terminar cada test). El sufijo garantiza
+  // mayúscula/minúscula/dígito/símbolo por si la política de contraseñas del
+  // proyecto lo exige alguna vez, aunque un UUID ya sería suficiente hoy.
+  const password = `E2E-${randomUUID()}-Aa1!`
 
   const { data, error } = await admin.auth.admin.createUser({
     email,
