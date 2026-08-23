@@ -4,10 +4,11 @@ import { useAuthStore } from '../../stores/useAuthStore'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
-import { X, LogOut } from 'lucide-react'
+import { X, LogOut, Trash2 } from 'lucide-react'
 import { COMUNIDADES_AUTONOMAS, festivoAutonomicoParaCursoEscolar } from '../../types/festivosOficiales'
 import { TerminosUso } from '../legal/TerminosUso'
 import { PoliticaPrivacidad } from '../legal/PoliticaPrivacidad'
+import { EliminarCuentaDialog } from './EliminarCuentaDialog'
 
 interface PerfilDialogProps {
   open: boolean
@@ -28,6 +29,7 @@ export function PerfilDialog({ open, onOpenChange }: PerfilDialogProps) {
   const [comunidadAutonoma, setComunidadAutonoma] = useState('')
   const [showTerminos, setShowTerminos] = useState(false)
   const [showPrivacidad, setShowPrivacidad] = useState(false)
+  const [showEliminarCuenta, setShowEliminarCuenta] = useState(false)
 
   useEffect(() => {
     if (open && cuadernoActual) {
@@ -218,6 +220,17 @@ export function PerfilDialog({ open, onOpenChange }: PerfilDialogProps) {
               Política de Privacidad
             </button>
           </div>
+
+          <div className="pt-2 border-t border-border">
+            <button
+              type="button"
+              onClick={() => setShowEliminarCuenta(true)}
+              className="flex items-center gap-1.5 text-xs text-destructive/80 hover:text-destructive underline"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Eliminar mi cuenta
+            </button>
+          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
@@ -229,6 +242,7 @@ export function PerfilDialog({ open, onOpenChange }: PerfilDialogProps) {
 
       <TerminosUso open={showTerminos} onOpenChange={setShowTerminos} />
       <PoliticaPrivacidad open={showPrivacidad} onOpenChange={setShowPrivacidad} />
+      <EliminarCuentaDialog open={showEliminarCuenta} onOpenChange={setShowEliminarCuenta} />
     </Dialog>
   )
 }

@@ -24,4 +24,21 @@ export function useHistoryBack(active: boolean, onBack: () => void) {
       entryRef.current = null
     }
   }, [active])
+
+  // Si el componente desaparece de golpe sin que `active` pase antes por
+  // `false` (ej. App.tsx cambia de pantalla entera al cerrar sesión o borrar
+  // la cuenta, desmontando un Dialog que seguía abierto), el efecto de
+  // arriba nunca llega a resolver la entrada — se quedaría huérfana en la
+  // pila compartida para siempre, descuadrando la profundidad del historial
+  // real de ahí en adelante. Este efecto de solo-montaje, con limpieza en el
+  // desmontaje, cubre exactamente ese caso sin interferir con el resuelto
+  // normal de arriba (si ya se resolvió, entryRef.current ya es null aquí).
+  useEffect(() => {
+    return () => {
+      if (entryRef.current) {
+        resolveBackEntry(entryRef.current)
+        entryRef.current = null
+      }
+    }
+  }, [])
 }

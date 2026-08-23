@@ -87,13 +87,17 @@ export function PoliticaPrivacidad({ open, onOpenChange }: PoliticaPrivacidadPro
           <section>
             <h3 className="font-semibold text-foreground mb-1">5. Cuánto tiempo conservamos tus datos</h3>
             <p>
-              Mientras tu cuenta esté activa. Si quieres que eliminemos tu cuenta y tus datos,
-              escríbenos a{' '}
+              Mientras tu cuenta esté activa. Puedes eliminar tu cuenta tú misma en cualquier
+              momento desde Perfil → Eliminar mi cuenta: se cancela de inmediato tu suscripción si
+              tienes una, y se borran tu cuenta y todos tus cuadernos, tanto en la nube como en el
+              dispositivo desde el que lo pidas — de forma inmediata e irreversible. También puedes
+              escribirnos a{' '}
               <a href="mailto:contact@appstracta.app" className="text-primary underline">
                 contact@appstracta.app
-              </a>
-              . También puedes exportar y borrar tus datos por tu cuenta desde la app en cualquier
-              momento (backup JSON y borrado de horarios, reuniones o notas de forma individual).
+              </a>{' '}
+              si lo prefieres así. Aparte de eso, puedes exportar y borrar tus datos por tu cuenta
+              desde la app en cualquier momento (backup JSON y borrado de horarios, reuniones o
+              notas de forma individual).
             </p>
           </section>
 
