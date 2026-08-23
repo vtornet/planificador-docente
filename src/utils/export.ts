@@ -37,6 +37,7 @@ export function prepareCuadernoForExport(cuaderno: CuadernoDocente): any {
       ...h,
       fechaInicio: dateToISO(h.fechaInicio),
       fechaFin: dateToISO(h.fechaFin),
+      actualizado: dateToISO(h.actualizado),
     })),
     planificacion: {
       mensual: cuaderno.planificacion.mensual.map((m) => ({ ...m })),
@@ -44,6 +45,7 @@ export function prepareCuadernoForExport(cuaderno: CuadernoDocente): any {
         ...s,
         fechaInicio: dateToISO(s.fechaInicio),
         fechaFin: dateToISO(s.fechaFin),
+        actualizado: dateToISO(s.actualizado),
         dias: s.dias.map((d) => ({
           ...d,
           fecha: dateToISO(d.fecha),
@@ -54,6 +56,7 @@ export function prepareCuadernoForExport(cuaderno: CuadernoDocente): any {
       ...r,
       fecha: dateToISO(r.fecha),
       creada: dateToISO(r.creada),
+      actualizado: dateToISO(r.actualizado),
       firmas: r.firmas.map((f) => ({
         ...f,
         fecha: dateToISO(f.fecha),
@@ -68,7 +71,12 @@ export function prepareCuadernoForExport(cuaderno: CuadernoDocente): any {
       ...e,
       fecha: dateToISO(e.fecha),
       creado: dateToISO(e.creado),
+      actualizado: dateToISO(e.actualizado),
       recurrencia: e.recurrencia ? { ...e.recurrencia, hasta: dateToISO(e.recurrencia.hasta) } : undefined,
+    })),
+    eliminados: (cuaderno.eliminados || []).map((el) => ({
+      ...el,
+      fecha: dateToISO(el.fecha),
     })),
     configuracion: {
       ...cuaderno.configuracion,
@@ -103,6 +111,10 @@ export function restoreCuadernoFromImport(data: any): CuadernoDocente {
       ...h,
       fechaInicio: isoToDate(h.fechaInicio),
       fechaFin: isoToDate(h.fechaFin),
+      // De antes de existir este campo (fusión por elemento, ver
+      // mergeCuaderno.ts): se trata como "muy antiguo", nunca gana un merge
+      // frente a una copia con marca de tiempo real.
+      actualizado: isoToDate(h.actualizado) || new Date(0),
     })),
     planificacion: {
       mensual: data.planificacion?.mensual || [],
@@ -110,6 +122,7 @@ export function restoreCuadernoFromImport(data: any): CuadernoDocente {
         ...s,
         fechaInicio: isoToDate(s.fechaInicio)!,
         fechaFin: isoToDate(s.fechaFin)!,
+        actualizado: isoToDate(s.actualizado) || new Date(0),
         dias: (s.dias || []).map((d: any) => ({
           ...d,
           fecha: isoToDate(d.fecha)!,
@@ -120,6 +133,7 @@ export function restoreCuadernoFromImport(data: any): CuadernoDocente {
       ...r,
       fecha: isoToDate(r.fecha)!,
       creada: isoToDate(r.creada)!,
+      actualizado: isoToDate(r.actualizado) || new Date(0),
       firmas: (r.firmas || []).map((f: any) => ({
         ...f,
         fecha: isoToDate(f.fecha)!,
@@ -134,7 +148,12 @@ export function restoreCuadernoFromImport(data: any): CuadernoDocente {
       ...e,
       fecha: isoToDate(e.fecha)!,
       creado: isoToDate(e.creado)!,
+      actualizado: isoToDate(e.actualizado) || new Date(0),
       recurrencia: e.recurrencia ? { ...e.recurrencia, hasta: isoToDate(e.recurrencia.hasta)! } : undefined,
+    })),
+    eliminados: (data.eliminados || []).map((el: any) => ({
+      ...el,
+      fecha: isoToDate(el.fecha)!,
     })),
     configuracion: {
       ...data.configuracion,

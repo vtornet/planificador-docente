@@ -14,7 +14,7 @@ interface HorarioTableProps {
   horario: Horario
   onGuardar: (datos: CeldaHorario[][], alcance?: 'periodo' | 'semana') => void
   preguntarAlcance?: boolean
-  onDuplicate?: (horario: Omit<Horario, 'id'>) => void
+  onDuplicate?: (horario: Omit<Horario, 'id' | 'actualizado'>) => void
   // Semana concreta que se está viendo (lunes a viernes). Si se indica, los
   // días festivos/de vacaciones de esa semana se marcan y no se pueden
   // editar. Sin ella (ej. horarios sin fecha asignada) la tabla es la
@@ -202,7 +202,7 @@ export function HorarioTable({ horario, onGuardar, preguntarAlcance, onDuplicate
               onClick={() => {
                 const nuevoTipo = horario.tipo === 'docente' ? 'alumnado' : 'docente'
                 if (confirm(`¿Duplicar este horario como horario de ${nuevoTipo}?`)) {
-                  const duplicado: Omit<Horario, 'id'> = {
+                  const duplicado: Omit<Horario, 'id' | 'actualizado'> = {
                     tipo: nuevoTipo,
                     nombre: `${horario.nombre} (${nuevoTipo})`,
                     datos: horario.datos.map((fila) => fila.map((celda) => ({ ...celda }))),

@@ -82,7 +82,7 @@ export function SemanaEditor({
       const inicioSemana = fechaInicio || startOfWeek(new Date(), { weekStartsOn: 1 })
       const finSemana = addDays(inicioSemana, 4) // Lunes a Viernes
 
-      const nuevaSemana: Semana = {
+      const nuevaSemana: Omit<Semana, 'actualizado'> = {
         id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         fechaInicio: inicioSemana,
         fechaFin: finSemana,

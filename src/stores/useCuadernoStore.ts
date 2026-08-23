@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { CuadernoDocente, CuadernoMetadata, Horario, Semana, Reunion, Nota, Evento } from '../types'
+import type { CuadernoDocente, CuadernoMetadata, Horario, Semana, Reunion, Nota, Evento, TipoEntidadEliminable } from '../types'
 import { parseFechaInput } from '../utils/fechas'
 import { festivosNacionalesParaCursoEscolar, festivoAutonomicoParaCursoEscolar } from '../types/festivosOficiales'
 import { useAuthStore } from './useAuthStore'
@@ -19,18 +19,18 @@ interface CuadernoState {
   updateMetadata: (updates: Partial<CuadernoMetadata>) => void
 
   // Acciones - Horarios
-  addHorario: (horario: Omit<Horario, 'id'>) => void
+  addHorario: (horario: Omit<Horario, 'id' | 'actualizado'>) => void
   updateHorario: (id: string, updates: Partial<Horario>) => void
   deleteHorario: (id: string) => void
 
   // Acciones - Planificación
-  addSemana: (semana: Semana) => void
+  addSemana: (semana: Omit<Semana, 'actualizado'>) => void
   updateSemana: (id: string, updates: Partial<Semana>) => void
   deleteSemana: (id: string) => void
   duplicateSemana: (semanaId: string, nuevaFechaInicio: Date) => void
 
   // Acciones - Reuniones
-  addReunion: (reunion: Omit<Reunion, 'id' | 'creada'>) => void
+  addReunion: (reunion: Omit<Reunion, 'id' | 'creada' | 'actualizado'>) => void
   updateReunion: (id: string, updates: Partial<Reunion>) => void
   deleteReunion: (id: string) => void
 
@@ -40,7 +40,7 @@ interface CuadernoState {
   deleteNota: (id: string) => void
 
   // Acciones - Eventos (agenda)
-  addEvento: (evento: Omit<Evento, 'id' | 'creado'>) => void
+  addEvento: (evento: Omit<Evento, 'id' | 'creado' | 'actualizado'>) => void
   updateEvento: (id: string, updates: Partial<Evento>) => void
   deleteEvento: (id: string) => void
 
@@ -79,6 +79,12 @@ function sincronizarConSupabase(cuaderno: CuadernoDocente) {
   import('../sync/syncCuaderno')
     .then(({ syncCuadernoToSupabase }) => syncCuadernoToSupabase(cuaderno))
     .catch((e) => console.error('Error sincronizando con Supabase:', e))
+}
+
+// Registra un borrado (ver mergeCuaderno.ts): sin esto, fusionar con la copia
+// de otro dispositivo que todavía tiene el elemento lo resucitaría.
+function conEliminacion(cuaderno: CuadernoDocente, tipo: TipoEntidadEliminable, id: string) {
+  return [...(cuaderno.eliminados || []), { id, tipo, fecha: new Date() }]
 }
 
 export const useCuadernoStore = create<CuadernoState>((set, get) => ({
@@ -121,6 +127,7 @@ export const useCuadernoStore = create<CuadernoState>((set, get) => ({
         reuniones: [],
         notas: [],
         eventos: [],
+        eliminados: [],
         configuracion: {
           id: 'config',
           cursoEscolarActual: metadata.cursoEscolar,
@@ -216,7 +223,7 @@ export const useCuadernoStore = create<CuadernoState>((set, get) => ({
       return
     }
 
-    const nuevoHorario: Horario = { ...horario, id: generateId() }
+    const nuevoHorario: Horario = { ...horario, id: generateId(), actualizado: new Date() }
     const actualizado = {
       ...cuadernoActual,
       horarios: [...cuadernoActual.horarios, nuevoHorario],
@@ -234,7 +241,7 @@ export const useCuadernoStore = create<CuadernoState>((set, get) => ({
     const actualizado = {
       ...cuadernoActual,
       horarios: cuadernoActual.horarios.map((h) =>
-        h.id === id ? { ...h, ...updates } : h
+        h.id === id ? { ...h, ...updates, actualizado: new Date() } : h
       ),
     }
     set({ cuadernoActual: actualizado })
@@ -248,6 +255,7 @@ export const useCuadernoStore = create<CuadernoState>((set, get) => ({
     const actualizado = {
       ...cuadernoActual,
       horarios: cuadernoActual.horarios.filter((h) => h.id !== id),
+      eliminados: conEliminacion(cuadernoActual, 'horario', id),
     }
     set({ cuadernoActual: actualizado })
     saveCuadernoAsync(actualizado)
@@ -264,11 +272,12 @@ export const useCuadernoStore = create<CuadernoState>((set, get) => ({
       return
     }
 
+    const nuevaSemana: Semana = { ...semana, actualizado: new Date() }
     const actualizado = {
       ...cuadernoActual,
       planificacion: {
         ...cuadernoActual.planificacion,
-        semanal: [...cuadernoActual.planificacion.semanal, semana],
+        semanal: [...cuadernoActual.planificacion.semanal, nuevaSemana],
       },
     }
     set({ cuadernoActual: actualizado })
@@ -284,7 +293,7 @@ export const useCuadernoStore = create<CuadernoState>((set, get) => ({
       planificacion: {
         ...cuadernoActual.planificacion,
         semanal: cuadernoActual.planificacion.semanal.map((s) =>
-          s.id === id ? { ...s, ...updates } : s
+          s.id === id ? { ...s, ...updates, actualizado: new Date() } : s
         ),
       },
     }
@@ -302,6 +311,7 @@ export const useCuadernoStore = create<CuadernoState>((set, get) => ({
         ...cuadernoActual.planificacion,
         semanal: cuadernoActual.planificacion.semanal.filter((s) => s.id !== id),
       },
+      eliminados: conEliminacion(cuadernoActual, 'semana', id),
     }
     set({ cuadernoActual: actualizado })
     saveCuadernoAsync(actualizado)
@@ -329,6 +339,7 @@ export const useCuadernoStore = create<CuadernoState>((set, get) => ({
         ...dia,
         fecha: new Date(new Date(nuevaFechaInicio).getTime() + idx * 24 * 60 * 60 * 1000),
       })),
+      actualizado: new Date(),
     }
 
     const actualizado = {
@@ -354,6 +365,7 @@ export const useCuadernoStore = create<CuadernoState>((set, get) => ({
       ...reunion,
       id: generateId(),
       creada: new Date(),
+      actualizado: new Date(),
     }
     const actualizado = {
       ...cuadernoActual,
@@ -370,7 +382,7 @@ export const useCuadernoStore = create<CuadernoState>((set, get) => ({
     const actualizado = {
       ...cuadernoActual,
       reuniones: cuadernoActual.reuniones.map((r) =>
-        r.id === id ? { ...r, ...updates } : r
+        r.id === id ? { ...r, ...updates, actualizado: new Date() } : r
       ),
     }
     set({ cuadernoActual: actualizado })
@@ -384,6 +396,7 @@ export const useCuadernoStore = create<CuadernoState>((set, get) => ({
     const actualizado = {
       ...cuadernoActual,
       reuniones: cuadernoActual.reuniones.filter((r) => r.id !== id),
+      eliminados: conEliminacion(cuadernoActual, 'reunion', id),
     }
     set({ cuadernoActual: actualizado })
     saveCuadernoAsync(actualizado)
@@ -433,6 +446,7 @@ export const useCuadernoStore = create<CuadernoState>((set, get) => ({
     const actualizado = {
       ...cuadernoActual,
       notas: cuadernoActual.notas.filter((n) => n.id !== id),
+      eliminados: conEliminacion(cuadernoActual, 'nota', id),
     }
     set({ cuadernoActual: actualizado })
     saveCuadernoAsync(actualizado)
@@ -446,7 +460,7 @@ export const useCuadernoStore = create<CuadernoState>((set, get) => ({
       return
     }
 
-    const nuevoEvento: Evento = { ...evento, id: generateId(), creado: new Date() }
+    const nuevoEvento: Evento = { ...evento, id: generateId(), creado: new Date(), actualizado: new Date() }
     const actualizado = {
       ...cuadernoActual,
       eventos: [...(cuadernoActual.eventos || []), nuevoEvento],
@@ -462,7 +476,7 @@ export const useCuadernoStore = create<CuadernoState>((set, get) => ({
     const actualizado = {
       ...cuadernoActual,
       eventos: (cuadernoActual.eventos || []).map((e) =>
-        e.id === id ? { ...e, ...updates } : e
+        e.id === id ? { ...e, ...updates, actualizado: new Date() } : e
       ),
     }
     set({ cuadernoActual: actualizado })
@@ -476,6 +490,7 @@ export const useCuadernoStore = create<CuadernoState>((set, get) => ({
     const actualizado = {
       ...cuadernoActual,
       eventos: (cuadernoActual.eventos || []).filter((e) => e.id !== id),
+      eliminados: conEliminacion(cuadernoActual, 'evento', id),
     }
     set({ cuadernoActual: actualizado })
     saveCuadernoAsync(actualizado)

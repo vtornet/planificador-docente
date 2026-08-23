@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabaseClient'
 import { useAuthStore } from '../stores/useAuthStore'
 import { prepareCuadernoForExport, restoreCuadernoFromImport } from '../utils/export'
+import { mergeCuadernos } from './mergeCuaderno'
 import type { CuadernoDocente } from '../types'
 
 /**
@@ -32,14 +33,14 @@ export async function syncCuadernoToSupabase(cuaderno: CuadernoDocente): Promise
 
 /**
  * Descarga los cuadernos remotos del usuario y los concilia con las copias
- * locales en Dexie: gana el más reciente por marca de tiempo. Se compara con
- * el `actualizado` del índice de Dexie (no con el `metadata.actualizado`
- * anidado dentro de `data`, que solo tocan updateCuaderno/updateMetadata —
- * ver comentario en saveCuadernoAsync) contra `updated_at` de la fila de
- * Supabase (siempre al día gracias al trigger touch_updated_at). Se llama
- * una vez, justo tras resolver la sesión y antes de que App.tsx decida qué
- * cuaderno cargar — así un dispositivo nuevo ya tiene los datos disponibles
- * antes de elegir cuál mostrar.
+ * locales en Dexie fusionándolos elemento a elemento (ver `mergeCuaderno.ts`)
+ * en vez de sustituir un cuaderno entero por otro según cuál se guardó en
+ * último lugar — así, si dos dispositivos editan offline módulos distintos
+ * (o incluso elementos distintos del mismo módulo) antes de sincronizar,
+ * ningún cambio se pierde en silencio. Se llama una vez, justo tras resolver
+ * la sesión y antes de que App.tsx decida qué cuaderno cargar — así un
+ * dispositivo nuevo ya tiene los datos disponibles antes de elegir cuál
+ * mostrar.
  */
 export async function reconcileCuadernosConSupabase(): Promise<void> {
   const user = useAuthStore.getState().user
@@ -52,15 +53,14 @@ export async function reconcileCuadernosConSupabase(): Promise<void> {
   if (error) throw error
   if (!filas) return
 
-  const { getCuaderno, saveCuaderno } = await import('../db/db')
+  const { getCuaderno, saveCuaderno, getCuadernos } = await import('../db/db')
 
   for (const fila of filas) {
     const remoto = restoreCuadernoFromImport(fila.data)
-    const actualizadoRemoto = new Date(fila.updated_at).getTime()
     const local = await getCuaderno(fila.id)
 
-    if (!local || actualizadoRemoto > local.metadata.actualizado) {
-      // No existe localmente, o el remoto es más reciente: sobreescribe Dexie.
+    if (!local) {
+      // No existe localmente: coge el remoto tal cual, nada que fusionar.
       await saveCuaderno({
         id: remoto.id,
         userId: user.id,
@@ -69,13 +69,54 @@ export async function reconcileCuadernosConSupabase(): Promise<void> {
           centro: remoto.metadata.centro,
           docente: remoto.metadata.docente,
           creado: remoto.metadata.creado.getTime(),
-          actualizado: actualizadoRemoto,
+          actualizado: new Date(fila.updated_at).getTime(),
         },
         data: remoto,
       })
-    } else if (local.metadata.actualizado > actualizadoRemoto) {
-      // La copia local es más reciente: la sube de vuelta.
-      await syncCuadernoToSupabase(local.data as CuadernoDocente)
+      continue
+    }
+
+    const merged = mergeCuadernos(local.data as CuadernoDocente, remoto)
+    const actualizadoMerged = Math.max(local.metadata.actualizado, new Date(fila.updated_at).getTime())
+
+    await saveCuaderno({
+      id: merged.id,
+      userId: user.id,
+      metadata: {
+        cursoEscolar: merged.metadata.cursoEscolar,
+        centro: merged.metadata.centro,
+        docente: merged.metadata.docente,
+        creado: merged.metadata.creado.getTime(),
+        actualizado: actualizadoMerged,
+      },
+      data: merged,
+    })
+
+    // Solo se vuelve a subir si la fusión aportó algo que el remoto no tenía
+    // (evita una escritura de red en cada arranque de la app cuando no hay
+    // nada que fusionar de verdad, el caso más común con un solo dispositivo).
+    const cambioFrenteARemoto =
+      JSON.stringify(prepareCuadernoForExport(merged)) !== JSON.stringify(prepareCuadernoForExport(remoto))
+    if (cambioFrenteARemoto) {
+      try {
+        await syncCuadernoToSupabase(merged)
+      } catch (e) {
+        console.error('No se pudo subir el cuaderno fusionado:', e)
+      }
+    }
+  }
+
+  // Cuadernos locales de este usuario que todavía no existen en Supabase
+  // (creados 100% offline, sin que ninguna mutación posterior haya logrado
+  // sincronizar todavía) — se suben proactivamente para que no se queden
+  // huérfanos hasta la siguiente edición.
+  const idsRemotos = new Set(filas.map((f) => f.id))
+  const pendientes = (await getCuadernos()).filter((c) => c.userId === user.id && !idsRemotos.has(c.id))
+  for (const cuaderno of pendientes) {
+    try {
+      await syncCuadernoToSupabase(cuaderno.data as CuadernoDocente)
+    } catch (e) {
+      console.error('No se pudo subir el cuaderno local pendiente:', e)
     }
   }
 }

@@ -226,6 +226,7 @@ export function NotasList() {
                 <Button
                   variant={vista === 'grid' ? 'default' : 'outline'}
                   size="sm"
+                  title="Vista de cuadrícula"
                   onClick={() => setVista('grid')}
                 >
                   <Grid size={18} />
@@ -233,6 +234,7 @@ export function NotasList() {
                 <Button
                   variant={vista === 'list' ? 'default' : 'outline'}
                   size="sm"
+                  title="Vista de lista"
                   onClick={() => setVista('list')}
                 >
                   <List size={18} />
@@ -425,6 +427,7 @@ export function NotasList() {
                     <Button
                       size="sm"
                       variant="outline"
+                      title="Editar esta nota"
                       onClick={(e) => {
                         e.stopPropagation()
                         setEditingNota(nota.id)
@@ -436,6 +439,7 @@ export function NotasList() {
                       size="sm"
                       variant="outline"
                       className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                      title="Eliminar esta nota"
                       onClick={(e) => {
                         e.stopPropagation()
                         handleEliminar(nota.id, nota.titulo)

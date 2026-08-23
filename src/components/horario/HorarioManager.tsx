@@ -127,7 +127,7 @@ export function HorarioManager() {
         }
       : CONFIG_HORARIOS_PREDEFINIDOS.secundaria
 
-    const nuevoHorario: Omit<Horario, 'id'> = {
+    const nuevoHorario: Omit<Horario, 'id' | 'actualizado'> = {
       tipo: nuevoTipo,
       nombre: nuevoNombre,
       datos: Array(7).fill(null).map(() => Array(configHorarios.numPeriodos + (configHorarios.recreo ? 1 : 0)).fill(null).map(() => ({ contenido: '' }))),

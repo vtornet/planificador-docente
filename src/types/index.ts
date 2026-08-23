@@ -20,6 +20,7 @@ interface Horario {
   configHorarios: ConfigHorarios
   fechaInicio?: Date // tramo de fechas en que el horario está vigente
   fechaFin?: Date
+  actualizado: Date // ver mergeCuadernos.ts — decide qué copia gana al fusionar ediciones de dos dispositivos offline
 }
 
 interface ConfigHorarios {
@@ -50,6 +51,7 @@ interface Semana {
   numeroSemana: number // 1-36
   observaciones: string
   dias: DiaPlanificacion[]
+  actualizado: Date // ver mergeCuadernos.ts
 }
 
 interface DiaPlanificacion {
@@ -90,6 +92,7 @@ interface Evento {
   recordatorio: RecordatorioEvento
   recurrencia?: RecurrenciaEvento
   creado: Date
+  actualizado: Date // ver mergeCuadernos.ts
 }
 
 // ============== REUNIONES ==============
@@ -103,6 +106,7 @@ interface Reunion {
   acuerdos: string
   firmas: Firma[]
   creada: Date
+  actualizado: Date // ver mergeCuadernos.ts
 }
 
 interface Firma {
@@ -158,6 +162,22 @@ interface Vacacion {
   fin: Date
 }
 
+// ============== FUSIÓN ENTRE DISPOSITIVOS ==============
+// Al reconciliar dos copias del mismo cuaderno editadas offline en
+// dispositivos distintos (ver src/sync/mergeCuaderno.ts), cada lista
+// (horarios, semanas, reuniones, notas, eventos) se fusiona por id usando el
+// `actualizado` de cada elemento — pero un array por sí solo no puede
+// distinguir "nunca existió aquí" de "existió y se borró aquí": sin este
+// registro, un elemento borrado en un dispositivo resucitaría al fusionar
+// con la copia (más antigua) del otro dispositivo, que todavía lo tiene.
+type TipoEntidadEliminable = 'horario' | 'semana' | 'reunion' | 'nota' | 'evento'
+
+interface Eliminacion {
+  id: string // id del elemento borrado (de la lista correspondiente a `tipo`)
+  tipo: TipoEntidadEliminable
+  fecha: Date // gana sobre una edición del otro dispositivo solo si es posterior a su `actualizado`
+}
+
 // ============== CUADERNO COMPLETO ==============
 interface CuadernoDocente {
   id: string
@@ -171,6 +191,7 @@ interface CuadernoDocente {
   notas: Nota[]
   eventos: Evento[]
   configuracion: Configuracion
+  eliminados: Eliminacion[]
 }
 
 // ============== EXPORTS ==============
@@ -194,4 +215,6 @@ export type {
   TipoFestivo,
   Vacacion,
   CuadernoDocente,
+  Eliminacion,
+  TipoEntidadEliminable,
 }

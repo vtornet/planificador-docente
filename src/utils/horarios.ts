@@ -23,7 +23,7 @@ export function horarioAbarcaMasDeLaSemana(horario: Horario, semana: { inicio: D
 export function dividirHorarioParaSemana(
   original: Horario,
   semana: { inicio: Date; fin: Date }
-): { actualizacionOriginal: Partial<Horario>; nuevos: Omit<Horario, 'id'>[] } {
+): { actualizacionOriginal: Partial<Horario>; nuevos: Omit<Horario, 'id' | 'actualizado'>[] } {
   const diaAntes = addDays(semana.inicio, -1)
   const diaDespues = addDays(semana.fin, 1)
   const fechaFinOriginal = original.fechaFin ? new Date(original.fechaFin) : null
@@ -33,7 +33,7 @@ export function dividirHorarioParaSemana(
 
   const clonarDatos = () => original.datos.map((fila) => fila.map((celda) => ({ ...celda })))
 
-  const nuevos: Omit<Horario, 'id'>[] = [
+  const nuevos: Omit<Horario, 'id' | 'actualizado'>[] = [
     {
       tipo: original.tipo,
       nombre: original.nombre,
