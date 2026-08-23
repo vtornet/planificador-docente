@@ -1,13 +1,18 @@
-import { useState } from 'react'
+import { useState, lazy, Suspense } from 'react'
 import { useCuadernoStore } from '../../stores/useCuadernoStore'
 import { cn } from '../../utils/cn'
-import { Calendar, CalendarDays, Users, FileText, Moon, Sun, UserCircle, Upload, HelpCircle } from 'lucide-react'
-import { ExportMenu } from '../export/ExportMenu'
+import { Calendar, CalendarDays, Users, FileText, Moon, Sun, UserCircle, Upload, HelpCircle, Download } from 'lucide-react'
 import { ImportDialog } from '../export/ImportDialog'
 import { Button } from '../ui/button'
 import { useTheme } from '../../hooks/useTheme'
 import { PerfilDialog } from '../perfil/PerfilDialog'
 import { AyudaDialog } from '../ayuda/AyudaDialog'
+
+// Perezoso: es el único sitio de la app que usa el menú desplegable de Radix
+// (react-dropdown-menu + floating-ui, ~100 KB sin minificar) — igual que las
+// 4 secciones principales (ver App.tsx), se descarga solo cuando hace falta
+// en vez de ir en el bundle inicial.
+const ExportMenu = lazy(() => import('../export/ExportMenu').then((m) => ({ default: m.ExportMenu })))
 
 interface AppHeaderProps {
   className?: string
@@ -89,7 +94,16 @@ export function AppHeader({ className }: AppHeaderProps) {
             <Upload className="w-4 h-4" />
             <span className="hidden sm:inline">Importar</span>
           </Button>
-          <ExportMenu />
+          <Suspense
+            fallback={
+              <Button variant="outline" size="sm" disabled>
+                <Download className="w-4 h-4" />
+                <span className="hidden sm:inline">Exportar</span>
+              </Button>
+            }
+          >
+            <ExportMenu />
+          </Suspense>
         </div>
       </div>
       <PerfilDialog open={showPerfil} onOpenChange={setShowPerfil} />
