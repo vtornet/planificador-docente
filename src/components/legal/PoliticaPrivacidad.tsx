@@ -37,7 +37,9 @@ export function PoliticaPrivacidad({ open, onOpenChange }: PoliticaPrivacidadPro
             <ul className="list-disc pl-5 space-y-1 mt-1">
               <li>
                 <strong>Datos de cuenta:</strong> email y contraseña (la contraseña nunca se
-                almacena en texto plano, la gestiona nuestro proveedor de autenticación).
+                almacena en texto plano, la gestiona nuestro proveedor de autenticación) — o, si
+                inicias sesión con Google, el email y el identificador que Google nos facilita para
+                ese fin.
               </li>
               <li>
                 <strong>Datos de perfil:</strong> centro educativo, nombre del docente, curso
@@ -76,6 +78,7 @@ export function PoliticaPrivacidad({ open, onOpenChange }: PoliticaPrivacidadPro
               <li><strong>Stripe</strong> — procesamiento de pagos de la suscripción.</li>
               <li><strong>Resend</strong> — envío de emails de la cuenta (confirmación, recuperación de contraseña).</li>
               <li><strong>Groq</strong> — genera las respuestas del asistente de IA cuando lo usas; solo recibe el texto que escribes en esa conversación, no el resto de tu cuaderno.</li>
+              <li><strong>Google</strong> — si eliges iniciar sesión con tu cuenta de Google, actúa como proveedor de identidad para ese inicio de sesión.</li>
             </ul>
             <p className="mt-1">
               Algunos de estos proveedores pueden procesar datos fuera del Espacio Económico

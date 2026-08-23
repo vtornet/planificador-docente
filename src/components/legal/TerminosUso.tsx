@@ -43,9 +43,9 @@ export function TerminosUso({ open, onOpenChange }: TerminosUsoProps) {
           <section>
             <h3 className="font-semibold text-foreground mb-1">3. Registro y cuenta</h3>
             <p>
-              Para usar Docenza necesitas crear una cuenta con un email real y una contraseña. Eres
-              responsable de mantener la confidencialidad de tu contraseña y de toda la actividad
-              que ocurra en tu cuenta.
+              Para usar Docenza necesitas crear una cuenta con un email real y una contraseña, o
+              iniciar sesión con tu cuenta de Google. Eres responsable de mantener la
+              confidencialidad de tu contraseña y de toda la actividad que ocurra en tu cuenta.
             </p>
           </section>
 
@@ -56,8 +56,15 @@ export function TerminosUso({ open, onOpenChange }: TerminosUsoProps) {
               módulo (un horario, una reunión, una nota, una semana de planificación y un evento).
               Superado ese límite, hace falta una suscripción de pago recurrente (anual) para seguir
               creando contenido nuevo y para usar el asistente de IA. La suscripción se renueva
-              automáticamente salvo que la canceles antes de la renovación; puedes cancelarla en
-              cualquier momento y seguirás teniendo acceso hasta el final del periodo ya pagado.
+              automáticamente salvo que la canceles. Ahora mismo, la única vía de autoservicio para
+              dejar de pagar es eliminar tu cuenta por completo (Perfil → Eliminar mi cuenta), que
+              cancela la suscripción de inmediato pero también borra tu cuenta y todos tus cuadernos
+              de forma irreversible. Si quieres cancelar la renovación sin perder tu cuenta ni tus
+              datos, escríbenos a{' '}
+              <a href="mailto:contact@appstracta.app" className="text-primary underline">
+                contact@appstracta.app
+              </a>
+              .
             </p>
           </section>
 
