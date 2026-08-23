@@ -2,6 +2,7 @@ import * as React from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { cn } from '../../utils/cn'
+import { useHistoryBack } from '../../hooks/useHistoryBack'
 
 interface DialogContextValue {
   isOpen: boolean
@@ -20,6 +21,7 @@ function useDialog() {
 
 const Dialog = ({ isOpen, open, onOpenChange, children }: { isOpen?: boolean; open?: boolean; onOpenChange: (open: boolean) => void; children: React.ReactNode }) => {
   const isOpenValue = open !== undefined ? open : (isOpen !== undefined ? isOpen : false)
+  useHistoryBack(isOpenValue, () => onOpenChange(false))
   return (
     <DialogContext.Provider value={{ isOpen: isOpenValue, setIsOpen: onOpenChange }}>
       {children}

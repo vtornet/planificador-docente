@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { format, startOfMonth, endOfMonth, eachWeekOfInterval, addDays } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { useCuadernoStore } from '../../stores/useCuadernoStore'
@@ -15,6 +15,7 @@ import type { Horario, ConfigHorarios } from '../../types'
 import { Calendar, Trash2, Clock, Edit2, ChevronRight, ChevronLeft, Download } from 'lucide-react'
 import { horarioActivoEnRango, horarioAbarcaMasDeLaSemana, dividirHorarioParaSemana, formatRangoFechas } from '../../utils/horarios'
 import { parseFechaInput } from '../../utils/fechas'
+import { pushBackEntry, resolveBackEntry, type BackEntry } from '../../hooks/backNavigationStack'
 
 // El curso escolar empieza en Septiembre (mes 8, 0-indexado). MESES: 0=Septiembre...10=Julio.
 function anioYMesDe(indiceMes: number, anioInicio: number, anioFin: number): { anio: number; mes: number } {
@@ -280,6 +281,36 @@ export function HorarioManager() {
     setVista('semana')
   }
 
+  // Enganche con la pila compartida de historial (`backNavigationStack.ts`):
+  // único sitio de la app con navegación por niveles (meses → semanas →
+  // semana) fuera de un Dialog (el resto ya lo cubre el enganche en el
+  // componente Dialog compartido, que usa la misma pila). Cada clic hacia
+  // dentro apila una entrada con la función que debe deshacerla; cada clic
+  // hacia fuera (breadcrumb, "Volver a...") la resuelve explícitamente. Al
+  // ser una pila global compartida con los Dialog (en vez de un mecanismo
+  // propio con su propio listener de popstate), un Dialog abierto sobre un
+  // nivel de aquí se cierra sin interferir con la navegación de niveles.
+  const entriesHistorialRef = useRef<BackEntry[]>([])
+
+  const apilarNivel = (onBack: () => void) => {
+    const entry = pushBackEntry(() => {
+      onBack()
+      entriesHistorialRef.current = entriesHistorialRef.current.filter((e) => e !== entry)
+    })
+    entriesHistorialRef.current.push(entry)
+  }
+
+  const desapilarUnNivel = () => {
+    const entry = entriesHistorialRef.current.pop()
+    if (entry) resolveBackEntry(entry)
+  }
+
+  const desapilarTodo = () => {
+    while (entriesHistorialRef.current.length > 0) {
+      resolveBackEntry(entriesHistorialRef.current.pop()!)
+    }
+  }
+
   const semanasMesActual = useMemo(() => {
     if (mesSeleccionado === null) return []
     const { anio, mes } = anioYMesDe(mesSeleccionado, anioInicio, anioFin)
@@ -367,7 +398,7 @@ export function HorarioManager() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <nav className="flex items-center gap-1 text-sm">
           <button
-            onClick={irAMeses}
+            onClick={() => { irAMeses(); desapilarTodo() }}
             className={vista === 'meses' ? 'font-bold text-foreground text-2xl tracking-tight' : 'text-primary hover:underline'}
           >
             Horarios
@@ -376,7 +407,11 @@ export function HorarioManager() {
             <>
               <ChevronRight className="w-4 h-4 text-muted-foreground" />
               <button
-                onClick={() => irAMes(mesSeleccionado)}
+                onClick={() => {
+                  const eraSemana = vista === 'semana'
+                  irAMes(mesSeleccionado)
+                  if (eraSemana) desapilarUnNivel()
+                }}
                 className={vista === 'semanas' ? 'font-bold text-foreground text-2xl tracking-tight' : 'text-primary hover:underline'}
               >
                 {MESES[mesSeleccionado]}
@@ -513,7 +548,7 @@ export function HorarioManager() {
 
       {vista === 'meses' && horariosSinFecha.length > 0 && (
         <button
-          onClick={() => setVista('sinFecha')}
+          onClick={() => { setVista('sinFecha'); apilarNivel(() => irAMeses()) }}
           className="w-full text-left text-sm text-muted-foreground hover:text-primary underline underline-offset-2"
         >
           Ver {horariosSinFecha.length} {horariosSinFecha.length === 1 ? 'horario' : 'horarios'} sin periodo asignado
@@ -532,7 +567,7 @@ export function HorarioManager() {
               <Card
                 key={nombreMes}
                 className="cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => irAMes(idx)}
+                onClick={() => { irAMes(idx); apilarNivel(() => irAMeses()) }}
               >
                 <CardContent className="pt-6 flex flex-col items-center text-center gap-2">
                   <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -553,7 +588,7 @@ export function HorarioManager() {
 
       {vista === 'semanas' && mesSeleccionado !== null && (
         <div className="space-y-4">
-          <Button variant="ghost" size="sm" onClick={irAMeses} className="text-muted-foreground">
+          <Button variant="ghost" size="sm" onClick={() => { irAMeses(); desapilarUnNivel() }} className="text-muted-foreground">
             <ChevronLeft className="w-4 h-4" /> Volver a meses
           </Button>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -563,7 +598,10 @@ export function HorarioManager() {
                 <Card
                   key={semana.inicio.toISOString()}
                   className="cursor-pointer hover:shadow-md transition-shadow"
-                  onClick={() => irASemana(semana)}
+                  onClick={() => {
+                    irASemana(semana)
+                    apilarNivel(() => { if (mesSeleccionado !== null) irAMes(mesSeleccionado) })
+                  }}
                 >
                   <CardContent className="pt-6">
                     <div className="font-semibold text-foreground mb-2">
@@ -593,7 +631,7 @@ export function HorarioManager() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => mesSeleccionado !== null && irAMes(mesSeleccionado)}
+            onClick={() => { if (mesSeleccionado !== null) irAMes(mesSeleccionado); desapilarUnNivel() }}
             className="text-muted-foreground"
           >
             <ChevronLeft className="w-4 h-4" /> Volver a {mesSeleccionado !== null ? MESES[mesSeleccionado] : 'el mes'}
@@ -643,7 +681,7 @@ export function HorarioManager() {
 
       {vista === 'sinFecha' && (
         <div className="space-y-6">
-          <Button variant="ghost" size="sm" onClick={irAMeses} className="text-muted-foreground">
+          <Button variant="ghost" size="sm" onClick={() => { irAMeses(); desapilarUnNivel() }} className="text-muted-foreground">
             <ChevronLeft className="w-4 h-4" /> Volver a meses
           </Button>
           <p className="text-sm text-muted-foreground">
