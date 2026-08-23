@@ -12,12 +12,20 @@ import {
 import { Button } from '../ui/button'
 import { Download, FileText, Calendar, CalendarClock, Users, BookOpen, FileJson, Loader2 } from 'lucide-react'
 import { exportCuadernoToJSON } from '../../utils/export'
+import { PdfPreviewDialog } from './PdfPreviewDialog'
+import type { PDFGenerado } from '../../utils/pdf.tsx'
 
 type ExportType = 'horarios' | 'planificacion' | 'reuniones' | 'notas' | 'agenda' | 'completo' | 'json'
 
 export function ExportMenu() {
   const { cuadernoActual } = useCuadernoStore()
   const [exporting, setExporting] = useState<ExportType | null>(null)
+  // Cada opción de PDF genera el archivo primero y lo enseña aquí — la
+  // descarga real solo ocurre si se confirma desde el propio diálogo
+  // (ver PdfPreviewDialog.tsx), para poder pillar un error (ej. el módulo
+  // equivocado del desplegable) antes de guardarlo. El backup JSON no pasa
+  // por aquí, no tiene sentido previsualizarlo como PDF.
+  const [previewPdf, setPreviewPdf] = useState<PDFGenerado | null>(null)
 
   const handleExport = async (type: ExportType) => {
     if (!cuadernoActual) return
@@ -26,61 +34,61 @@ export function ExportMenu() {
     try {
       switch (type) {
         case 'horarios': {
-          // Exportar todos los horarios combinados en un PDF (uno por página).
+          // Todos los horarios combinados en un PDF (uno por página).
           // Para exportar uno en concreto, usa el botón de descarga de su tarjeta.
           if (cuadernoActual.horarios.length > 0) {
-            const { exportHorariosToPDF } = await import('../../utils/pdf.tsx')
-            await exportHorariosToPDF(cuadernoActual.horarios, cuadernoActual.metadata)
+            const { generarHorariosPDF } = await import('../../utils/pdf.tsx')
+            setPreviewPdf(await generarHorariosPDF(cuadernoActual.horarios, cuadernoActual.metadata))
           }
           break
         }
 
         case 'planificacion': {
-          // Exportar la primera semana (o todas)
+          // La primera semana (o todas)
           if (cuadernoActual.planificacion.semanal.length > 0) {
-            const { exportSemanaToPDF } = await import('../../utils/pdf.tsx')
-            await exportSemanaToPDF(cuadernoActual.planificacion.semanal[0], cuadernoActual.metadata)
+            const { generarSemanaPDF } = await import('../../utils/pdf.tsx')
+            setPreviewPdf(await generarSemanaPDF(cuadernoActual.planificacion.semanal[0], cuadernoActual.metadata))
           }
           break
         }
 
         case 'reuniones': {
-          // Exportar todas las reuniones combinadas en un PDF (una por página).
+          // Todas las reuniones combinadas en un PDF (una por página).
           // Para exportar una en concreto, usa el botón de descarga de su tarjeta.
           if (cuadernoActual.reuniones.length > 0) {
-            const { exportReunionesToPDF } = await import('../../utils/pdf.tsx')
-            await exportReunionesToPDF(cuadernoActual.reuniones, cuadernoActual.metadata)
+            const { generarReunionesPDF } = await import('../../utils/pdf.tsx')
+            setPreviewPdf(await generarReunionesPDF(cuadernoActual.reuniones, cuadernoActual.metadata))
           }
           break
         }
 
         case 'notas': {
-          // Exportar todas las notas
+          // Todas las notas
           if (cuadernoActual.notas.length > 0) {
-            const { exportNotasToPDF } = await import('../../utils/pdf.tsx')
-            await exportNotasToPDF(cuadernoActual.notas, cuadernoActual.metadata)
+            const { generarNotasPDF } = await import('../../utils/pdf.tsx')
+            setPreviewPdf(await generarNotasPDF(cuadernoActual.notas, cuadernoActual.metadata))
           }
           break
         }
 
         case 'agenda': {
-          // Exportar los eventos de la agenda (expandiendo recurrencias)
+          // Los eventos de la agenda (expandiendo recurrencias)
           if ((cuadernoActual.eventos || []).length > 0) {
-            const { exportEventosToPDF } = await import('../../utils/pdf.tsx')
-            await exportEventosToPDF(cuadernoActual)
+            const { generarEventosPDF } = await import('../../utils/pdf.tsx')
+            setPreviewPdf(await generarEventosPDF(cuadernoActual))
           }
           break
         }
 
         case 'completo': {
-          // Exportar todo el cuaderno
-          const { exportCuadernoCompletoToPDF } = await import('../../utils/pdf.tsx')
-          await exportCuadernoCompletoToPDF(cuadernoActual)
+          // Todo el cuaderno
+          const { generarCuadernoCompletoPDF } = await import('../../utils/pdf.tsx')
+          setPreviewPdf(await generarCuadernoCompletoPDF(cuadernoActual))
           break
         }
 
         case 'json':
-          // Exportar a JSON
+          // El backup JSON se descarga directo, sin vista previa.
           exportCuadernoToJSON(cuadernoActual)
           break
       }
@@ -157,6 +165,8 @@ export function ExportMenu() {
           <span>Backup (JSON)</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
+
+      <PdfPreviewDialog pdf={previewPdf} onOpenChange={(open) => !open && setPreviewPdf(null)} />
     </DropdownMenu>
   )
 }
