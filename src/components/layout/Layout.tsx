@@ -8,6 +8,7 @@ import { CompletarPerfilScreen } from '../perfil/CompletarPerfilScreen'
 import { useRecordatoriosEventos } from '../../hooks/useRecordatoriosEventos'
 import { useCheckoutReturn } from '../../hooks/useCheckoutReturn'
 import { CheckoutStatusBanner } from './CheckoutStatusBanner'
+import { SyncTopeBanner } from './SyncTopeBanner'
 import { AsistenteChat } from '../ai/AsistenteChat'
 
 interface LayoutProps {
@@ -56,6 +57,7 @@ export function Layout({ children }: LayoutProps) {
       <div className="md:ml-64 pb-16 md:pb-0">
         <AppHeader />
         <CheckoutStatusBanner estado={estadoCheckout} />
+        <SyncTopeBanner />
         <main className="p-4 md:p-6">{children}</main>
       </div>
       <BottomNav />

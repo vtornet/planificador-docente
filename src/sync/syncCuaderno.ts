@@ -1,8 +1,19 @@
 import { supabase } from '../lib/supabaseClient'
 import { useAuthStore } from '../stores/useAuthStore'
+import { useSyncStatusStore } from '../stores/useSyncStatusStore'
 import { prepareCuadernoForExport, restoreCuadernoFromImport } from '../utils/export'
 import { mergeCuadernos } from './mergeCuaderno'
 import type { CuadernoDocente } from '../types'
+
+// El trigger enforce_trial_limits (0001_init.sql) rechaza el upsert entero con
+// este mensaje cuando algún módulo supera el tope de la prueba gratuita — se
+// distingue así de un fallo de red normal (esperable offline, no debe
+// alarmar a la docente) para decidir si mostrar el aviso de "sin sincronizar
+// por el límite de prueba" en la UI (ver SyncTopeBanner.tsx).
+function esErrorTopeDePrueba(error: unknown): boolean {
+  const mensaje = error instanceof Error ? error.message : (error as { message?: string } | null)?.message
+  return typeof mensaje === 'string' && mensaje.includes('trial_limit_exceeded')
+}
 
 /**
  * Empuja un cuaderno a Supabase (siempre upsert, nunca insert — idempotente,
@@ -13,7 +24,11 @@ import type { CuadernoDocente } from '../types'
  *
  * Se llama siempre en fire-and-forget (igual que el resto de persistencia de
  * useCuadernoStore.ts): un fallo aquí no debe bloquear la UI, que ya guardó
- * en Dexie primero y sigue siendo usable offline.
+ * en Dexie primero y sigue siendo usable offline. Sí que se refleja en
+ * `useSyncStatusStore`, único punto por el que pasan las tres formas de
+ * llegar aquí (el fire-and-forget de cada mutación, reconcileCuadernosConSupabase
+ * y reclamarCuadernoLocal), para que un fallo por tope de prueba dé al menos
+ * un aviso visible en vez de quedarse solo en `console.error`.
  */
 export async function syncCuadernoToSupabase(cuaderno: CuadernoDocente): Promise<void> {
   const user = useAuthStore.getState().user
@@ -28,7 +43,14 @@ export async function syncCuadernoToSupabase(cuaderno: CuadernoDocente): Promise
     updated_at: new Date().toISOString(),
   })
 
-  if (error) throw error
+  if (error) {
+    if (esErrorTopeDePrueba(error)) {
+      useSyncStatusStore.getState().marcarBloqueado()
+    }
+    throw error
+  }
+
+  useSyncStatusStore.getState().marcarDesbloqueado()
 }
 
 /**

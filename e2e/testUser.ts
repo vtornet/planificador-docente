@@ -9,12 +9,16 @@ export interface TestUser {
 
 /**
  * Crea una cuenta de prueba ya confirmada (sin pasar por el email real de
- * confirmación, ver Admin API de Supabase) y con la suscripción marcada como
- * activa, para que ningún test choque con el tope de la prueba gratuita sin
- * estar probando precisamente eso. Cada test crea la suya y la borra al
- * terminar (ver eliminarUsuarioPrueba) — nunca se reutiliza entre tests.
+ * confirmación, ver Admin API de Supabase). Por defecto con la suscripción
+ * marcada como activa, para que ningún test choque con el tope de la prueba
+ * gratuita sin estar probando precisamente eso — pasar `suscripcion: 'trial'`
+ * para el caso contrario (deja `subscription_status` sin fijar, tal y como
+ * lo deja `handle_new_user()` en un alta real, así que `has_paid` es `false`).
+ * Cada test crea la suya y la borra al terminar (ver eliminarUsuarioPrueba)
+ * — nunca se reutiliza entre tests.
  */
-export async function crearUsuarioPrueba(): Promise<TestUser> {
+export async function crearUsuarioPrueba(opts: { suscripcion?: 'active' | 'trial' } = {}): Promise<TestUser> {
+  const { suscripcion = 'active' } = opts
   const admin = getSupabaseAdmin()
   const email = `e2e-${randomUUID()}@docenza-e2e.test`
   const password = 'PruebaE2E123!'
@@ -28,12 +32,14 @@ export async function crearUsuarioPrueba(): Promise<TestUser> {
     throw new Error(`No se pudo crear la usuaria de prueba: ${error?.message}`)
   }
 
-  const { error: profileError } = await admin
-    .from('profiles')
-    .update({ subscription_status: 'active' })
-    .eq('id', data.user.id)
-  if (profileError) {
-    throw new Error(`No se pudo activar la suscripción de la usuaria de prueba: ${profileError.message}`)
+  if (suscripcion === 'active') {
+    const { error: profileError } = await admin
+      .from('profiles')
+      .update({ subscription_status: 'active' })
+      .eq('id', data.user.id)
+    if (profileError) {
+      throw new Error(`No se pudo activar la suscripción de la usuaria de prueba: ${profileError.message}`)
+    }
   }
 
   return { id: data.user.id, email, password }
