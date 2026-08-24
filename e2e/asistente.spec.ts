@@ -14,13 +14,15 @@ async function mockearAsistente(page: import('@playwright/test').Page, respuesta
   })
 }
 
-async function preguntarAlAsistente(page: import('@playwright/test').Page, respuesta: string) {
+async function preguntarAlAsistenteYExportarAHorario(page: import('@playwright/test').Page, respuesta: string) {
   await mockearAsistente(page, respuesta)
   await page.getByRole('button', { name: 'Abrir asistente de IA' }).click()
   await page.getByPlaceholder('Escribe tu pregunta…').fill('Dame una actividad')
   await page.keyboard.press('Enter')
   await expect(page.getByText(respuesta)).toBeVisible()
-  await page.getByRole('button', { name: 'Exportar a un horario' }).click()
+  await page.getByRole('button', { name: 'Exportar respuesta', exact: true }).click()
+  await expect(page.getByRole('heading', { name: '¿Dónde quieres exportar la respuesta?' })).toBeVisible()
+  await page.getByRole('button', { name: 'Horario', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Exportar respuesta a un horario' })).toBeVisible()
 }
 
@@ -47,7 +49,7 @@ test.describe('Asistente de IA', () => {
     await page.getByRole('button', { name: 'Guardar cambios' }).click()
     await expect(celdaLunes).toContainText('Lengua')
 
-    await preguntarAlAsistente(page, 'Actividad de Educación Física para el martes.')
+    await preguntarAlAsistenteYExportarAHorario(page, 'Actividad de Educación Física para el martes.')
 
     // Fecha = martes de esa misma semana (día distinto al que ya tiene
     // asignatura), y el primer periodo disponible de ese día.
@@ -57,7 +59,7 @@ test.describe('Asistente de IA', () => {
     await page.locator('button', { hasText: 'Sin asignar' }).first().click()
     await expect(page.getByText('Se guardará como nota de esa celda:')).toBeVisible()
     await page.getByRole('button', { name: 'Guardar en el horario' }).click()
-    await expect(page.getByText('Guardado en el horario')).toBeVisible()
+    await expect(page.getByText('Guardado')).toBeVisible()
 
     await page.getByRole('button', { name: 'Cerrar asistente' }).first().click()
 
@@ -82,7 +84,7 @@ test.describe('Asistente de IA', () => {
     await page.getByRole('button', { name: 'Crear' }).click()
     await expect(page.getByRole('heading', { name: 'Nuevo horario' })).not.toBeVisible()
 
-    await preguntarAlAsistente(page, 'Planificación de Educación Física, 3º de Primaria.')
+    await preguntarAlAsistenteYExportarAHorario(page, 'Planificación de Educación Física, 3º de Primaria.')
 
     // 8 de septiembre de 2026 (martes) cae en la primera semana del horario.
     await page.locator('input[type="date"]').last().fill('2026-09-08')
@@ -93,7 +95,7 @@ test.describe('Asistente de IA', () => {
     // El horario abarca más de una semana: debe preguntar el alcance.
     await expect(page.getByRole('heading', { name: '¿Guardar en todo el periodo o solo esta semana?' })).toBeVisible()
     await page.getByRole('button', { name: 'Solo esta semana' }).click()
-    await expect(page.getByText('Guardado en el horario')).toBeVisible()
+    await expect(page.getByText('Guardado')).toBeVisible()
     await page.getByRole('button', { name: 'Cerrar asistente' }).first().click()
 
     // La semana del 7-11 (donde cae el 8 de septiembre) tiene la nota...
@@ -190,5 +192,71 @@ test.describe('Asistente de IA (V2)', () => {
     await page.keyboard.press('Enter')
     await expect(page.getByText('OK', { exact: true }).last()).toBeVisible()
     expect(contextoRecibido).toContain('boletines de notas')
+  })
+})
+
+// Pedido explícito del usuario (24-08-2026): el destino de exportación no
+// debe depender del módulo activo del asistente — un selector explícito
+// (Horario / Nota / Reunión) reemplaza al antiguo "siempre a un horario".
+test.describe('Asistente de IA: exportar a distintos destinos', () => {
+  test('el destino es independiente del módulo activo: se puede exportar a una nota nueva estando en Horarios', async ({
+    page,
+    testUser,
+  }) => {
+    await crearCuaderno(page, testUser) // vista inicial: Horarios
+
+    await mockearAsistente(page, 'Trae los boletines de notas a la reunión del jueves.')
+    await page.getByRole('button', { name: 'Abrir asistente de IA' }).click()
+    await page.getByPlaceholder('Escribe tu pregunta…').fill('Dame un recordatorio')
+    await page.keyboard.press('Enter')
+    await expect(page.getByText('Trae los boletines de notas a la reunión del jueves.')).toBeVisible()
+
+    await page.getByRole('button', { name: 'Exportar respuesta', exact: true }).click()
+    await expect(page.getByRole('heading', { name: '¿Dónde quieres exportar la respuesta?' })).toBeVisible()
+    await page.getByRole('button', { name: 'Nota', exact: true }).click()
+    await expect(page.getByRole('heading', { name: 'Exportar respuesta a una nota' })).toBeVisible()
+    await expect(page.getByText('Todavía no tienes ninguna nota creada.')).toBeVisible()
+
+    await page.getByRole('button', { name: 'Crear una nota nueva' }).click()
+    await page.getByRole('button', { name: 'Crear nota' }).click()
+    await expect(page.getByText('Guardado')).toBeVisible()
+    await page.getByRole('button', { name: 'Cerrar asistente' }).first().click()
+
+    await irASeccion(page, 'Notas')
+    await expect(page.getByText('Respuesta del asistente')).toBeVisible()
+    await page.getByText('Respuesta del asistente').click()
+    await page.getByRole('button', { name: 'Editar', exact: true }).click()
+    await expect(page.locator('.ProseMirror')).toContainText('Trae los boletines de notas a la reunión del jueves.')
+  })
+
+  test('exportar a una reunión existente añade el texto al campo elegido', async ({ page, testUser }) => {
+    await crearCuaderno(page, testUser)
+    await irASeccion(page, 'Reuniones')
+    await page.getByRole('button', { name: 'Crear reunión' }).click()
+    await page.getByPlaceholder('Ej: Claustro mensual de septiembre').fill('Claustro para exportar E2E')
+    await page.getByRole('button', { name: 'Guardar' }).click()
+    await expect(page.getByText('Claustro para exportar E2E')).toBeVisible()
+
+    await mockearAsistente(page, 'Revisar el calendario de exámenes del segundo trimestre.')
+    await page.getByRole('button', { name: 'Abrir asistente de IA' }).click()
+    await page.getByPlaceholder('Escribe tu pregunta…').fill('Propuesta para el orden del día')
+    await page.keyboard.press('Enter')
+    await expect(page.getByText('Revisar el calendario de exámenes del segundo trimestre.')).toBeVisible()
+
+    await page.getByRole('button', { name: 'Exportar respuesta', exact: true }).click()
+    await page.getByRole('button', { name: 'Reunión', exact: true }).click()
+    await expect(page.getByRole('heading', { name: 'Exportar respuesta a una reunión' })).toBeVisible()
+    await page.getByRole('button', { name: /Claustro para exportar E2E/ }).click()
+    await page.getByRole('button', { name: 'Acuerdos', exact: true }).click()
+    await expect(page.getByText('Se añadirá al final de ese campo:')).toBeVisible()
+    await page.getByRole('button', { name: 'Guardar en la reunión' }).click()
+    await expect(page.getByText('Guardado')).toBeVisible()
+    await page.getByRole('button', { name: 'Cerrar asistente' }).first().click()
+
+    await page.getByText('Claustro para exportar E2E').click()
+    await expect(page.getByRole('heading', { name: 'Editar Reunión' })).toBeVisible()
+    await expect(page.getByPlaceholder('Anota los acuerdos tomados y conclusiones...')).toHaveValue(
+      'Revisar el calendario de exámenes del segundo trimestre.'
+    )
   })
 })

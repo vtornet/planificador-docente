@@ -5,9 +5,9 @@ import { useCuadernoStore } from '../../stores/useCuadernoStore'
 import { useEditorContextStore, type ModuloConContexto } from '../../stores/useEditorContextStore'
 import { supabase } from '../../lib/supabaseClient'
 import { PaywallDialog } from '../paywall/PaywallDialog'
-import { ExportarAHorarioDialog } from './ExportarAHorarioDialog'
+import { ExportarRespuestaDialog } from './ExportarRespuestaDialog'
 import { Button } from '../ui/button'
-import { Sparkles, X, Send, CalendarPlus, Check, Eraser } from 'lucide-react'
+import { Sparkles, X, Send, Share, Check, Eraser } from 'lucide-react'
 import { cn } from '../../utils/cn'
 import { type Mensaje, type ModuloAsistente, cargarHistorial, guardarHistorial, limpiarHistorial } from '../../utils/asistenteHistorial'
 
@@ -197,7 +197,7 @@ export function AsistenteChat() {
                   <div className="mt-1">
                     {exportadoIdx === idx ? (
                       <span className="inline-flex items-center gap-1 text-xs text-primary">
-                        <Check className="w-3 h-3" /> Guardado en el horario
+                        <Check className="w-3 h-3" /> Guardado
                       </span>
                     ) : (
                       <button
@@ -205,7 +205,7 @@ export function AsistenteChat() {
                         onClick={() => setExportandoIdx(idx)}
                         className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
                       >
-                        <CalendarPlus className="w-3 h-3" /> Exportar a un horario
+                        <Share className="w-3 h-3" /> Exportar respuesta
                       </button>
                     )}
                   </div>
@@ -263,10 +263,11 @@ export function AsistenteChat() {
       />
 
       {exportandoIdx !== null && (
-        <ExportarAHorarioDialog
+        <ExportarRespuestaDialog
           open={exportandoIdx !== null}
           onOpenChange={(open) => !open && setExportandoIdx(null)}
           texto={mensajes[exportandoIdx]?.content || ''}
+          moduloActual={modulo}
           onExportado={() => handleExportado(exportandoIdx)}
         />
       )}
