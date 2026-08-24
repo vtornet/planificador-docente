@@ -101,9 +101,146 @@ test.describe('Calendario', () => {
     await page.mouse.click(box.x + box.width / 2, box.y + box.height + 25)
 
     await expect(page.getByRole('heading', { name: 'Nueva Semana' })).toBeVisible()
-    await expect(page.getByText('Precargada desde el horario "Horario de Prueba E2E"')).toBeVisible()
+    await expect(page.getByText('Vinculada al horario "Horario de Prueba E2E"')).toBeVisible()
 
-    const primerInputLunes = page.locator('table tbody tr').first().locator('td').nth(1).locator('input')
-    await expect(primerInputLunes).toHaveValue('Lengua')
+    const primeraCeldaLunes = page.locator('table tbody tr').first().locator('td').nth(1)
+    await expect(primeraCeldaLunes).toContainText('Lengua')
+  })
+})
+
+// Sincronización Planificación ↔ Horario (24-08-2026): cuando hay un horario
+// vigente esa semana, la nota que se escribe en el Planificador se guarda en
+// la celda del horario (fuente única, ver "PLANIFICACIÓN ↔ HORARIO" en
+// CLAUDE.md) — y viceversa, un cambio hecho directamente en Horarios se ve
+// reflejado al reabrir esa semana en el Planificador.
+test.describe('Planificación ↔ Horario', () => {
+  test('la nota escrita en el Planificador aparece en el Horario, y un cambio en el Horario aparece en el Planificador', async ({
+    page,
+    testUser,
+  }) => {
+    await crearCuaderno(page, testUser)
+
+    // Horario de una sola semana exacta (7-11 de septiembre de 2026): sin
+    // varias semanas de por medio, no hay que resolver la pregunta de alcance.
+    await page.getByRole('button', { name: '+ Nuevo horario' }).click()
+    await page.getByPlaceholder('Ej: Horario 1º ESO A').fill('Horario Sync E2E')
+    const fechas = page.locator('input[type="date"]')
+    await fechas.first().fill('2026-09-07')
+    await fechas.nth(1).fill('2026-09-11')
+    await page.getByRole('button', { name: 'Crear' }).click()
+    await expect(page.getByRole('heading', { name: 'Nuevo horario' })).not.toBeVisible()
+
+    await page.getByText('Septiembre', { exact: true }).click()
+    await page.getByText('Del 7 al 11 de septiembre').click()
+    const celdaLunesHorario = page.locator('table tbody tr').first().locator('td').nth(1)
+    await celdaLunesHorario.click()
+    await page.locator('select').first().selectOption({ label: 'Lengua' })
+    await page.getByRole('button', { name: 'Guardar', exact: true }).click()
+    await page.getByRole('button', { name: 'Guardar cambios' }).click()
+    await expect(celdaLunesHorario).toContainText('Lengua')
+
+    // Crear la semana de Planificación para esa misma semana y escribir una
+    // nota en la celda del Lunes (primer periodo, la misma que ya tiene
+    // "Lengua" como asignatura en el Horario).
+    await irASeccion(page, 'Calendario')
+    await page.getByRole('button', { name: '▶' }).click()
+    const celdaDia7 = page.locator('.rbc-date-cell', { hasText: /^0?7$/ })
+    const boxDia7 = await celdaDia7.boundingBox()
+    if (!boxDia7) throw new Error('No se encontró la celda del día 7 en el calendario')
+    await page.mouse.click(boxDia7.x + boxDia7.width / 2, boxDia7.y + boxDia7.height + 25)
+    await expect(page.getByRole('heading', { name: 'Nueva Semana' })).toBeVisible()
+
+    const celdaLunesPlanificador = page.locator('table tbody tr').first().locator('td').nth(1)
+    await expect(celdaLunesPlanificador).toContainText('Lengua')
+    await celdaLunesPlanificador.locator('textarea').fill('Ejercicios de repaso, página 12')
+    await page.getByRole('button', { name: 'Guardar', exact: true }).click()
+    await expect(page.getByRole('heading', { name: 'Nueva Semana' })).not.toBeVisible()
+
+    // La nota debe verse ahora directamente en Horarios, sin tocar la
+    // asignatura "Lengua" ya asignada.
+    await irASeccion(page, 'Horarios')
+    await page.getByText('Septiembre', { exact: true }).click()
+    await page.getByText('Del 7 al 11 de septiembre').click()
+    await expect(celdaLunesHorario).toContainText('Lengua')
+    await expect(celdaLunesHorario).toContainText('Ejercicios de repaso, página 12')
+
+    // Dirección inversa: cambiar la nota directamente desde Horarios (la celda
+    // ya tiene contenido, así que se abre en modo Ver — hay que pulsar Editar).
+    await celdaLunesHorario.click()
+    await expect(page.getByRole('heading', { name: 'Lengua' })).toBeVisible()
+    await page.getByRole('button', { name: 'Editar', exact: true }).click()
+    await expect(page.getByRole('heading', { name: 'Editar celda' })).toBeVisible()
+    await page.getByPlaceholder('Ej: Traer material de plástica...').fill('Cambiado desde Horarios')
+    await page.getByRole('button', { name: 'Guardar', exact: true }).click()
+    await page.getByRole('button', { name: 'Guardar cambios' }).click()
+    await expect(celdaLunesHorario).toContainText('Cambiado desde Horarios')
+
+    // ...y comprobar que se ve reflejado al reabrir esa semana en el Planificador.
+    // (Calendario vuelve a arrancar en el mes actual al reentrar en la sección.)
+    await irASeccion(page, 'Calendario')
+    await page.getByRole('button', { name: '▶' }).click()
+    await page.getByText('Semana 1', { exact: true }).click()
+    await expect(page.getByRole('heading', { name: /^Semana \d+$/ })).toBeVisible()
+    const celdaLunesVista = page.locator('table tbody tr').first().locator('td').nth(1)
+    await expect(celdaLunesVista).toContainText('Lengua')
+    await expect(celdaLunesVista.locator('textarea')).toHaveValue('Cambiado desde Horarios')
+  })
+
+  test('si el horario abarca varias semanas, guardar el Planificador pregunta el alcance', async ({ page, testUser }) => {
+    await crearCuaderno(page, testUser)
+
+    // Horario de 3 semanas exactas (7-11, 14-18 y 21-25 de septiembre de 2026).
+    await page.getByRole('button', { name: '+ Nuevo horario' }).click()
+    await page.getByPlaceholder('Ej: Horario 1º ESO A').fill('Horario Trimestre Planificación E2E')
+    const fechas = page.locator('input[type="date"]')
+    await fechas.first().fill('2026-09-07')
+    await fechas.nth(1).fill('2026-09-25')
+    await page.getByRole('button', { name: 'Crear' }).click()
+    await expect(page.getByRole('heading', { name: 'Nuevo horario' })).not.toBeVisible()
+
+    await page.getByText('Septiembre', { exact: true }).click()
+    await page.getByText('Del 7 al 11 de septiembre').click()
+    const celdaLunes = page.locator('table tbody tr').first().locator('td').nth(1)
+    await celdaLunes.click()
+    await page.locator('select').first().selectOption({ label: 'Matemáticas' })
+    await page.getByRole('button', { name: 'Guardar', exact: true }).click()
+    await page.getByRole('button', { name: 'Guardar cambios' }).click()
+    // El horario abarca varias semanas: también aquí pregunta el alcance —
+    // "Todo el periodo" para que las 3 semanas compartan la misma plantilla.
+    await expect(page.getByRole('heading', { name: '¿Guardar todo el periodo o solo esta semana?' })).toBeVisible()
+    await page.getByRole('button', { name: 'Todo el periodo' }).click()
+
+    // Crear la semana de Planificación para la primera semana (7-11) y
+    // guardar una nota — el horario abarca más de esa semana, así que debe
+    // preguntar el alcance, igual que ya hace "Guardar cambios" en Horarios.
+    await irASeccion(page, 'Calendario')
+    await page.getByRole('button', { name: '▶' }).click()
+    const celdaDia7 = page.locator('.rbc-date-cell', { hasText: /^0?7$/ })
+    const boxDia7 = await celdaDia7.boundingBox()
+    if (!boxDia7) throw new Error('No se encontró la celda del día 7 en el calendario')
+    await page.mouse.click(boxDia7.x + boxDia7.width / 2, boxDia7.y + boxDia7.height + 25)
+    await expect(page.getByRole('heading', { name: 'Nueva Semana' })).toBeVisible()
+
+    const celdaLunesPlanificador = page.locator('table tbody tr').first().locator('td').nth(1)
+    await celdaLunesPlanificador.locator('textarea').fill('Repaso para el examen')
+    await page.getByRole('button', { name: 'Guardar', exact: true }).click()
+    await expect(page.getByRole('heading', { name: '¿Guardar en todo el periodo o solo esta semana?' })).toBeVisible()
+    await page.getByRole('button', { name: 'Solo esta semana' }).click()
+    await expect(page.getByRole('heading', { name: 'Nueva Semana' })).not.toBeVisible()
+
+    // La semana 1 (7-11) tiene la nota...
+    await irASeccion(page, 'Horarios')
+    await page.getByText('Septiembre', { exact: true }).click()
+    await page.getByText('Del 7 al 11 de septiembre').click()
+    const celdaLunesSemana1 = page.locator('table tbody tr').first().locator('td').nth(1)
+    await expect(celdaLunesSemana1).toContainText('Matemáticas')
+    await expect(celdaLunesSemana1).toContainText('Repaso para el examen')
+
+    // ...pero la semana 2 (14-18), que compartía el mismo horario, no se ve afectada.
+    await page.getByRole('button', { name: 'Volver a Septiembre' }).click()
+    await page.getByText('Del 14 al 18 de septiembre').click()
+    const celdaLunesSemana2 = page.locator('table tbody tr').first().locator('td').nth(1)
+    await expect(celdaLunesSemana2).toContainText('Matemáticas')
+    await expect(celdaLunesSemana2).not.toContainText('Repaso para el examen')
   })
 })

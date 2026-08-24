@@ -11,9 +11,16 @@ import { Textarea } from '../ui/textarea'
 import { Button } from '../ui/button'
 import { CONFIG_HORARIOS_PREDEFINIDOS } from '../../types/constants'
 import { esDiaFestivo, esDiaVacaciones } from '../../utils/festivos'
-import { horarioActivoEnRango } from '../../utils/horarios'
+import {
+  horarioActivoEnRango,
+  horarioAbarcaMasDeLaSemana,
+  dividirHorarioParaSemana,
+  aplicarNotasEnDatos,
+  contenidoParaSemana,
+} from '../../utils/horarios'
 import type { Horario, ConfigHorarios } from '../../types'
 import { cn } from '../../utils/cn'
+import { StickyNote } from 'lucide-react'
 
 interface SemanaEditorProps {
   semana?: Semana
@@ -28,22 +35,26 @@ export function SemanaEditor({
   onSave,
   onCancel,
 }: SemanaEditorProps) {
-  const { cuadernoActual, addSemana, updateSemana, duplicateSemana } = useCuadernoStore()
+  const { cuadernoActual, addSemana, updateSemana, updateHorario, addHorario, duplicateSemana } = useCuadernoStore()
   const festivos = cuadernoActual?.configuracion.festivos || []
   const vacaciones = cuadernoActual?.configuracion.vacaciones || []
 
-  // Horario vigente esa semana (si existe), para prellenar la planificación con
-  // su estructura real de periodos y las asignaturas de cada celda. Solo se usa
-  // al crear una semana nueva (!semana) — una semana ya guardada mantiene sus
-  // propios datos, editados o no, sin recalcularse a partir del horario.
-  const inicioSemanaNueva = fechaInicio || startOfWeek(new Date(), { weekStartsOn: 1 })
-  const finSemanaNueva = addDays(inicioSemanaNueva, 4)
+  // Rango real de la semana (de la propia semana si ya existe, o de
+  // fechaInicio si se está creando) — decide tanto qué horario prellena la
+  // tabla como, ahora, a qué horario se escribe al guardar (ver
+  // "PLANIFICACIÓN ↔ HORARIO: FUENTE ÚNICA" en CLAUDE.md).
+  const inicioSemana = semana ? new Date(semana.fechaInicio) : fechaInicio || startOfWeek(new Date(), { weekStartsOn: 1 })
+  const finSemana = semana ? new Date(semana.fechaFin) : addDays(inicioSemana, 4)
+  const rangoSemana = { inicio: inicioSemana, fin: finSemana }
+
   const horariosVigentes = (cuadernoActual?.horarios || []).filter((h) =>
-    horarioActivoEnRango(h, inicioSemanaNueva, finSemanaNueva)
+    horarioActivoEnRango(h, inicioSemana, finSemana)
   )
   const horarioVigente: Horario | undefined =
     horariosVigentes.find((h) => h.tipo === 'docente') || horariosVigentes[0]
   const configHorariosBase = horarioVigente?.configHorarios || CONFIG_HORARIOS_PREDEFINIDOS.secundaria
+  const periodosHorarios = generarPeriodos(configHorariosBase)
+  const numPeriodosConRecreo = configHorariosBase.numPeriodos + (configHorariosBase.recreo ? 1 : 0)
 
   const [numeroSemana, setNumeroSemana] = useState(semana?.numeroSemana || 1)
   const [observaciones, setObservaciones] = useState(semana?.observaciones || '')
@@ -51,69 +62,109 @@ export function SemanaEditor({
     if (semana?.dias) {
       return semana.dias
     }
-
-    // Crear estructura base para una nueva semana, tomando el nº de periodos y,
-    // si hay horario vigente, el contenido ya asignado en él (datos[periodo][día]).
-    const numPeriodos = configHorariosBase.numPeriodos + (configHorariosBase.recreo ? 1 : 0)
-
     return DIAS_SEMANA.map((_, diaIndex) => {
       const fecha = addDays(fechaInicio || new Date(), diaIndex)
       return {
         fecha,
         esFestivo: esDiaFestivo(fecha, festivos),
         esVacaciones: esDiaVacaciones(fecha, vacaciones),
-        periodos: Array.from({ length: numPeriodos }, (_, periodoIndex) => ({
-          contenido: horarioVigente?.datos[periodoIndex]?.[diaIndex]?.contenido || '',
-        })),
+        periodos: Array.from({ length: numPeriodosConRecreo }, () => ({ contenido: '' })),
       }
     })
   })
 
-  const periodosHorarios = generarPeriodos(configHorariosBase)
+  // Cuando hay un horario vigente esa semana, el contenido editable de cada
+  // periodo ya no vive en `dias` (eso queda para semanas sin horario) — se
+  // lee y escribe en vivo en la nota de la celda del horario
+  // (horario.datos[periodo][día].nota), para que un cambio aquí o en
+  // Horarios se vea reflejado en los dos sitios sin mantener dos copias que
+  // puedan desincronizarse. `dias` se sigue calculando al guardar (ver
+  // construirDiasFinal) solo para que el PDF de la semana y el contexto del
+  // asistente de IA, que leen Semana.dias directamente, sigan siendo útiles.
+  const [notasHorario, setNotasHorario] = useState<Record<string, string>>(() => {
+    if (!horarioVigente) return {}
+    const inicial: Record<string, string> = {}
+    for (let periodoIndex = 0; periodoIndex < numPeriodosConRecreo; periodoIndex++) {
+      for (let diaIndex = 0; diaIndex < DIAS_SEMANA.length; diaIndex++) {
+        inicial[`${periodoIndex}-${diaIndex}`] = horarioVigente.datos[periodoIndex]?.[diaIndex]?.nota || ''
+      }
+    }
+    return inicial
+  })
+  const [mostrarAlcance, setMostrarAlcance] = useState(false)
 
   const publicarContexto = useEditorContextStore((s) => s.publicar)
 
   useEffect(() => {
-    const texto = resumenSemanaParaAsistente(dias, observaciones, periodosHorarios)
+    const texto = horarioVigente
+      ? resumenConHorario(horarioVigente, notasHorario, periodosHorarios, observaciones)
+      : resumenSemanaParaAsistente(dias, observaciones, periodosHorarios)
     if (texto) {
-      const inicio = semana ? new Date(semana.fechaInicio) : fechaInicio || new Date()
-      publicarContexto('planificacion', `Semana del ${format(inicio, 'dd/MM/yyyy')}`, texto)
+      publicarContexto('planificacion', `Semana del ${format(inicioSemana, 'dd/MM/yyyy')}`, texto)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dias, observaciones])
+  }, [dias, notasHorario, observaciones])
 
-  const handleGuardar = () => {
+  // Versión final de `dias` que se guarda en la Semana: con horario vigente,
+  // cada periodo se deriva de asignatura + nota (contenidoParaSemana) en vez
+  // de venir de `dias` directamente.
+  const construirDiasFinal = () => {
+    if (!horarioVigente) return dias
+    return dias.map((dia, diaIndex) => ({
+      ...dia,
+      periodos: periodosHorarios.map((periodo, periodoIndex) => {
+        if (periodo.esRecreo) return { contenido: '' }
+        const asignatura = horarioVigente.datos[periodoIndex]?.[diaIndex]?.contenido || ''
+        const nota = notasHorario[`${periodoIndex}-${diaIndex}`] || ''
+        return { contenido: contenidoParaSemana(asignatura, nota) }
+      }),
+    }))
+  }
+
+  const guardarConAlcance = (alcance?: 'periodo' | 'semana') => {
+    if (horarioVigente) {
+      if (alcance === 'semana') {
+        const { actualizacionOriginal, nuevos } = dividirHorarioParaSemana(horarioVigente, rangoSemana)
+        nuevos[0] = { ...nuevos[0], datos: aplicarNotasEnDatos(nuevos[0].datos, notasHorario) }
+        updateHorario(horarioVigente.id, actualizacionOriginal)
+        nuevos.forEach((nuevo) => addHorario(nuevo))
+      } else {
+        updateHorario(horarioVigente.id, { datos: aplicarNotasEnDatos(horarioVigente.datos, notasHorario) })
+      }
+    }
+
+    const diasFinal = construirDiasFinal()
     if (semana) {
-      // Actualizar semana existente
-      updateSemana(semana.id, {
-        observaciones,
-        dias,
-      })
+      updateSemana(semana.id, { observaciones, dias: diasFinal })
     } else {
-      // Crear nueva semana
-      const inicioSemana = fechaInicio || startOfWeek(new Date(), { weekStartsOn: 1 })
-      const finSemana = addDays(inicioSemana, 4) // Lunes a Viernes
-
       const nuevaSemana: Omit<Semana, 'actualizado'> = {
         id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         fechaInicio: inicioSemana,
         fechaFin: finSemana,
         numeroSemana,
         observaciones,
-        dias,
+        dias: diasFinal,
       }
-
       addSemana(nuevaSemana)
     }
 
+    setMostrarAlcance(false)
     onSave()
   }
 
-  const handleCeldaChange = (
-    diaIndex: number,
-    periodoIndex: number,
-    valor: string
-  ) => {
+  const handleGuardar = () => {
+    if (horarioVigente && horarioAbarcaMasDeLaSemana(horarioVigente, rangoSemana)) {
+      setMostrarAlcance(true)
+    } else {
+      guardarConAlcance()
+    }
+  }
+
+  const handleCeldaChange = (diaIndex: number, periodoIndex: number, valor: string) => {
+    if (horarioVigente) {
+      setNotasHorario((prev) => ({ ...prev, [`${periodoIndex}-${diaIndex}`]: valor }))
+      return
+    }
     const nuevosDias = [...dias]
     nuevosDias[diaIndex].periodos[periodoIndex] = {
       contenido: valor,
@@ -122,10 +173,30 @@ export function SemanaEditor({
   }
 
   const getCeldaContenido = (diaIndex: number, periodoIndex: number) => {
+    if (horarioVigente) return notasHorario[`${periodoIndex}-${diaIndex}`] || ''
     return dias[diaIndex]?.periodos[periodoIndex]?.contenido || ''
   }
 
+  const getCeldaAsignatura = (diaIndex: number, periodoIndex: number) => {
+    if (!horarioVigente) return ''
+    return horarioVigente.datos[periodoIndex]?.[diaIndex]?.contenido || ''
+  }
+
   const handleCopiarDia = (diaIndex: number) => {
+    if (horarioVigente) {
+      const valores = periodosHorarios.map((_, periodoIndex) => notasHorario[`${periodoIndex}-${diaIndex}`] || '')
+      setNotasHorario((prev) => {
+        const nuevo = { ...prev }
+        for (let idx = diaIndex + 1; idx < DIAS_SEMANA.length; idx++) {
+          valores.forEach((valor, periodoIndex) => {
+            nuevo[`${periodoIndex}-${idx}`] = valor
+          })
+        }
+        return nuevo
+      })
+      return
+    }
+
     const contenidoDia = dias[diaIndex].periodos.map((p) => p.contenido)
     const nuevosDias = dias.map((dia, idx) => {
       if (idx > diaIndex) {
@@ -139,6 +210,34 @@ export function SemanaEditor({
       return dia
     })
     setDias(nuevosDias)
+  }
+
+  // Pregunta de alcance (mismo patrón que HorarioTable.tsx/PasoExportarHorario.tsx):
+  // una pantalla alternativa dentro del mismo Dialog del padre, no un <Dialog>
+  // anidado.
+  if (mostrarAlcance) {
+    return (
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold text-foreground tracking-tight">
+          ¿Guardar en todo el periodo o solo esta semana?
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          El horario "{horarioVigente?.nombre}" abarca varias semanas. Elige si los cambios de esta
+          planificación se aplican a todas ellas o solo a esta semana (se independizará del resto).
+        </p>
+        <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
+          <Button variant="ghost" className="w-full sm:w-auto" onClick={() => setMostrarAlcance(false)}>
+            Volver
+          </Button>
+          <Button variant="outline" className="w-full sm:w-auto" onClick={() => guardarConAlcance('semana')}>
+            Solo esta semana
+          </Button>
+          <Button className="w-full sm:w-auto" onClick={() => guardarConAlcance('periodo')}>
+            Todo el periodo
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -159,9 +258,10 @@ export function SemanaEditor({
               {format(new Date(semana.fechaFin), 'dd/MM/yyyy')}</>
             )}
           </p>
-          {!semana && horarioVigente && (
+          {horarioVigente && (
             <p className="text-xs text-primary mt-1">
-              Precargada desde el horario "{horarioVigente.nombre}" — puedes editar cualquier celda libremente.
+              Vinculada al horario "{horarioVigente.nombre}" — la asignatura de cada celda viene del horario;
+              lo que escribas aquí se guarda como nota de esa celda y también se ve desde Horarios.
             </p>
           )}
         </div>
@@ -262,6 +362,7 @@ export function SemanaEditor({
                       // (a diferencia de Horarios) solo se marcan visualmente por ahora.
                       const bloqueada = periodo.esRecreo
                       const muted = dias[diaIndex]?.esFestivo || dias[diaIndex]?.esVacaciones || bloqueada
+                      const asignatura = getCeldaAsignatura(diaIndex, periodoIndex)
                       return (
                         <td
                           key={diaIndex}
@@ -271,20 +372,37 @@ export function SemanaEditor({
                             muted && 'bg-muted/60'
                           )}
                         >
-                          <input
-                            type="text"
-                            value={getCeldaContenido(diaIndex, periodoIndex)}
-                            onChange={(e) =>
-                              handleCeldaChange(
-                                diaIndex,
-                                periodoIndex,
-                                e.target.value
-                              )
-                            }
-                            disabled={bloqueada}
-                            className="w-full min-h-[50px] p-2 text-sm resize-none bg-transparent text-foreground border-0 focus:ring-2 focus:ring-ring rounded disabled:cursor-not-allowed"
-                            placeholder={bloqueada ? '' : 'Click para editar...'}
-                          />
+                          {horarioVigente && !bloqueada ? (
+                            <div className="p-1">
+                              <div className="text-sm truncate text-foreground">
+                                {asignatura || <span className="text-muted-foreground/50 italic">Sin asignar</span>}
+                              </div>
+                              <div className="mt-0.5 flex items-start gap-1">
+                                <StickyNote className="w-3 h-3 mt-1.5 flex-shrink-0 text-muted-foreground/70" />
+                                <textarea
+                                  value={getCeldaContenido(diaIndex, periodoIndex)}
+                                  onChange={(e) => handleCeldaChange(diaIndex, periodoIndex, e.target.value)}
+                                  className="w-full min-h-[42px] p-1 text-xs resize-none bg-transparent text-foreground border-0 focus:ring-2 focus:ring-ring rounded"
+                                  placeholder="Planificación de este periodo..."
+                                />
+                              </div>
+                            </div>
+                          ) : (
+                            <input
+                              type="text"
+                              value={getCeldaContenido(diaIndex, periodoIndex)}
+                              onChange={(e) =>
+                                handleCeldaChange(
+                                  diaIndex,
+                                  periodoIndex,
+                                  e.target.value
+                                )
+                              }
+                              disabled={bloqueada}
+                              className="w-full min-h-[50px] p-2 text-sm resize-none bg-transparent text-foreground border-0 focus:ring-2 focus:ring-ring rounded disabled:cursor-not-allowed"
+                              placeholder={bloqueada ? '' : 'Click para editar...'}
+                            />
+                          )}
                         </td>
                       )
                     })}
@@ -317,12 +435,22 @@ export function SemanaEditor({
           variant="outline"
           onClick={() => {
             if (confirm('¿Limpiar todos los periodos?')) {
-              setDias(
-                dias.map((dia) => ({
-                  ...dia,
-                  periodos: dia.periodos.map(() => ({ contenido: '' })),
-                }))
-              )
+              if (horarioVigente) {
+                setNotasHorario((prev) => {
+                  const limpio: Record<string, string> = {}
+                  Object.keys(prev).forEach((clave) => {
+                    limpio[clave] = ''
+                  })
+                  return limpio
+                })
+              } else {
+                setDias(
+                  dias.map((dia) => ({
+                    ...dia,
+                    periodos: dia.periodos.map(() => ({ contenido: '' })),
+                  }))
+                )
+              }
             }
           }}
         >
@@ -389,7 +517,7 @@ function generarPeriodos(config: ConfigHorarios) {
   return periodos
 }
 
-/** Resumen en texto plano de una semana, para dar contexto al asistente de IA (ver useEditorContextStore). */
+/** Resumen en texto plano de una semana sin horario, para dar contexto al asistente de IA (ver useEditorContextStore). */
 function resumenSemanaParaAsistente(
   dias: Semana['dias'],
   observaciones: string,
@@ -405,6 +533,35 @@ function resumenSemanaParaAsistente(
       .filter((linea): linea is string => linea !== null)
     if (contenidos.length > 0) {
       lineas.push(`${DIAS_SEMANA[diaIndex]}: ${contenidos.join(' · ')}`)
+    }
+  })
+  if (observaciones.trim()) {
+    lineas.push(`Observaciones: ${observaciones.trim()}`)
+  }
+  return lineas.join('\n')
+}
+
+/** Igual que resumenSemanaParaAsistente, pero leyendo asignatura+nota en vivo del horario vigente. */
+function resumenConHorario(
+  horario: Horario,
+  notasHorario: Record<string, string>,
+  periodosHorarios: { inicio: string; fin: string; esRecreo?: boolean }[],
+  observaciones: string
+): string {
+  const lineas: string[] = []
+  DIAS_SEMANA.forEach((diaNombre, diaIndex) => {
+    const contenidos = periodosHorarios
+      .map((periodo, periodoIndex) => {
+        if (periodo.esRecreo) return null
+        const asignatura = horario.datos[periodoIndex]?.[diaIndex]?.contenido || ''
+        const nota = notasHorario[`${periodoIndex}-${diaIndex}`]?.trim() || ''
+        const texto = contenidoParaSemana(asignatura, nota)
+        if (!texto) return null
+        return `${periodo.inicio}: ${texto}`
+      })
+      .filter((linea): linea is string => linea !== null)
+    if (contenidos.length > 0) {
+      lineas.push(`${diaNombre}: ${contenidos.join(' · ')}`)
     }
   })
   if (observaciones.trim()) {

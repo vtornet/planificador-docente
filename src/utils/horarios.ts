@@ -65,6 +65,33 @@ export function dividirHorarioParaSemana(
   return { actualizacionOriginal, nuevos }
 }
 
+// Aplica un mapa de notas nuevas (clave "fila-columna") a la rejilla de un
+// horario, sin tocar el resto de campos de cada celda (asignatura, color).
+// Usado por Planificación (SemanaEditor/VistaSemanal) para escribir la
+// planificación de una semana concreta como nota de la celda del horario
+// correspondiente — ver "PLANIFICACIÓN ↔ HORARIO: FUENTE ÚNICA" en CLAUDE.md.
+export function aplicarNotasEnDatos(datos: Horario['datos'], notas: Record<string, string>): Horario['datos'] {
+  const nuevosDatos = datos.map((fila) => [...fila])
+  for (const [clave, nota] of Object.entries(notas)) {
+    const [fila, columna] = clave.split('-').map(Number)
+    if (!nuevosDatos[fila]) continue
+    nuevosDatos[fila] = [...nuevosDatos[fila]]
+    nuevosDatos[fila][columna] = { ...nuevosDatos[fila][columna], nota }
+  }
+  return nuevosDatos
+}
+
+// Texto que se guarda en Semana.dias[].periodos[].contenido cuando el
+// periodo está respaldado por un horario — combina la asignatura (contexto,
+// nunca editable desde Planificación) con la nota (lo que sí edita la
+// docente ahí) para que el PDF de la semana y el contexto del asistente de
+// IA (que leen directamente este campo, no el horario) sigan siendo útiles
+// sin tener que cruzar datos con el horario en cada sitio que los consume.
+export function contenidoParaSemana(asignatura: string, nota: string): string {
+  if (!nota.trim()) return asignatura
+  return asignatura ? `${asignatura}: ${nota}` : nota
+}
+
 export function formatRangoFechas(fechaInicio?: Date, fechaFin?: Date): string {
   if (!fechaInicio) return ''
   const inicio = new Date(fechaInicio)

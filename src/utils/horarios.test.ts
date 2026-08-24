@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest'
-import { horarioActivoEnRango, horarioAbarcaMasDeLaSemana, dividirHorarioParaSemana, formatRangoFechas } from './horarios'
+import {
+  horarioActivoEnRango,
+  horarioAbarcaMasDeLaSemana,
+  dividirHorarioParaSemana,
+  formatRangoFechas,
+  aplicarNotasEnDatos,
+  contenidoParaSemana,
+} from './horarios'
 import type { Horario } from '../types'
 
 const local = (year: number, month: number, day: number) => new Date(year, month - 1, day)
@@ -130,5 +137,51 @@ describe('formatRangoFechas', () => {
 
   it('formato abreviado cuando las fechas caen en meses distintos', () => {
     expect(formatRangoFechas(local(2026, 9, 28), local(2026, 10, 2))).toBe('Del 28 sep al 2 oct 2026')
+  })
+})
+
+describe('aplicarNotasEnDatos', () => {
+  it('escribe la nota en la celda indicada sin tocar la asignatura ni el resto de celdas', () => {
+    const datos = [
+      [{ contenido: 'Lengua' }, { contenido: 'Matemáticas' }],
+      [{ contenido: 'Inglés' }, { contenido: 'Plástica' }],
+    ]
+    const resultado = aplicarNotasEnDatos(datos, { '0-1': 'Examen el jueves' })
+    expect(resultado[0][1]).toEqual({ contenido: 'Matemáticas', nota: 'Examen el jueves' })
+    expect(resultado[0][0]).toEqual({ contenido: 'Lengua' })
+    expect(resultado[1]).toEqual(datos[1])
+  })
+
+  it('no muta el array original (inmutable)', () => {
+    const datos = [[{ contenido: 'Lengua' }]]
+    aplicarNotasEnDatos(datos, { '0-0': 'Nota nueva' })
+    expect(datos[0][0]).toEqual({ contenido: 'Lengua' })
+  })
+
+  it('sobrescribe una nota ya existente en vez de acumularla', () => {
+    const datos = [[{ contenido: 'Lengua', nota: 'Nota vieja' }]]
+    const resultado = aplicarNotasEnDatos(datos, { '0-0': 'Nota nueva' })
+    expect(resultado[0][0].nota).toBe('Nota nueva')
+  })
+
+  it('ignora claves que apuntan a una fila fuera de rango', () => {
+    const datos = [[{ contenido: 'Lengua' }]]
+    const resultado = aplicarNotasEnDatos(datos, { '5-0': 'No debería aplicarse' })
+    expect(resultado).toEqual(datos)
+  })
+})
+
+describe('contenidoParaSemana', () => {
+  it('sin nota, devuelve solo la asignatura', () => {
+    expect(contenidoParaSemana('Matemáticas', '')).toBe('Matemáticas')
+    expect(contenidoParaSemana('Matemáticas', '   ')).toBe('Matemáticas')
+  })
+
+  it('con nota y asignatura, combina "asignatura: nota"', () => {
+    expect(contenidoParaSemana('Matemáticas', 'Ejercicios página 12')).toBe('Matemáticas: Ejercicios página 12')
+  })
+
+  it('con nota pero sin asignatura, devuelve solo la nota', () => {
+    expect(contenidoParaSemana('', 'Repaso general')).toBe('Repaso general')
   })
 })
