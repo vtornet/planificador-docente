@@ -110,6 +110,36 @@ test.describe('Asistente de IA', () => {
     const celdaMartesSemana2 = page.locator('table tbody tr').first().locator('td').nth(2)
     await expect(celdaMartesSemana2).not.toContainText('Planificación de Educación Física')
   })
+
+  test('exportar a un día festivo se bloquea, para no dejar una nota que ya nunca se podría editar', async ({ page, testUser }) => {
+    await crearCuaderno(page, testUser)
+
+    // Semana del 12 al 16 de octubre de 2026 — el lunes 12 es festivo
+    // nacional (Fiesta Nacional de España), cargado automáticamente al crear
+    // el cuaderno (ver festivosOficiales.ts).
+    await page.getByRole('button', { name: '+ Nuevo horario' }).click()
+    await page.getByPlaceholder('Ej: Horario 1º ESO A').fill('Horario Festivo Asistente E2E')
+    const fechas = page.locator('input[type="date"]')
+    await fechas.first().fill('2026-10-12')
+    await fechas.nth(1).fill('2026-10-16')
+    await page.getByRole('button', { name: 'Crear' }).click()
+    await expect(page.getByRole('heading', { name: 'Nuevo horario' })).not.toBeVisible()
+
+    await preguntarAlAsistenteYExportarAHorario(page, 'Actividad para el día festivo.')
+
+    await page.locator('input[type="date"]').last().fill('2026-10-12')
+    await expect(page.getByText(/festivo \(Fiesta Nacional de España\)/)).toBeVisible()
+
+    // El selector de periodo no llega a aparecer, y el botón de guardar
+    // se queda deshabilitado (nunca se pudo elegir ningún periodo).
+    await expect(page.getByText(/^Periodo del Lunes/)).not.toBeVisible()
+    await expect(page.getByRole('button', { name: 'Guardar en el horario' })).toBeDisabled()
+
+    // Un día laborable normal de la misma semana sí deja continuar con normalidad.
+    await page.locator('input[type="date"]').last().fill('2026-10-13')
+    await expect(page.getByText(/festivo \(/)).not.toBeVisible()
+    await page.getByText(/^Periodo del Martes/).waitFor()
+  })
 })
 
 // V2 (Agosto 2026): historial persistente por módulo (localStorage) y

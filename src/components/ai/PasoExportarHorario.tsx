@@ -6,9 +6,10 @@ import { DIAS_SEMANA } from '../../types/constants'
 import type { ConfigHorarios, Horario } from '../../types'
 import { horarioActivoEnRango, horarioAbarcaMasDeLaSemana, dividirHorarioParaSemana } from '../../utils/horarios'
 import { parseFechaInput } from '../../utils/fechas'
+import { esDiaFestivo, esDiaVacaciones, festivoDelDia, vacacionDelDia } from '../../utils/festivos'
 import { DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog'
 import { Button } from '../ui/button'
-import { Check, ChevronLeft } from 'lucide-react'
+import { Check, ChevronLeft, AlertTriangle } from 'lucide-react'
 import { cn } from '../../utils/cn'
 
 interface PasoExportarHorarioProps {
@@ -43,7 +44,19 @@ export function PasoExportarHorario({ texto, onVolver, onCerrar, onExportado }: 
   const diaLaborable = diaSemanaISO !== null && diaSemanaISO >= 1 && diaSemanaISO <= 5
   const columna = diaLaborable ? diaSemanaISO! - 1 : null // 0=Lunes … 4=Viernes
 
-  const semana = fechaDate && diaLaborable
+  // Un día festivo/de vacaciones ya bloquea la edición de esa celda en
+  // Horarios y en Planificar (ver HorarioTable.tsx/SemanaEditor.tsx) — si el
+  // asistente escribiera ahí de todos modos, la nota quedaría atrapada: nunca
+  // más se podría editar ni borrar desde la UI normal. En vez de avisar y
+  // dejar continuar, se bloquea aquí también, con el mismo criterio.
+  const configuracion = cuadernoActual?.configuracion
+  const festivoInfo = fechaDate && diaLaborable && configuracion ? festivoDelDia(fechaDate, configuracion.festivos) : undefined
+  const vacacionInfo = fechaDate && diaLaborable && configuracion ? vacacionDelDia(fechaDate, configuracion.vacaciones) : undefined
+  const diaNoLectivo = fechaDate && diaLaborable && configuracion
+    ? esDiaFestivo(fechaDate, configuracion.festivos) || esDiaVacaciones(fechaDate, configuracion.vacaciones)
+    : false
+
+  const semana = fechaDate && diaLaborable && !diaNoLectivo
     ? { inicio: startOfWeek(fechaDate, { weekStartsOn: 1 }), fin: addDays(startOfWeek(fechaDate, { weekStartsOn: 1 }), 4) }
     : null
 
@@ -159,6 +172,17 @@ export function PasoExportarHorario({ texto, onVolver, onCerrar, onExportado }: 
           <p className="text-sm text-muted-foreground">
             Elige un día de lunes a viernes — los horarios solo cubren días lectivos de la semana.
           </p>
+        )}
+
+        {fecha && diaLaborable && diaNoLectivo && (
+          <div className="flex items-start gap-2 text-sm text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 rounded-lg p-3">
+            <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+            <span>
+              Ese día es {festivoInfo ? `festivo (${festivoInfo.nombre})` : `de vacaciones (${vacacionInfo?.nombre})`}.
+              No se puede planificar contenido ahí, igual que en Horarios y Planificar — nadie podría editarlo
+              después. Elige otro día.
+            </span>
+          </div>
         )}
 
         {semana && horariosVigentes.length === 0 && (
