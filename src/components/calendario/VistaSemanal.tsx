@@ -238,12 +238,14 @@ export function VistaSemanal({ semana, onClose }: VistaSemanalProps) {
                       </div>
                     </td>
                     {diasSemana.map((dia, diaIndex) => {
-                      // El recreo bloquea de verdad la edición; festivo/vacaciones aquí
-                      // (a diferencia de Horarios) solo se marcan visualmente por ahora,
-                      // se sigue pudiendo planificar contenido ese día si hace falta.
-                      const bloqueada = periodo.esRecreo
-                      const muted = dia.esFestivo || dia.esVacaciones || bloqueada
-                      const celda = bloqueada ? undefined : celdaActual(periodoIndex, diaIndex)
+                      // Mismo criterio que en Horarios (HorarioTable.tsx): un día festivo
+                      // o de vacaciones bloquea la edición igual que el recreo — si no, una
+                      // nota escrita aquí quedaría después imposible de editar o borrar desde
+                      // Horarios, que sí bloquea esas celdas.
+                      const esRecreo = periodo.esRecreo
+                      const diaNoLectivo = dia.esFestivo || dia.esVacaciones
+                      const noEditable = esRecreo || diaNoLectivo
+                      const celda = esRecreo ? undefined : celdaActual(periodoIndex, diaIndex)
                       const claseColor = celda?.color
                         ? PALETA_ASIGNATURAS.find((c) => c.id === celda.color)?.clase
                         : undefined
@@ -251,25 +253,23 @@ export function VistaSemanal({ semana, onClose }: VistaSemanalProps) {
                       return (
                         <td
                           key={diaIndex}
-                          onClick={() => !bloqueada && setCeldaEditando({ periodoIndex, diaIndex })}
-                          title={bloqueada ? 'Recreo, no se puede editar' : undefined}
+                          onClick={() => !noEditable && setCeldaEditando({ periodoIndex, diaIndex })}
+                          title={diaNoLectivo ? 'Día no lectivo, no se puede editar' : esRecreo ? 'Recreo, no se puede editar' : undefined}
                           className={cn(
                             'border border-border p-1 align-top min-h-[60px] transition-colors',
-                            bloqueada
+                            noEditable
                               ? 'bg-muted/60 cursor-not-allowed'
-                              : muted
-                                ? 'bg-muted/60 cursor-pointer'
-                                : claseColor
-                                  ? cn(claseColor, 'cursor-pointer hover:brightness-95 dark:hover:brightness-125')
-                                  : 'cursor-pointer hover:bg-accent/50'
+                              : claseColor
+                                ? cn(claseColor, 'cursor-pointer hover:brightness-95 dark:hover:brightness-125')
+                                : 'cursor-pointer hover:bg-accent/50'
                           )}
                         >
-                          {!bloqueada && (
+                          {!esRecreo && (
                             <div className="p-1 min-h-[50px] overflow-hidden">
                               <div className="text-sm truncate">
-                                {celda?.contenido || (
+                                {celda?.contenido || (noEditable ? null : (
                                   <span className="text-muted-foreground/50 italic">Click para editar</span>
-                                )}
+                                ))}
                               </div>
                               {celda?.nota && (
                                 <div className="mt-0.5 flex items-start gap-1 text-xs opacity-80 italic">

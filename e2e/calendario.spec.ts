@@ -364,4 +364,54 @@ test.describe('Planificación ↔ Horario', () => {
     await expect(celdaLunesHorario).toContainText('Matemáticas')
     await expect(celdaLunesHorario).toContainText('Ejercicios página 20')
   })
+
+  test('un día festivo bloquea la edición en Planificar, igual que en Horarios, en creación y en edición', async ({
+    page,
+    testUser,
+  }) => {
+    await crearCuaderno(page, testUser)
+
+    // Semana del 12 al 16 de octubre de 2026 — el lunes 12 es festivo
+    // nacional (Fiesta Nacional de España), cargado automáticamente al crear
+    // el cuaderno (ver festivosOficiales.ts). Horario docente para que la
+    // semana no se cree "sin horario" (mismo camino que usaría una docente real).
+    await page.getByRole('button', { name: '+ Nuevo horario' }).click()
+    await page.getByPlaceholder('Ej: Horario 1º ESO A').fill('Horario Festivo Planificar E2E')
+    const fechas = page.locator('input[type="date"]')
+    await fechas.first().fill('2026-10-12')
+    await fechas.nth(1).fill('2026-10-16')
+    await page.getByRole('button', { name: 'Crear' }).click()
+    await expect(page.getByRole('heading', { name: 'Nuevo horario' })).not.toBeVisible()
+
+    // Crear la semana desde el Planificador (August → Octubre, 2 clicks).
+    await irASeccion(page, 'Calendario')
+    await page.getByRole('button', { name: '▶' }).click()
+    await page.getByRole('button', { name: '▶' }).click()
+    await page.locator('.rbc-date-cell', { hasText: /^0?12$/ }).click()
+    await expect(page.getByRole('heading', { name: 'Nueva Semana' })).toBeVisible()
+
+    // Lunes (festivo): el click no abre el formulario de edición.
+    const celdaLunes = page.locator('table tbody tr').first().locator('td').nth(1)
+    await celdaLunes.click()
+    await expect(page.getByRole('heading', { name: 'Editar celda' })).not.toBeVisible()
+
+    // Martes (día normal de la misma semana): sí se puede editar con normalidad.
+    const celdaMartes = page.locator('table tbody tr').first().locator('td').nth(2)
+    await celdaMartes.click()
+    await expect(page.getByRole('heading', { name: 'Editar celda' })).toBeVisible()
+    await page.getByPlaceholder('Ej: Traer material de plástica...').fill('Nota del martes')
+    await page.getByRole('button', { name: 'Guardar', exact: true }).click()
+    await expect(celdaMartes).toContainText('Nota del martes')
+
+    await page.getByRole('button', { name: 'Guardar', exact: true }).click()
+    await expect(page.getByRole('heading', { name: 'Nueva Semana' })).not.toBeVisible()
+
+    // Reabrir la semana ya guardada (VistaSemanal.tsx, un componente distinto
+    // de SemanaEditor.tsx): el lunes festivo sigue bloqueado ahí también.
+    await page.locator('.rbc-date-cell', { hasText: /^0?12$/ }).click()
+    await expect(page.getByRole('heading', { name: 'Semana 1' })).toBeVisible()
+    const celdaLunesVista = page.locator('table tbody tr').first().locator('td').nth(1)
+    await celdaLunesVista.click()
+    await expect(page.getByRole('heading', { name: 'Editar celda' })).not.toBeVisible()
+  })
 })

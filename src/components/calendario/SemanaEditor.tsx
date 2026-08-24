@@ -169,6 +169,9 @@ export function SemanaEditor({
         if (periodo.esRecreo) return
         const origen = celdaActual(periodoIndex, diaIndex)
         for (let idx = diaIndex + 1; idx < DIAS_SEMANA.length; idx++) {
+          // Nunca copiar sobre un día festivo/de vacaciones — misma regla
+          // que bloquea su edición manual, para no colarse por este atajo.
+          if (dias[idx]?.esFestivo || dias[idx]?.esVacaciones) continue
           nuevo[`${periodoIndex}-${idx}`] = { ...origen }
         }
       })
@@ -342,36 +345,37 @@ export function SemanaEditor({
                       </div>
                     </td>
                     {DIAS_SEMANA.map((_, diaIndex) => {
-                      // El recreo bloquea de verdad la edición; festivo/vacaciones aquí
-                      // (a diferencia de Horarios) solo se marcan visualmente por ahora.
-                      const bloqueada = periodo.esRecreo
-                      const muted = dias[diaIndex]?.esFestivo || dias[diaIndex]?.esVacaciones || bloqueada
-                      const celda = bloqueada ? undefined : celdaActual(periodoIndex, diaIndex)
+                      // Mismo criterio que en Horarios (HorarioTable.tsx): un día festivo
+                      // o de vacaciones bloquea la edición igual que el recreo — si no, una
+                      // nota escrita aquí quedaría después imposible de editar o borrar desde
+                      // Horarios, que sí bloquea esas celdas.
+                      const esRecreo = periodo.esRecreo
+                      const diaNoLectivo = dias[diaIndex]?.esFestivo || dias[diaIndex]?.esVacaciones
+                      const noEditable = esRecreo || diaNoLectivo
+                      const celda = esRecreo ? undefined : celdaActual(periodoIndex, diaIndex)
                       const claseColor = celda?.color
                         ? PALETA_ASIGNATURAS.find((c) => c.id === celda.color)?.clase
                         : undefined
                       return (
                         <td
                           key={diaIndex}
-                          onClick={() => !bloqueada && setCeldaEditando({ periodoIndex, diaIndex })}
-                          title={bloqueada ? 'Recreo, no se puede editar' : undefined}
+                          onClick={() => !noEditable && setCeldaEditando({ periodoIndex, diaIndex })}
+                          title={diaNoLectivo ? 'Día no lectivo, no se puede editar' : esRecreo ? 'Recreo, no se puede editar' : undefined}
                           className={cn(
                             'border border-border p-1 align-top min-h-[60px] transition-colors',
-                            bloqueada
+                            noEditable
                               ? 'bg-muted/60 cursor-not-allowed'
-                              : muted
-                                ? 'bg-muted/60 cursor-pointer'
-                                : claseColor
-                                  ? cn(claseColor, 'cursor-pointer hover:brightness-95 dark:hover:brightness-125')
-                                  : 'cursor-pointer hover:bg-accent/50'
+                              : claseColor
+                                ? cn(claseColor, 'cursor-pointer hover:brightness-95 dark:hover:brightness-125')
+                                : 'cursor-pointer hover:bg-accent/50'
                           )}
                         >
-                          {!bloqueada && (
+                          {!esRecreo && (
                             <div className="p-1 min-h-[50px] overflow-hidden">
                               <div className="text-sm truncate">
-                                {celda?.contenido || (
+                                {celda?.contenido || (noEditable ? null : (
                                   <span className="text-muted-foreground/50 italic">Click para editar</span>
-                                )}
+                                ))}
                               </div>
                               {celda?.nota && (
                                 <div className="mt-0.5 flex items-start gap-1 text-xs opacity-80 italic">
