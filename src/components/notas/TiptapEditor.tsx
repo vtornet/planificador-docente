@@ -23,7 +23,10 @@ import {
   Undo,
   Redo,
   X,
+  PenTool,
 } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog'
+import { DibujoCanvas } from './DibujoCanvas'
 import './TiptapEditor.css'
 
 const MAX_IMAGE_DIMENSION = 1600
@@ -73,6 +76,7 @@ export function TiptapEditor({
   editable = true,
 }: TiptapEditorProps) {
   const [imagenAmpliada, setImagenAmpliada] = useState<string | null>(null)
+  const [mostrarDibujo, setMostrarDibujo] = useState(false)
 
   const editor = useEditor({
     extensions: [
@@ -152,6 +156,11 @@ export function TiptapEditor({
 
   const addTable = () => {
     editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
+  }
+
+  const handleInsertarDibujo = (imagen: string) => {
+    editor.chain().focus().setImage({ src: imagen }).run()
+    setMostrarDibujo(false)
   }
 
   const ToolbarButton = ({
@@ -235,6 +244,10 @@ export function TiptapEditor({
         <Upload size={18} />
       </ToolbarButton>
 
+      <ToolbarButton onClick={() => setMostrarDibujo(true)} title="Insertar dibujo o escritura a mano">
+        <PenTool size={18} />
+      </ToolbarButton>
+
       <ToolbarButton onClick={addTable} title="Tabla">
         <TableIcon size={18} />
       </ToolbarButton>
@@ -271,6 +284,14 @@ export function TiptapEditor({
         editor={editor}
         className="prose prose-sm max-w-none p-4 min-h-[200px] text-foreground"
       />
+      <Dialog open={mostrarDibujo} onOpenChange={setMostrarDibujo}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Insertar dibujo o escritura a mano</DialogTitle>
+          </DialogHeader>
+          <DibujoCanvas onInsertar={handleInsertarDibujo} onCancel={() => setMostrarDibujo(false)} />
+        </DialogContent>
+      </Dialog>
       {imagenAmpliada &&
         createPortal(
           <div

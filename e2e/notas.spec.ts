@@ -103,4 +103,41 @@ test.describe('Notas', () => {
     await page.getByText(titulo).click()
     await expect(page.locator('.ProseMirror img')).toBeVisible()
   })
+
+  test('insertar un dibujo a mano alzada en una nota, con grosor de pincel seleccionable, y que persista', async ({ page, testUser }) => {
+    await crearCuaderno(page, testUser)
+    await irASeccion(page, 'Notas')
+
+    await page.getByRole('button', { name: 'Crear nota' }).click()
+    const titulo = 'Nota con dibujo E2E'
+    await page.getByPlaceholder('Ej: Proyecto de fin de curso').fill(titulo)
+    await page.locator('.ProseMirror').click()
+    await page.keyboard.type('Texto antes del dibujo.')
+
+    await page.getByTitle('Insertar dibujo o escritura a mano').click()
+    await expect(page.getByRole('heading', { name: 'Insertar dibujo o escritura a mano' })).toBeVisible()
+
+    // Grosor "Grueso" seleccionable, no solo el fino por defecto.
+    await page.getByRole('button', { name: 'Grueso' }).click()
+
+    const canvas = page.locator('canvas').first()
+    const box = await canvas.boundingBox()
+    if (!box) throw new Error('No se encontró el canvas de dibujo')
+    await page.mouse.move(box.x + 20, box.y + 20)
+    await page.mouse.down()
+    await page.mouse.move(box.x + 80, box.y + 60)
+    await page.mouse.move(box.x + 140, box.y + 20)
+    await page.mouse.up()
+
+    await page.getByRole('button', { name: 'Insertar dibujo', exact: true }).click()
+    await expect(page.getByRole('heading', { name: 'Insertar dibujo o escritura a mano' })).not.toBeVisible()
+    await expect(page.locator('.ProseMirror img')).toBeVisible()
+
+    await page.getByRole('button', { name: 'Guardar' }).click()
+    await expect(page.getByText(titulo)).toBeVisible()
+
+    // Persiste igual que una imagen subida: sobrevive a reconstruirse desde el HTML guardado.
+    await page.getByText(titulo).click()
+    await expect(page.locator('.ProseMirror img')).toBeVisible()
+  })
 })
