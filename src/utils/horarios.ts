@@ -1,6 +1,6 @@
 import { addDays, format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import type { Horario, Semana } from '../types'
+import type { CeldaHorario, Horario, Semana } from '../types'
 
 // ¿El horario está vigente en algún punto del rango [desde, hasta]?
 export function horarioActivoEnRango(horario: Horario, desde: Date, hasta: Date): boolean {
@@ -65,20 +65,28 @@ export function dividirHorarioParaSemana(
   return { actualizacionOriginal, nuevos }
 }
 
-// Aplica un mapa de notas nuevas (clave "fila-columna") a la rejilla de un
-// horario, sin tocar el resto de campos de cada celda (asignatura, color).
-// Usado por Planificación (SemanaEditor/VistaSemanal) para escribir la
-// planificación de una semana concreta como nota de la celda del horario
-// correspondiente — ver "PLANIFICACIÓN ↔ HORARIO: FUENTE ÚNICA" en CLAUDE.md.
-export function aplicarNotasEnDatos(datos: Horario['datos'], notas: Record<string, string>): Horario['datos'] {
+// Aplica un mapa de celdas nuevas (clave "fila-columna") a la rejilla de un
+// horario — celda completa (asignatura, color y nota), no solo la nota:
+// Horarios y Planificación ofrecen las mismas opciones al editar una celda
+// (ver CeldaHorarioForm.tsx, compartido entre los dos) y escriben en el
+// mismo sitio — ver "HORARIOS Y PLANIFICAR: MISMAS OPCIONES" en CLAUDE.md.
+export function aplicarCeldasEnDatos(datos: Horario['datos'], celdas: Record<string, CeldaHorario>): Horario['datos'] {
   const nuevosDatos = datos.map((fila) => [...fila])
-  for (const [clave, nota] of Object.entries(notas)) {
+  for (const [clave, celda] of Object.entries(celdas)) {
     const [fila, columna] = clave.split('-').map(Number)
     if (!nuevosDatos[fila]) continue
     nuevosDatos[fila] = [...nuevosDatos[fila]]
-    nuevosDatos[fila][columna] = { ...nuevosDatos[fila][columna], nota }
+    nuevosDatos[fila][columna] = celda
   }
   return nuevosDatos
+}
+
+// Rejilla vacía (sin ninguna celda asignada) para un horario nuevo, con la
+// forma que espera Horario.datos: filas x columnas (incluido el recreo,
+// aunque nunca se edite) según numPeriodos + recreo.
+export function rejillaVacia(configHorarios: Horario['configHorarios']): Horario['datos'] {
+  const filas = configHorarios.numPeriodos + (configHorarios.recreo ? 1 : 0)
+  return Array.from({ length: filas }, () => Array.from({ length: 5 }, () => ({ contenido: '' })))
 }
 
 // Texto que se guarda en Semana.dias[].periodos[].contenido cuando el

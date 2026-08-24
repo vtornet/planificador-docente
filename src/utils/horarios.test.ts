@@ -4,7 +4,8 @@ import {
   horarioAbarcaMasDeLaSemana,
   dividirHorarioParaSemana,
   formatRangoFechas,
-  aplicarNotasEnDatos,
+  aplicarCeldasEnDatos,
+  rejillaVacia,
   contenidoParaSemana,
   resolverDiasSemana,
 } from './horarios'
@@ -141,34 +142,51 @@ describe('formatRangoFechas', () => {
   })
 })
 
-describe('aplicarNotasEnDatos', () => {
-  it('escribe la nota en la celda indicada sin tocar la asignatura ni el resto de celdas', () => {
+describe('aplicarCeldasEnDatos', () => {
+  it('sustituye la celda indicada por completo (asignatura, color y nota)', () => {
     const datos = [
       [{ contenido: 'Lengua' }, { contenido: 'Matemáticas' }],
       [{ contenido: 'Inglés' }, { contenido: 'Plástica' }],
     ]
-    const resultado = aplicarNotasEnDatos(datos, { '0-1': 'Examen el jueves' })
-    expect(resultado[0][1]).toEqual({ contenido: 'Matemáticas', nota: 'Examen el jueves' })
+    const resultado = aplicarCeldasEnDatos(datos, {
+      '0-1': { contenido: 'Matemáticas', color: 'blue', nota: 'Examen el jueves' },
+    })
+    expect(resultado[0][1]).toEqual({ contenido: 'Matemáticas', color: 'blue', nota: 'Examen el jueves' })
     expect(resultado[0][0]).toEqual({ contenido: 'Lengua' })
     expect(resultado[1]).toEqual(datos[1])
   })
 
   it('no muta el array original (inmutable)', () => {
     const datos = [[{ contenido: 'Lengua' }]]
-    aplicarNotasEnDatos(datos, { '0-0': 'Nota nueva' })
+    aplicarCeldasEnDatos(datos, { '0-0': { contenido: 'Matemáticas' } })
     expect(datos[0][0]).toEqual({ contenido: 'Lengua' })
-  })
-
-  it('sobrescribe una nota ya existente en vez de acumularla', () => {
-    const datos = [[{ contenido: 'Lengua', nota: 'Nota vieja' }]]
-    const resultado = aplicarNotasEnDatos(datos, { '0-0': 'Nota nueva' })
-    expect(resultado[0][0].nota).toBe('Nota nueva')
   })
 
   it('ignora claves que apuntan a una fila fuera de rango', () => {
     const datos = [[{ contenido: 'Lengua' }]]
-    const resultado = aplicarNotasEnDatos(datos, { '5-0': 'No debería aplicarse' })
+    const resultado = aplicarCeldasEnDatos(datos, { '5-0': { contenido: 'No debería aplicarse' } })
     expect(resultado).toEqual(datos)
+  })
+})
+
+describe('rejillaVacia', () => {
+  it('genera filas x 5 columnas, todas sin contenido', () => {
+    const rejilla = rejillaVacia({ numPeriodos: 3, horaInicio: '08:00', duracionPeriodo: 55 })
+    expect(rejilla).toHaveLength(3)
+    rejilla.forEach((fila) => {
+      expect(fila).toHaveLength(5)
+      fila.forEach((celda) => expect(celda).toEqual({ contenido: '' }))
+    })
+  })
+
+  it('incluye una fila extra para el recreo si el horario lo tiene', () => {
+    const rejilla = rejillaVacia({
+      numPeriodos: 3,
+      horaInicio: '08:00',
+      duracionPeriodo: 55,
+      recreo: { periodo: 2, duracion: 30 },
+    })
+    expect(rejilla).toHaveLength(4)
   })
 })
 
