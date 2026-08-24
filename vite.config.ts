@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
@@ -64,5 +65,12 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true
-  }
+  },
+  test: {
+    // Utilidades puras, sin DOM — 'node' basta y arranca más rápido que
+    // 'jsdom'. Si algún día se testean componentes React, esto tendría que
+    // pasar a 'jsdom' (o un `environmentMatchGlobs` por carpeta).
+    environment: 'node',
+    include: ['src/**/*.test.ts'],
+  },
 })
