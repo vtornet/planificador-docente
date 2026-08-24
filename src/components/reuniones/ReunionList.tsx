@@ -9,6 +9,8 @@ import { Input } from '../ui/input'
 import { Card, CardContent } from '../ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog'
 import { PaywallDialog } from '../paywall/PaywallDialog'
+import { PdfPreviewDialog } from '../export/PdfPreviewDialog'
+import type { PDFGenerado } from '../../utils/pdf.tsx'
 import { ReunionForm } from './ReunionForm'
 import { Users, Calendar, FileText, Trash2, Pencil, Download } from 'lucide-react'
 
@@ -26,6 +28,7 @@ export function ReunionList() {
   const hasPaid = useAuthStore((s) => s.hasPaid)
   const [showCrear, setShowCrear] = useState(false)
   const [showPaywall, setShowPaywall] = useState(false)
+  const [previewPdf, setPreviewPdf] = useState<PDFGenerado | null>(null)
   const [editingReunion, setEditingReunion] = useState<string | null>(null)
   const [filtroTipo, setFiltroTipo] = useState<string>('todos')
   const [busqueda, setBusqueda] = useState('')
@@ -83,8 +86,8 @@ export function ReunionList() {
   const handleExportarPDF = async (reunion: (typeof reuniones)[number]) => {
     if (!cuadernoActual) return
     try {
-      const { exportReunionToPDF } = await import('../../utils/pdf.tsx')
-      await exportReunionToPDF(reunion, cuadernoActual.metadata)
+      const { generarReunionPDF } = await import('../../utils/pdf.tsx')
+      setPreviewPdf(await generarReunionPDF(reunion, cuadernoActual.metadata))
     } catch (error) {
       console.error('Error exportando reunión a PDF:', error)
       alert('Error al exportar la reunión a PDF. Inténtalo de nuevo.')
@@ -173,6 +176,7 @@ export function ReunionList() {
           </DialogContent>
         </Dialog>
         <PaywallDialog open={showPaywall} onOpenChange={setShowPaywall} modulo="reuniones" />
+        <PdfPreviewDialog pdf={previewPdf} onOpenChange={(open) => !open && setPreviewPdf(null)} />
       </div>
 
       {/* Filtros */}

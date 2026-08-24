@@ -11,6 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Input } from '../ui/input'
 import { HorarioTable } from './HorarioTable'
 import { PaywallDialog } from '../paywall/PaywallDialog'
+import { PdfPreviewDialog } from '../export/PdfPreviewDialog'
+import type { PDFGenerado } from '../../utils/pdf.tsx'
 import type { Horario, ConfigHorarios } from '../../types'
 import { Calendar, Trash2, Clock, Edit2, ChevronRight, ChevronLeft, Download } from 'lucide-react'
 import { horarioActivoEnRango, horarioAbarcaMasDeLaSemana, dividirHorarioParaSemana, formatRangoFechas } from '../../utils/horarios'
@@ -59,6 +61,7 @@ export function HorarioManager() {
   // Diálogos crear/editar
   const [showCrear, setShowCrear] = useState(false)
   const [showPaywall, setShowPaywall] = useState(false)
+  const [previewPdf, setPreviewPdf] = useState<PDFGenerado | null>(null)
   const [showEditar, setShowEditar] = useState(false)
   const [horarioEditando, setHorarioEditando] = useState<Horario | null>(null)
   const [horarioEliminando, setHorarioEliminando] = useState<Horario | null>(null)
@@ -193,8 +196,8 @@ export function HorarioManager() {
   const handleExportarPDF = async (horario: Horario) => {
     if (!cuadernoActual) return
     try {
-      const { exportHorarioToPDF } = await import('../../utils/pdf.tsx')
-      await exportHorarioToPDF(horario, cuadernoActual.metadata)
+      const { generarHorarioPDF } = await import('../../utils/pdf.tsx')
+      setPreviewPdf(await generarHorarioPDF(horario, cuadernoActual.metadata))
     } catch (error) {
       console.error('Error exportando horario a PDF:', error)
       alert('Error al exportar el horario a PDF. Inténtalo de nuevo.')
@@ -440,6 +443,8 @@ export function HorarioManager() {
       </div>
 
       <PaywallDialog open={showPaywall} onOpenChange={setShowPaywall} modulo="horarios" />
+
+      <PdfPreviewDialog pdf={previewPdf} onOpenChange={(open) => !open && setPreviewPdf(null)} />
 
       <Dialog open={showCrear} onOpenChange={setShowCrear}>
         <DialogContent className="max-w-lg">

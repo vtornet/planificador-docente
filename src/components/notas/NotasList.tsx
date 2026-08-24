@@ -8,6 +8,8 @@ import { Input } from '../ui/input'
 import { Card, CardContent } from '../ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog'
 import { PaywallDialog } from '../paywall/PaywallDialog'
+import { PdfPreviewDialog } from '../export/PdfPreviewDialog'
+import type { PDFGenerado } from '../../utils/pdf.tsx'
 import { NotaEditor } from './NotaEditor'
 import { NotaViewer } from './NotaViewer'
 import { Search, Grid, List, Trash2, Edit, FileText, Download } from 'lucide-react'
@@ -19,6 +21,7 @@ export function NotasList() {
   const hasPaid = useAuthStore((s) => s.hasPaid)
   const [showCrear, setShowCrear] = useState(false)
   const [showPaywall, setShowPaywall] = useState(false)
+  const [previewPdf, setPreviewPdf] = useState<PDFGenerado | null>(null)
   const [editingNota, setEditingNota] = useState<string | null>(null)
   const [viewingNota, setViewingNota] = useState<string | null>(null)
   const [vista, setVista] = useState<(typeof VISTAS)[number]>('grid')
@@ -80,8 +83,8 @@ export function NotasList() {
   const handleExportarPDF = async (nota: (typeof notas)[number]) => {
     if (!cuadernoActual) return
     try {
-      const { exportNotaToPDF } = await import('../../utils/pdf.tsx')
-      await exportNotaToPDF(nota, cuadernoActual.metadata)
+      const { generarNotaPDF } = await import('../../utils/pdf.tsx')
+      setPreviewPdf(await generarNotaPDF(nota, cuadernoActual.metadata))
     } catch (error) {
       console.error('Error exportando nota a PDF:', error)
       alert('Error al exportar la nota a PDF. Inténtalo de nuevo.')
@@ -206,6 +209,7 @@ export function NotasList() {
           </DialogContent>
         </Dialog>
         <PaywallDialog open={showPaywall} onOpenChange={setShowPaywall} modulo="notas" />
+        <PdfPreviewDialog pdf={previewPdf} onOpenChange={(open) => !open && setPreviewPdf(null)} />
       </div>
 
       {/* Filtros y búsqueda */}

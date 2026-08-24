@@ -27,9 +27,13 @@ test.describe('Reuniones', () => {
     await page.getByRole('button', { name: 'Guardar' }).click()
     await expect(page.getByText(titulo)).toBeVisible()
 
+    await page.getByRole('button', { name: 'Descargar esta reunión en PDF' }).click()
+    await expect(page.getByRole('heading', { name: 'Vista previa' })).toBeVisible()
+    await expect(page.locator('canvas').first()).toBeVisible()
+
     const [download] = await Promise.all([
       page.waitForEvent('download'),
-      page.getByRole('button', { name: 'Descargar esta reunión en PDF' }).click(),
+      page.getByRole('button', { name: 'Descargar', exact: true }).click(),
     ])
 
     expect(download.suggestedFilename()).toMatch(/^reunion-.*\.pdf$/)

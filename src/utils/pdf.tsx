@@ -21,18 +21,25 @@ export interface PDFGenerado {
 }
 
 /**
- * Genera y descarga un PDF de un horario
+ * Genera un PDF (sin descargarlo) de un horario — ver generarHorariosPDF.
  */
-export async function exportHorarioToPDF(horario: Horario, metadata: CuadernoDocente['metadata']): Promise<void> {
+export async function generarHorarioPDF(horario: Horario, metadata: CuadernoDocente['metadata']): Promise<PDFGenerado> {
   try {
     const doc = <HorarioPDFDocument horario={horario} metadata={metadata} />
-    const pdfBlob = await pdf(doc).toBlob()
-    const filename = `horario-${horario.nombre.replace(/\s+/g, '-')}.pdf`
-    saveAs(pdfBlob, filename)
+    const blob = await pdf(doc).toBlob()
+    return { blob, filename: `horario-${horario.nombre.replace(/\s+/g, '-')}.pdf` }
   } catch (error) {
     console.error('Error generating horario PDF:', error)
     throw new Error('Error al generar el PDF del horario')
   }
+}
+
+/**
+ * Genera y descarga un PDF de un horario
+ */
+export async function exportHorarioToPDF(horario: Horario, metadata: CuadernoDocente['metadata']): Promise<void> {
+  const { blob, filename } = await generarHorarioPDF(horario, metadata)
+  saveAs(blob, filename)
 }
 
 /**
@@ -59,15 +66,14 @@ export async function exportHorariosToPDF(horarios: Horario[], metadata: Cuadern
 }
 
 /**
- * Genera y descarga un PDF de una reunión
+ * Genera un PDF (sin descargarlo) de una reunión — ver generarHorariosPDF.
  */
-export async function exportReunionToPDF(reunion: Reunion, metadata: CuadernoDocente['metadata']): Promise<void> {
+export async function generarReunionPDF(reunion: Reunion, metadata: CuadernoDocente['metadata']): Promise<PDFGenerado> {
   try {
     const doc = <ReunionPDFDocument reunion={reunion} metadata={metadata} />
-    const pdfBlob = await pdf(doc).toBlob()
+    const blob = await pdf(doc).toBlob()
     const fecha = new Date(reunion.fecha).toISOString().split('T')[0]
-    const filename = `reunion-${reunion.titulo.replace(/\s+/g, '-')}-${fecha}.pdf`
-    saveAs(pdfBlob, filename)
+    return { blob, filename: `reunion-${reunion.titulo.replace(/\s+/g, '-')}-${fecha}.pdf` }
   } catch (error) {
     console.error('Error generating reunion PDF:', error)
     throw new Error('Error al generar el PDF de la reunión')
@@ -75,18 +81,33 @@ export async function exportReunionToPDF(reunion: Reunion, metadata: CuadernoDoc
 }
 
 /**
- * Genera y descarga un PDF de una única nota
+ * Genera y descarga un PDF de una reunión
  */
-export async function exportNotaToPDF(nota: Nota, metadata: CuadernoDocente['metadata']): Promise<void> {
+export async function exportReunionToPDF(reunion: Reunion, metadata: CuadernoDocente['metadata']): Promise<void> {
+  const { blob, filename } = await generarReunionPDF(reunion, metadata)
+  saveAs(blob, filename)
+}
+
+/**
+ * Genera un PDF (sin descargarlo) de una única nota — ver generarHorariosPDF.
+ */
+export async function generarNotaPDF(nota: Nota, metadata: CuadernoDocente['metadata']): Promise<PDFGenerado> {
   try {
     const doc = <NotaPDFDocument nota={nota} metadata={metadata} />
-    const pdfBlob = await pdf(doc).toBlob()
-    const filename = `nota-${nota.titulo.replace(/\s+/g, '-')}.pdf`
-    saveAs(pdfBlob, filename)
+    const blob = await pdf(doc).toBlob()
+    return { blob, filename: `nota-${nota.titulo.replace(/\s+/g, '-')}.pdf` }
   } catch (error) {
     console.error('Error generating nota PDF:', error)
     throw new Error('Error al generar el PDF de la nota')
   }
+}
+
+/**
+ * Genera y descarga un PDF de una única nota
+ */
+export async function exportNotaToPDF(nota: Nota, metadata: CuadernoDocente['metadata']): Promise<void> {
+  const { blob, filename } = await generarNotaPDF(nota, metadata)
+  saveAs(blob, filename)
 }
 
 /**

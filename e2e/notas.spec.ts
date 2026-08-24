@@ -65,9 +65,13 @@ test.describe('Notas', () => {
     await page.getByRole('button', { name: 'Guardar' }).click()
     await expect(page.getByText(titulo)).toBeVisible()
 
+    await page.getByTitle('Descargar esta nota en PDF').first().click()
+    await expect(page.getByRole('heading', { name: 'Vista previa' })).toBeVisible()
+    await expect(page.locator('canvas').first()).toBeVisible()
+
     const [download] = await Promise.all([
       page.waitForEvent('download'),
-      page.getByTitle('Descargar esta nota en PDF').first().click(),
+      page.getByRole('button', { name: 'Descargar', exact: true }).click(),
     ])
     expect(download.suggestedFilename()).toMatch(/^nota-.*\.pdf$/)
   })

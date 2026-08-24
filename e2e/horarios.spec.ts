@@ -89,4 +89,29 @@ test.describe('Horarios', () => {
     await page.getByText('Del 21 al 25 de septiembre').click()
     await expect(page.getByRole('heading', { name: 'Horario Trimestre E2E' }).first()).toBeVisible()
   })
+
+  test('el icono de descarga de un horario muestra vista previa y descarga solo ese horario', async ({ page, testUser }) => {
+    await crearCuaderno(page, testUser)
+
+    await page.getByRole('button', { name: '+ Nuevo horario' }).click()
+    await page.getByPlaceholder('Ej: Horario 1º ESO A').fill('Horario Descarga E2E')
+    const fechas = page.locator('input[type="date"]')
+    await fechas.first().fill('')
+    await fechas.nth(1).fill('')
+    await page.getByRole('button', { name: 'Crear' }).click()
+    await expect(page.getByRole('heading', { name: 'Nuevo horario' })).not.toBeVisible()
+
+    await page.getByText(/Ver 1 horario sin periodo asignado/).click()
+    await expect(page.getByRole('heading', { name: 'Horario Descarga E2E' }).first()).toBeVisible()
+
+    await page.getByTitle('Descargar este horario en PDF').click()
+    await expect(page.getByRole('heading', { name: 'Vista previa' })).toBeVisible()
+    await expect(page.locator('canvas').first()).toBeVisible()
+
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.getByRole('button', { name: 'Descargar', exact: true }).click(),
+    ])
+    expect(download.suggestedFilename()).toMatch(/^horario-.*\.pdf$/)
+  })
 })
