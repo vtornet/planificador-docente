@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { useCuadernoStore } from '../../stores/useCuadernoStore'
+import { useEditorContextStore } from '../../stores/useEditorContextStore'
 import { CATEGORIAS_NOTAS } from '../../types/constants'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
@@ -9,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { TiptapEditor } from './TiptapEditor'
 import type { Nota } from '../../types'
 import { X } from 'lucide-react'
+import { stripHtml } from '../../utils/texto'
 
 interface NotaEditorProps {
   nota?: Nota
@@ -24,6 +26,15 @@ export function NotaEditor({ nota, onSave, onCancel }: NotaEditorProps) {
   const [contenido, setContenido] = useState(nota?.contenido || '')
   const [tagInput, setTagInput] = useState('')
   const [tags, setTags] = useState<string[]>(nota?.tags || [])
+
+  const publicarContexto = useEditorContextStore((s) => s.publicar)
+
+  useEffect(() => {
+    const texto = stripHtml(contenido)
+    if (texto) {
+      publicarContexto('notas', titulo || '(nota sin título)', texto)
+    }
+  }, [titulo, contenido, publicarContexto])
 
   const handleGuardar = () => {
     if (!titulo.trim()) {

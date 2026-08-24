@@ -1,32 +1,58 @@
 import { useState, useRef, useEffect } from 'react'
+import { FunctionsHttpError } from '@supabase/functions-js'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { useCuadernoStore } from '../../stores/useCuadernoStore'
+import { useEditorContextStore, type ModuloConContexto } from '../../stores/useEditorContextStore'
 import { supabase } from '../../lib/supabaseClient'
 import { PaywallDialog } from '../paywall/PaywallDialog'
 import { ExportarAHorarioDialog } from './ExportarAHorarioDialog'
 import { Button } from '../ui/button'
-import { Sparkles, X, Send, CalendarPlus, Check } from 'lucide-react'
+import { Sparkles, X, Send, CalendarPlus, Check, Eraser } from 'lucide-react'
 import { cn } from '../../utils/cn'
-
-interface Mensaje {
-  role: 'user' | 'assistant'
-  content: string
-}
+import { type Mensaje, type ModuloAsistente, cargarHistorial, guardarHistorial, limpiarHistorial } from '../../utils/asistenteHistorial'
 
 // Vista activa → especialización del asistente. El estado interno se llama
 // 'calendario' pero en la UI ese módulo se titula "Planificación" (mismo
-// mapeo que usa AppHeader.tsx) — Horarios y Reuniones no tienen prompt
-// propio todavía (V1 solo cubre Notas y Planificación), usan el genérico.
-function moduloDeVista(view: string): { modulo: 'notas' | 'planificacion' | 'general'; label: string } {
+// mapeo que usa AppHeader.tsx). Los 4 módulos de la app tienen ya prompt
+// propio en el servidor (ver ai-assistant/index.ts) — 'general' queda como
+// red de seguridad si alguna vez se añade una vista nueva sin prompt propio.
+function moduloDeVista(view: string): { modulo: ModuloAsistente; label: string } {
   if (view === 'notas') return { modulo: 'notas', label: 'Notas' }
   if (view === 'calendario') return { modulo: 'planificacion', label: 'Planificación' }
+  if (view === 'horario') return { modulo: 'horarios', label: 'Horarios' }
+  if (view === 'reuniones') return { modulo: 'reuniones', label: 'Reuniones' }
   return { modulo: 'general', label: 'Asistente' }
 }
 
+// Mensaje de error legible para el chat a partir de lo que devuelva la
+// llamada a la Edge Function. El servidor ya manda mensajes en español
+// listos para mostrar (límite diario, suscripción requerida, Groq
+// saturado...) en el cuerpo JSON de la respuesta de error — solo hace falta
+// leerlo. Un fallo de red real (sin respuesta del servidor) usa un mensaje
+// genérico aparte.
+async function mensajeDeError(e: unknown): Promise<string> {
+  if (e instanceof FunctionsHttpError) {
+    try {
+      const body = await e.context.json()
+      if (typeof body?.error === 'string') return body.error
+    } catch {
+      // cuerpo no era JSON — cae al mensaje genérico de abajo
+    }
+  }
+  return 'No se ha podido contactar con el asistente. Inténtalo de nuevo en un momento.'
+}
+
 export function AsistenteChat() {
+  const user = useAuthStore((s) => s.user)
   const hasPaid = useAuthStore((s) => s.hasPaid)
   const view = useCuadernoStore((s) => s.view)
   const { modulo, label } = moduloDeVista(view)
+
+  const contextoModulo = useEditorContextStore((s) => s.modulo)
+  const contextoTitulo = useEditorContextStore((s) => s.titulo)
+  const contextoTexto = useEditorContextStore((s) => s.texto)
+  const contextoDisponible: { modulo: ModuloConContexto; titulo: string; texto: string } | null =
+    contextoModulo === modulo && contextoTexto ? { modulo: contextoModulo, titulo: contextoTitulo, texto: contextoTexto } : null
 
   const [open, setOpen] = useState(false)
   const [showPaywall, setShowPaywall] = useState(false)
@@ -34,9 +60,25 @@ export function AsistenteChat() {
   const [input, setInput] = useState('')
   const [enviando, setEnviando] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [incluirContexto, setIncluirContexto] = useState(false)
   const [exportandoIdx, setExportandoIdx] = useState<number | null>(null)
   const [exportadoIdx, setExportadoIdx] = useState<number | null>(null)
   const listaRef = useRef<HTMLDivElement>(null)
+
+  // Un hilo de conversación por módulo (Notas, Planificación, Horarios,
+  // Reuniones) — al cambiar de módulo se carga su propia historia guardada
+  // en vez de seguir mostrando la del módulo anterior.
+  useEffect(() => {
+    if (!user) return
+    setMensajes(cargarHistorial(user.id, modulo))
+    setError(null)
+    setIncluirContexto(false)
+  }, [user, modulo])
+
+  useEffect(() => {
+    if (!user) return
+    guardarHistorial(user.id, modulo, mensajes)
+  }, [user, modulo, mensajes])
 
   useEffect(() => {
     listaRef.current?.scrollTo({ top: listaRef.current.scrollHeight })
@@ -48,6 +90,13 @@ export function AsistenteChat() {
       return
     }
     setOpen((o) => !o)
+  }
+
+  const handleNuevaConversacion = () => {
+    if (!user) return
+    setMensajes([])
+    limpiarHistorial(user.id, modulo)
+    setError(null)
   }
 
   const handleEnviar = async () => {
@@ -67,7 +116,12 @@ export function AsistenteChat() {
 
     try {
       const { data, error: fnError } = await supabase.functions.invoke('ai-assistant', {
-        body: { modulo, mensaje: texto, historial: nuevosMensajes },
+        body: {
+          modulo,
+          mensaje: texto,
+          historial: nuevosMensajes,
+          contexto: incluirContexto && contextoDisponible ? contextoDisponible.texto : undefined,
+        },
       })
       if (fnError) throw fnError
       setMensajes((prev) => [
@@ -75,7 +129,7 @@ export function AsistenteChat() {
         { role: 'assistant', content: data?.respuesta || 'No he podido generar una respuesta.' },
       ])
     } catch (e) {
-      setError('No se ha podido contactar con el asistente. Inténtalo de nuevo en un momento.')
+      setError(await mensajeDeError(e))
     } finally {
       setEnviando(false)
     }
@@ -102,6 +156,17 @@ export function AsistenteChat() {
           <div className="px-4 py-3 border-b border-border flex items-center gap-2 bg-primary/5">
             <Sparkles className="w-4 h-4 text-primary flex-shrink-0" />
             <span className="font-medium text-foreground text-sm flex-1">Asistente · {label}</span>
+            {mensajes.length > 0 && (
+              <button
+                type="button"
+                onClick={handleNuevaConversacion}
+                aria-label="Nueva conversación"
+                title="Nueva conversación"
+                className="p-1 rounded-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              >
+                <Eraser className="w-4 h-4" />
+              </button>
+            )}
             <button
               type="button"
               onClick={() => setOpen(false)}
@@ -154,6 +219,20 @@ export function AsistenteChat() {
               </p>
             )}
           </div>
+
+          {contextoDisponible && (
+            <label className="px-3 pb-1 flex items-start gap-2 text-xs text-muted-foreground cursor-pointer">
+              <input
+                type="checkbox"
+                checked={incluirContexto}
+                onChange={(e) => setIncluirContexto(e.target.checked)}
+                className="mt-0.5"
+              />
+              <span>
+                Incluir lo último que has editado (<span className="font-medium">{contextoDisponible.titulo}</span>)
+              </span>
+            </label>
+          )}
 
           <div className="p-3 border-t border-border flex gap-2">
             <input

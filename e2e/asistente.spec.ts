@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures'
-import { crearCuaderno } from './helpers'
+import { crearCuaderno, irASeccion } from './helpers'
 
 // La Edge Function real depende de Groq — se intercepta para no depender de
 // una API externa en la suite E2E, igual que se hace con Stripe/Resend en
@@ -107,5 +107,88 @@ test.describe('Asistente de IA', () => {
     await page.getByText('Del 14 al 18 de septiembre').click()
     const celdaMartesSemana2 = page.locator('table tbody tr').first().locator('td').nth(2)
     await expect(celdaMartesSemana2).not.toContainText('Planificación de Educación Física')
+  })
+})
+
+// V2 (Agosto 2026): historial persistente por módulo (localStorage) y
+// contexto opcional con lo que la docente está editando (useEditorContextStore).
+test.describe('Asistente de IA (V2)', () => {
+  test('el historial de conversación persiste entre cierres del chat, y "Nueva conversación" lo vacía', async ({
+    page,
+    testUser,
+  }) => {
+    await crearCuaderno(page, testUser)
+    await mockearAsistente(page, 'Respuesta de prueba para persistencia.')
+    await page.getByRole('button', { name: 'Abrir asistente de IA' }).click()
+    await page.getByPlaceholder('Escribe tu pregunta…').fill('Dame una actividad')
+    await page.keyboard.press('Enter')
+    await expect(page.getByText('Respuesta de prueba para persistencia.')).toBeVisible()
+
+    // Cerrar y reabrir el chat: el mensaje sigue ahí (cargado de localStorage).
+    await page.getByRole('button', { name: 'Cerrar asistente' }).first().click()
+    await page.getByRole('button', { name: 'Abrir asistente de IA' }).click()
+    await expect(page.getByText('Respuesta de prueba para persistencia.')).toBeVisible()
+
+    // "Nueva conversación" la vacía, y sigue vacía tras cerrar y reabrir.
+    await page.getByRole('button', { name: 'Nueva conversación' }).click()
+    await expect(page.getByText('Respuesta de prueba para persistencia.')).not.toBeVisible()
+    await page.getByRole('button', { name: 'Cerrar asistente' }).first().click()
+    await page.getByRole('button', { name: 'Abrir asistente de IA' }).click()
+    await expect(page.getByText('Respuesta de prueba para persistencia.')).not.toBeVisible()
+  })
+
+  test('cada módulo tiene su propio hilo: cambiar de sección no mezcla las conversaciones', async ({ page, testUser }) => {
+    await crearCuaderno(page, testUser)
+
+    await mockearAsistente(page, 'Respuesta sobre horarios.')
+    await page.getByRole('button', { name: 'Abrir asistente de IA' }).click()
+    await page.getByPlaceholder('Escribe tu pregunta…').fill('Pregunta de horarios')
+    await page.keyboard.press('Enter')
+    await expect(page.getByText('Respuesta sobre horarios.')).toBeVisible()
+    await page.getByRole('button', { name: 'Cerrar asistente' }).first().click()
+
+    await irASeccion(page, 'Notas')
+    await page.getByRole('button', { name: 'Abrir asistente de IA' }).click()
+    // Módulo distinto (Notas): no se ve la conversación de Horarios.
+    await expect(page.getByText('Respuesta sobre horarios.')).not.toBeVisible()
+    await expect(page.getByText('Pregúntame lo que necesites')).toBeVisible()
+  })
+
+  test('al editar una nota, el asistente ofrece incluir su contenido como contexto', async ({ page, testUser }) => {
+    await crearCuaderno(page, testUser)
+    await irASeccion(page, 'Notas')
+
+    await page.getByRole('button', { name: 'Crear nota' }).click()
+    await page.getByPlaceholder('Ej: Proyecto de fin de curso').fill('Reunión de padres')
+    await page.locator('.ProseMirror').click()
+    await page.keyboard.type('Recordar traer los boletines de notas el jueves.')
+    // El editor vive dentro de un Dialog modal (bloquea el resto de la app,
+    // incluido el botón del asistente) — se cierra sin guardar; el contexto
+    // publicado sobrevive al cierre a propósito (ver useEditorContextStore).
+    await page.getByRole('button', { name: 'Cancelar' }).click()
+
+    let contextoRecibido: string | undefined
+    await page.route('**/functions/v1/ai-assistant', async (route) => {
+      contextoRecibido = route.request().postDataJSON()?.contexto
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ respuesta: 'OK' }) })
+    })
+
+    await page.getByRole('button', { name: 'Abrir asistente de IA' }).click()
+    const checkbox = page.getByRole('checkbox', { name: /Incluir lo último que has editado/ })
+    await expect(checkbox).toBeVisible()
+    await expect(page.getByText('Reunión de padres')).toBeVisible()
+
+    // Sin marcar la casilla, no se manda contexto.
+    await page.getByPlaceholder('Escribe tu pregunta…').fill('Primera pregunta')
+    await page.keyboard.press('Enter')
+    await expect(page.getByText('OK', { exact: true })).toBeVisible()
+    expect(contextoRecibido).toBeUndefined()
+
+    // Marcada, sí se manda el contenido real de la nota.
+    await checkbox.check()
+    await page.getByPlaceholder('Escribe tu pregunta…').fill('Segunda pregunta')
+    await page.keyboard.press('Enter')
+    await expect(page.getByText('OK', { exact: true }).last()).toBeVisible()
+    expect(contextoRecibido).toContain('boletines de notas')
   })
 })

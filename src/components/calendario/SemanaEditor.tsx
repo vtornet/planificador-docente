@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { format, addDays, startOfWeek } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { DIAS_SEMANA, COLOR_VACACIONES } from '../../types/constants'
 import { useCuadernoStore } from '../../stores/useCuadernoStore'
+import { useEditorContextStore } from '../../stores/useEditorContextStore'
 import type { Semana } from '../../types'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Input } from '../ui/input'
@@ -69,6 +70,17 @@ export function SemanaEditor({
   })
 
   const periodosHorarios = generarPeriodos(configHorariosBase)
+
+  const publicarContexto = useEditorContextStore((s) => s.publicar)
+
+  useEffect(() => {
+    const texto = resumenSemanaParaAsistente(dias, observaciones, periodosHorarios)
+    if (texto) {
+      const inicio = semana ? new Date(semana.fechaInicio) : fechaInicio || new Date()
+      publicarContexto('planificacion', `Semana del ${format(inicio, 'dd/MM/yyyy')}`, texto)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dias, observaciones])
 
   const handleGuardar = () => {
     if (semana) {
@@ -375,4 +387,28 @@ function generarPeriodos(config: ConfigHorarios) {
   }
 
   return periodos
+}
+
+/** Resumen en texto plano de una semana, para dar contexto al asistente de IA (ver useEditorContextStore). */
+function resumenSemanaParaAsistente(
+  dias: Semana['dias'],
+  observaciones: string,
+  periodosHorarios: { inicio: string; fin: string; esRecreo?: boolean }[]
+): string {
+  const lineas: string[] = []
+  dias.forEach((dia, diaIndex) => {
+    const contenidos = dia.periodos
+      .map((p, periodoIndex) => {
+        if (periodosHorarios[periodoIndex]?.esRecreo || !p.contenido.trim()) return null
+        return `${periodosHorarios[periodoIndex]?.inicio || ''}: ${p.contenido.trim()}`
+      })
+      .filter((linea): linea is string => linea !== null)
+    if (contenidos.length > 0) {
+      lineas.push(`${DIAS_SEMANA[diaIndex]}: ${contenidos.join(' · ')}`)
+    }
+  })
+  if (observaciones.trim()) {
+    lineas.push(`Observaciones: ${observaciones.trim()}`)
+  }
+  return lineas.join('\n')
 }
