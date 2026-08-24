@@ -137,8 +137,20 @@
     padding: 2px 4px;
   }
 
+  /* Filas más altas en móvil (el calendario ya no tiene una altura fija de
+     600px, ver CalendarioMensual.tsx) para que cada día sea más fácil de
+     tocar — antes 60px, muy ajustado junto con el número del día y
+     cualquier evento en la misma celda. */
   .rbc-row-content {
-    min-height: 60px;
+    min-height: 100px;
+  }
+
+  /* El número del día es ahora un botón que abre el día directamente (ver
+     CabeceraDiaClicable en CalendarioMensual.tsx) — objetivo táctil de al
+     menos 32px, más cómodo que el tamaño de texto por sí solo. */
+  .rbc-button-link {
+    min-width: 32px;
+    min-height: 32px;
   }
 
   .rbc-event {

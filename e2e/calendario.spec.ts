@@ -96,10 +96,10 @@ test.describe('Calendario', () => {
     // selección de slot real (onSelectSlot).
     await irASeccion(page, 'Calendario')
     await page.getByRole('button', { name: '▶' }).click()
-    const celdaDia7 = page.locator('.rbc-date-cell', { hasText: /^0?7$/ })
-    const box = await celdaDia7.boundingBox()
-    if (!box) throw new Error('No se encontró la celda del día 7 en el calendario')
-    await page.mouse.click(box.x + box.width / 2, box.y + box.height + 25)
+    // Un click normal en el número del día ya abre la semana de forma
+    // fiable (ver CabeceraDiaClicable en CalendarioMensual.tsx) — ya no
+    // hace falta calcular un punto por debajo del número.
+    await page.locator('.rbc-date-cell', { hasText: /^0?7$/ }).click()
 
     await expect(page.getByRole('heading', { name: 'Nueva Semana' })).toBeVisible()
     await expect(page.getByText('Vinculada al horario "Horario de Prueba E2E"')).toBeVisible()
@@ -145,10 +145,10 @@ test.describe('Planificación ↔ Horario', () => {
     // "Lengua" como asignatura en el Horario).
     await irASeccion(page, 'Calendario')
     await page.getByRole('button', { name: '▶' }).click()
-    const celdaDia7 = page.locator('.rbc-date-cell', { hasText: /^0?7$/ })
-    const boxDia7 = await celdaDia7.boundingBox()
-    if (!boxDia7) throw new Error('No se encontró la celda del día 7 en el calendario')
-    await page.mouse.click(boxDia7.x + boxDia7.width / 2, boxDia7.y + boxDia7.height + 25)
+    // Un click normal en el número del día ya abre la semana de forma
+    // fiable (ver CabeceraDiaClicable en CalendarioMensual.tsx) — ya no
+    // hace falta calcular un punto por debajo del número.
+    await page.locator('.rbc-date-cell', { hasText: /^0?7$/ }).click()
     await expect(page.getByRole('heading', { name: 'Nueva Semana' })).toBeVisible()
 
     const celdaLunesPlanificador = page.locator('table tbody tr').first().locator('td').nth(1)
@@ -216,10 +216,10 @@ test.describe('Planificación ↔ Horario', () => {
     // preguntar el alcance, igual que ya hace "Guardar cambios" en Horarios.
     await irASeccion(page, 'Calendario')
     await page.getByRole('button', { name: '▶' }).click()
-    const celdaDia7 = page.locator('.rbc-date-cell', { hasText: /^0?7$/ })
-    const boxDia7 = await celdaDia7.boundingBox()
-    if (!boxDia7) throw new Error('No se encontró la celda del día 7 en el calendario')
-    await page.mouse.click(boxDia7.x + boxDia7.width / 2, boxDia7.y + boxDia7.height + 25)
+    // Un click normal en el número del día ya abre la semana de forma
+    // fiable (ver CabeceraDiaClicable en CalendarioMensual.tsx) — ya no
+    // hace falta calcular un punto por debajo del número.
+    await page.locator('.rbc-date-cell', { hasText: /^0?7$/ }).click()
     await expect(page.getByRole('heading', { name: 'Nueva Semana' })).toBeVisible()
 
     const celdaLunesPlanificador = page.locator('table tbody tr').first().locator('td').nth(1)
@@ -270,10 +270,10 @@ test.describe('Planificación ↔ Horario', () => {
     // Crear la semana de Planificación con una nota inicial.
     await irASeccion(page, 'Calendario')
     await page.getByRole('button', { name: '▶' }).click()
-    const celdaDia7 = page.locator('.rbc-date-cell', { hasText: /^0?7$/ })
-    const boxDia7 = await celdaDia7.boundingBox()
-    if (!boxDia7) throw new Error('No se encontró la celda del día 7 en el calendario')
-    await page.mouse.click(boxDia7.x + boxDia7.width / 2, boxDia7.y + boxDia7.height + 25)
+    // Un click normal en el número del día ya abre la semana de forma
+    // fiable (ver CabeceraDiaClicable en CalendarioMensual.tsx) — ya no
+    // hace falta calcular un punto por debajo del número.
+    await page.locator('.rbc-date-cell', { hasText: /^0?7$/ }).click()
     await expect(page.getByRole('heading', { name: 'Nueva Semana' })).toBeVisible()
     await page.locator('table tbody tr').first().locator('td').nth(1).locator('textarea').fill('Nota inicial del Planificador')
     await page.getByRole('button', { name: 'Guardar', exact: true }).click()

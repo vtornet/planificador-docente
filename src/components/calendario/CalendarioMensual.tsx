@@ -207,6 +207,45 @@ export function CalendarioMensual() {
     }
   }
 
+  // Tocar cualquier parte de un día (el número, un hueco vacío, o incluso un
+  // día que ya tiene eventos) lo abre de forma fiable con un toque normal —
+  // sustituye el mecanismo de selección de react-big-calendar (`selectable`
+  // + `onSelectSlot`), que en pantallas táctiles exige mantener pulsado
+  // (`longPressThreshold`) y que además, en un día con eventos, apenas deja
+  // hueco "vacío" donde hacerlo — bug real reportado por el usuario (ver
+  // "PLANIFICAR EN MÓVIL" en CLAUDE.md). Ambos componentes solo envuelven lo
+  // que react-big-calendar ya renderiza (la celda de fondo con sus clases
+  // rbc-day-bg/rbc-today/etc., y el número del día) — nada de estilos se
+  // pierde, solo se sustituye a qué función llama el click.
+  function CeldaDiaClicable({ value, children }: { value: Date; children: React.ReactNode }) {
+    return (
+      <div className="h-full cursor-pointer" onClick={() => handleSelectSlot({ start: value })}>
+        {children}
+      </div>
+    )
+  }
+
+  function CabeceraDiaClicable({ label, date: fechaCelda }: { label: React.ReactNode; date: Date }) {
+    return (
+      <button
+        type="button"
+        className="rbc-button-link"
+        // El botón por defecto de react-big-calendar solo ocupa el ancho de
+        // su texto, alineado a la derecha de una celda mucho más ancha
+        // (`.rbc-date-cell` es flex:1) — tocar el resto de esa cabecera no
+        // hacía nada. `display:block; width/height:100%` hace que el botón
+        // rellene toda la celda, así que cualquier toque ahí abre el día.
+        style={{ display: 'block', width: '100%', height: '100%' }}
+        onClick={(e) => {
+          e.stopPropagation()
+          handleSelectSlot({ start: fechaCelda })
+        }}
+      >
+        {label}
+      </button>
+    )
+  }
+
   const eventPropGetter = (event: CalendarioEvent) => {
     if (event.resource?.tipo === 'festivo') {
       const color = TIPOS_FESTIVO.find((t) => t.id === event.resource?.tipoFestivo)?.color
@@ -285,12 +324,22 @@ export function CalendarioMensual() {
           onView={setCalendarView}
           onNavigate={handleNavigate}
           onSelectEvent={handleSelectEvent}
-          onSelectSlot={handleSelectSlot}
           eventPropGetter={eventPropGetter}
-          selectable
+          // Sin `selectable` ni `onSelectSlot`: la apertura de un día ya no
+          // pasa por el mecanismo de selección de react-big-calendar (con su
+          // exigencia de mantener pulsado en táctil), sino por los toques
+          // normales de CeldaDiaClicable/CabeceraDiaClicable de abajo.
+          // Semana y Día no tienen estilo ni interacciones propias en esta
+          // app — quitadas para que el número del día no drille en silencio
+          // a una vista rota (ver "PLANIFICAR EN MÓVIL" en CLAUDE.md).
+          // Agenda sí se deja: es solo una lista, sin la ambigüedad táctil
+          // de la cuadrícula de Mes.
+          views={['month', 'agenda']}
+          onDrillDown={() => {}}
+          components={{ dateCellWrapper: CeldaDiaClicable, month: { dateHeader: CabeceraDiaClicable } }}
           startAccessor="start"
           endAccessor="end"
-          style={{ height: 600 }}
+          style={{ height: 'min(85vh, 900px)' }}
           formats={{
             monthHeaderFormat: (date: Date) => format(date, 'MMMM yyyy', { locale: es }),
             dayFormat: (date: Date) => format(date, 'EEE', { locale: es }),
