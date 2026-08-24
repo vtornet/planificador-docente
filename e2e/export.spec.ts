@@ -125,4 +125,55 @@ test.describe('Exportación', () => {
       expect(tieneContenidoReal).toBe(true)
     })
   })
+
+  test.describe('Compartir (Web Share API)', () => {
+    test('sin navigator.share (Chromium de escritorio real) no aparece el botón Compartir', async ({ page, testUser }) => {
+      // Verifica que la detección de compatibilidad no rompe nada en un
+      // navegador sin soporte de verdad (el caso habitual de Playwright) —
+      // no simula nada aquí, al contrario que el test de abajo.
+      await crearCuaderno(page, testUser)
+
+      await page.getByRole('button', { name: 'Exportar' }).click()
+      await page.getByRole('menuitem', { name: 'PDF completo' }).click()
+      await expect(page.getByRole('heading', { name: 'Vista previa' })).toBeVisible()
+
+      await expect(page.getByRole('button', { name: 'Compartir' })).not.toBeVisible()
+      await expect(page.getByRole('button', { name: 'Descargar', exact: true })).toBeVisible()
+    })
+
+    test('con navigator.share disponible, "Compartir" invoca la API con el PDF correcto', async ({ page, testUser }) => {
+      // Simula un dispositivo que sí soporta compartir archivos (sobre todo
+      // móvil) — Playwright no puede abrir el panel nativo real del sistema
+      // operativo, pero sí puede comprobar que el código de la app invoca
+      // correctamente navigator.share con el archivo esperado.
+      await page.addInitScript(() => {
+        // @ts-expect-error mock deliberado para el test, no una implementación real
+        navigator.canShare = () => true
+        // @ts-expect-error idem
+        navigator.share = async (data: { title?: string; files?: File[] }) => {
+          const file = data.files?.[0]
+          ;(window as any).__compartido = file ? { name: file.name, type: file.type, size: file.size } : null
+        }
+      })
+
+      await crearCuaderno(page, testUser)
+
+      await page.getByRole('button', { name: 'Exportar' }).click()
+      await page.getByRole('menuitem', { name: 'PDF completo' }).click()
+      await expect(page.getByRole('heading', { name: 'Vista previa' })).toBeVisible()
+
+      const botonCompartir = page.getByRole('button', { name: 'Compartir' })
+      await expect(botonCompartir).toBeVisible()
+      await botonCompartir.click()
+
+      // Cerrar el diálogo tras compartir confirma que la promesa de
+      // navigator.share() se resolvió sin error.
+      await expect(page.getByRole('heading', { name: 'Vista previa' })).not.toBeVisible()
+
+      const compartido = await page.evaluate(() => (window as any).__compartido)
+      expect(compartido?.name).toMatch(/^docenza-completo-.*\.pdf$/)
+      expect(compartido?.type).toBe('application/pdf')
+      expect(compartido?.size).toBeGreaterThan(0)
+    })
+  })
 })

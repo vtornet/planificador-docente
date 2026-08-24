@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog'
 import { Button } from '../ui/button'
-import { Download, Loader2 } from 'lucide-react'
+import { Download, Loader2, Share2 } from 'lucide-react'
 import { saveAs } from 'file-saver'
 import type { PDFGenerado } from '../../utils/pdf.tsx'
 
@@ -13,11 +13,9 @@ interface PdfPreviewDialogProps {
 /**
  * Muestra el PDF ya generado (en memoria, sin descargar todavía) antes de
  * guardarlo — para poder pillar un error (ej. el módulo equivocado del
- * desplegable Exportar) antes de que se descargue, no después. Solo cubre
- * los exportados desde ExportMenu.tsx (los de un solo elemento — icono de
- * descarga en la tarjeta de un horario/reunión/nota concretos — siguen
- * descargando directo: ahí es mucho más difícil equivocarse de qué se está
- * exportando).
+ * desplegable Exportar) antes de que se descargue, no después. Cubre todos
+ * los sitios de exportación a PDF de la app: el menú "Exportar" y los
+ * iconos de descarga individuales de horario/reunión/nota.
  *
  * Renderiza con pdf.js a <canvas> en vez de un <iframe src="blob:...">: la
  * primera versión usaba iframe y funcionaba en escritorio, pero en móvil
@@ -28,6 +26,34 @@ interface PdfPreviewDialogProps {
  * cualquier dispositivo.
  */
 export function PdfPreviewDialog({ pdf, onOpenChange }: PdfPreviewDialogProps) {
+  const [puedeCompartir, setPuedeCompartir] = useState(false)
+
+  useEffect(() => {
+    if (!pdf) {
+      setPuedeCompartir(false)
+      return
+    }
+    // navigator.canShare({ files }) — solo disponible en algunos navegadores
+    // (sobre todo móvil; en escritorio suele faltar o no soportar archivos),
+    // así que el botón "Compartir" solo aparece donde de verdad funciona.
+    const file = new File([pdf.blob], pdf.filename, { type: 'application/pdf' })
+    setPuedeCompartir(typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] }))
+  }, [pdf])
+
+  const handleCompartir = async () => {
+    if (!pdf) return
+    const file = new File([pdf.blob], pdf.filename, { type: 'application/pdf' })
+    try {
+      await navigator.share({ files: [file], title: pdf.filename })
+      onOpenChange(false)
+    } catch (error) {
+      // Cancelar el panel nativo de compartir no es un error — se deja el
+      // diálogo abierto por si prefiere descargarlo en su lugar.
+      if (error instanceof Error && error.name === 'AbortError') return
+      console.error('Error compartiendo el PDF:', error)
+    }
+  }
+
   return (
     <Dialog open={pdf !== null} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
@@ -41,6 +67,12 @@ export function PdfPreviewDialog({ pdf, onOpenChange }: PdfPreviewDialogProps) {
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
+          {puedeCompartir && (
+            <Button variant="outline" onClick={handleCompartir}>
+              <Share2 className="w-4 h-4" />
+              Compartir
+            </Button>
+          )}
           <Button
             onClick={() => {
               if (pdf) saveAs(pdf.blob, pdf.filename)
