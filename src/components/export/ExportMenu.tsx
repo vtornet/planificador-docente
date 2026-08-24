@@ -111,7 +111,7 @@ export function ExportMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" disabled={exporting !== null}>
+        <Button variant="outline" size="sm" disabled={exporting !== null} aria-label="Exportar">
           {exporting ? (
             <Loader2 className="w-4 h-4 animate-spin" />
           ) : (

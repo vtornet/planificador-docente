@@ -17,14 +17,18 @@ test.describe('Exportación', () => {
     await page.getByRole('button', { name: 'Exportar' }).click()
     await page.getByRole('menuitem', { name: 'Agenda (eventos)' }).click()
 
-    // Los PDF del menú Exportar muestran una vista previa antes de
-    // descargar (no el backup JSON, que sigue siendo descarga directa). No
-    // se inspecciona el contenido del iframe: un PDF vía blob: URL lo
-    // renderiza el visor nativo del navegador, no un documento HTML normal
-    // accesible por Playwright — basta con confirmar que el iframe apunta a
-    // un blob: real.
+    // Los PDF del menú Exportar muestran una vista previa antes de descargar
+    // (no el backup JSON, que sigue siendo descarga directa). Renderizada
+    // con pdf.js a <canvas> (no un <iframe src="blob:...">: en móvil no hay
+    // visor nativo de PDF fiable dentro de un iframe, la vista previa salía
+    // en blanco — bug real reportado por el usuario) — basta con confirmar
+    // que aparece al menos un <canvas> con contenido dibujado.
     await expect(page.getByRole('heading', { name: 'Vista previa' })).toBeVisible()
-    await expect(page.locator('iframe[title="Vista previa del PDF"]')).toHaveAttribute('src', /^blob:/)
+    const canvas = page.locator('canvas').first()
+    await expect(canvas).toBeVisible()
+    await expect
+      .poll(async () => canvas.evaluate((el: HTMLCanvasElement) => el.width > 0 && el.height > 0))
+      .toBe(true)
 
     const [download] = await Promise.all([
       page.waitForEvent('download'),
@@ -41,6 +45,7 @@ test.describe('Exportación', () => {
     await page.getByRole('menuitem', { name: 'PDF completo' }).click()
 
     await expect(page.getByRole('heading', { name: 'Vista previa' })).toBeVisible()
+    await expect(page.locator('canvas').first()).toBeVisible()
 
     const [download] = await Promise.all([
       page.waitForEvent('download'),
@@ -81,5 +86,43 @@ test.describe('Exportación', () => {
     ])
 
     expect(download.suggestedFilename()).toMatch(/^docenza-.*\.json$/)
+  })
+
+  test.describe('vista previa en viewport móvil', () => {
+    test.use({ viewport: { width: 390, height: 844 } })
+
+    test('la vista previa se dibuja con contenido real, no en blanco', async ({ page, testUser }) => {
+      // Playwright siempre corre sobre el motor de escritorio de Chromium
+      // (que ya tenía visor de PDF nativo funcionando incluso con la versión
+      // anterior basada en <iframe>), así que este test no puede reproducir
+      // el bug real (específico de Safari iOS / Chrome Android) — pero sí
+      // confirma que el cálculo del ancho responsive del <canvas> no rompe
+      // en un viewport estrecho.
+      await crearCuaderno(page, testUser)
+
+      await page.getByRole('button', { name: 'Exportar' }).click()
+      await page.getByRole('menuitem', { name: 'PDF completo' }).click()
+      await expect(page.getByRole('heading', { name: 'Vista previa' })).toBeVisible()
+
+      const canvas = page.locator('canvas').first()
+      await expect(canvas).toBeVisible()
+
+      // "En blanco" de verdad significa: sin dimensiones, o con toda la
+      // superficie de un único color uniforme (ej. transparente/blanco sin
+      // dibujar nada encima) — se comprueba que hay más de un color distinto
+      // entre los píxeles, no solo que el <canvas> exista en el DOM.
+      const tieneContenidoReal = await canvas.evaluate((el: HTMLCanvasElement) => {
+        if (el.width === 0 || el.height === 0) return false
+        const ctx = el.getContext('2d')
+        if (!ctx) return false
+        const { data } = ctx.getImageData(0, 0, el.width, el.height)
+        const primerPixel = `${data[0]},${data[1]},${data[2]},${data[3]}`
+        for (let i = 4; i < data.length; i += 4) {
+          if (`${data[i]},${data[i + 1]},${data[i + 2]},${data[i + 3]}` !== primerPixel) return true
+        }
+        return false
+      })
+      expect(tieneContenidoReal).toBe(true)
+    })
   })
 })
