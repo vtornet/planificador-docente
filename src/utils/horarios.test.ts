@@ -6,8 +6,9 @@ import {
   formatRangoFechas,
   aplicarNotasEnDatos,
   contenidoParaSemana,
+  resolverDiasSemana,
 } from './horarios'
-import type { Horario } from '../types'
+import type { Horario, Semana } from '../types'
 
 const local = (year: number, month: number, day: number) => new Date(year, month - 1, day)
 
@@ -183,5 +184,55 @@ describe('contenidoParaSemana', () => {
 
   it('con nota pero sin asignatura, devuelve solo la nota', () => {
     expect(contenidoParaSemana('', 'Repaso general')).toBe('Repaso general')
+  })
+})
+
+describe('resolverDiasSemana', () => {
+  function crearSemana(overrides: Partial<Semana> = {}): Semana {
+    return {
+      id: 'semana-1',
+      fechaInicio: local(2026, 9, 7),
+      fechaFin: local(2026, 9, 11),
+      numeroSemana: 1,
+      observaciones: '',
+      dias: [
+        { fecha: local(2026, 9, 7), esFestivo: false, esVacaciones: false, periodos: [{ contenido: 'Guardado hace tiempo' }] },
+        { fecha: local(2026, 9, 8), esFestivo: false, esVacaciones: false, periodos: [{ contenido: '' }] },
+      ],
+      actualizado: new Date(),
+      ...overrides,
+    }
+  }
+
+  it('sin ningún horario vigente esa semana, devuelve semana.dias tal cual', () => {
+    const semana = crearSemana()
+    expect(resolverDiasSemana(semana, [])).toBe(semana.dias)
+  })
+
+  it('con horario vigente, resuelve el contenido en vivo (asignatura + nota), no el valor guardado', () => {
+    const semana = crearSemana()
+    const horario = crearHorario({
+      fechaInicio: local(2026, 9, 7),
+      fechaFin: local(2026, 9, 11),
+      datos: [[{ contenido: 'Matemáticas', nota: 'Cambiado directamente en Horarios' }, { contenido: 'Lengua' }]],
+    })
+    const resultado = resolverDiasSemana(semana, [horario])
+    expect(resultado[0].periodos[0].contenido).toBe('Matemáticas: Cambiado directamente en Horarios')
+    expect(resultado[1].periodos[0].contenido).toBe('Lengua')
+  })
+
+  it('preserva esFestivo/esVacaciones/fecha del día, solo cambia el contenido de los periodos', () => {
+    const semana = crearSemana({
+      dias: [{ fecha: local(2026, 9, 7), esFestivo: true, esVacaciones: false, periodos: [{ contenido: '' }] }],
+    })
+    const horario = crearHorario({
+      fechaInicio: local(2026, 9, 7),
+      fechaFin: local(2026, 9, 11),
+      datos: [[{ contenido: 'Matemáticas' }]],
+    })
+    const resultado = resolverDiasSemana(semana, [horario])
+    expect(resultado[0].esFestivo).toBe(true)
+    expect(resultado[0].fecha).toEqual(local(2026, 9, 7))
+    expect(resultado[0].periodos[0].contenido).toBe('Matemáticas')
   })
 })

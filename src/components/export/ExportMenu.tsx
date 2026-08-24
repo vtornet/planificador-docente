@@ -47,7 +47,9 @@ export function ExportMenu() {
           // La primera semana (o todas)
           if (cuadernoActual.planificacion.semanal.length > 0) {
             const { generarSemanaPDF } = await import('../../utils/pdf.tsx')
-            setPreviewPdf(await generarSemanaPDF(cuadernoActual.planificacion.semanal[0], cuadernoActual.metadata))
+            setPreviewPdf(
+              await generarSemanaPDF(cuadernoActual.planificacion.semanal[0], cuadernoActual.metadata, cuadernoActual.horarios)
+            )
           }
           break
         }

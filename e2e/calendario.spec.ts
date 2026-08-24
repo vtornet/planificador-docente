@@ -1,5 +1,6 @@
 import { test, expect } from './fixtures'
 import { crearCuaderno, irASeccion } from './helpers'
+import { extraerTextoPDF } from './pdfText'
 
 test.describe('Calendario', () => {
   test('crear un evento y verlo en el calendario del mes actual', async ({ page, testUser }) => {
@@ -242,5 +243,69 @@ test.describe('Planificación ↔ Horario', () => {
     const celdaLunesSemana2 = page.locator('table tbody tr').first().locator('td').nth(1)
     await expect(celdaLunesSemana2).toContainText('Matemáticas')
     await expect(celdaLunesSemana2).not.toContainText('Repaso para el examen')
+  })
+
+  test('el PDF de Planificación refleja un cambio hecho directamente en Horarios, sin volver a guardar la semana', async ({
+    page,
+    testUser,
+  }) => {
+    await crearCuaderno(page, testUser)
+
+    // Horario de una sola semana con "Matemáticas" el Lunes.
+    await page.getByRole('button', { name: '+ Nuevo horario' }).click()
+    await page.getByPlaceholder('Ej: Horario 1º ESO A').fill('Horario PDF Live E2E')
+    const fechas = page.locator('input[type="date"]')
+    await fechas.first().fill('2026-09-07')
+    await fechas.nth(1).fill('2026-09-11')
+    await page.getByRole('button', { name: 'Crear' }).click()
+    await expect(page.getByRole('heading', { name: 'Nuevo horario' })).not.toBeVisible()
+    await page.getByText('Septiembre', { exact: true }).click()
+    await page.getByText('Del 7 al 11 de septiembre').click()
+    const celdaLunes = page.locator('table tbody tr').first().locator('td').nth(1)
+    await celdaLunes.click()
+    await page.locator('select').first().selectOption({ label: 'Matemáticas' })
+    await page.getByRole('button', { name: 'Guardar', exact: true }).click()
+    await page.getByRole('button', { name: 'Guardar cambios' }).click()
+
+    // Crear la semana de Planificación con una nota inicial.
+    await irASeccion(page, 'Calendario')
+    await page.getByRole('button', { name: '▶' }).click()
+    const celdaDia7 = page.locator('.rbc-date-cell', { hasText: /^0?7$/ })
+    const boxDia7 = await celdaDia7.boundingBox()
+    if (!boxDia7) throw new Error('No se encontró la celda del día 7 en el calendario')
+    await page.mouse.click(boxDia7.x + boxDia7.width / 2, boxDia7.y + boxDia7.height + 25)
+    await expect(page.getByRole('heading', { name: 'Nueva Semana' })).toBeVisible()
+    await page.locator('table tbody tr').first().locator('td').nth(1).locator('textarea').fill('Nota inicial del Planificador')
+    await page.getByRole('button', { name: 'Guardar', exact: true }).click()
+    await expect(page.getByRole('heading', { name: 'Nueva Semana' })).not.toBeVisible()
+
+    // Cambiar la nota directamente desde Horarios, SIN volver a abrir el
+    // Planificador de esa semana.
+    await irASeccion(page, 'Horarios')
+    await page.getByText('Septiembre', { exact: true }).click()
+    await page.getByText('Del 7 al 11 de septiembre').click()
+    await celdaLunes.click()
+    await page.getByRole('button', { name: 'Editar', exact: true }).click()
+    await page.getByPlaceholder('Ej: Traer material de plástica...').fill('Nota actualizada solo en Horarios')
+    await page.getByRole('button', { name: 'Guardar', exact: true }).click()
+    await page.getByRole('button', { name: 'Guardar cambios' }).click()
+    await expect(celdaLunes).toContainText('Nota actualizada solo en Horarios')
+
+    // El PDF de Planificación debe reflejar el cambio en vivo, no la foto
+    // fija de cuando se guardó la semana por última vez.
+    await irASeccion(page, 'Calendario')
+    await page.getByRole('button', { name: 'Exportar' }).click()
+    await page.getByRole('menuitem', { name: 'Planificación' }).click()
+    await expect(page.getByRole('heading', { name: 'Vista previa' })).toBeVisible()
+
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.getByRole('button', { name: 'Descargar', exact: true }).click(),
+    ])
+    const path = await download.path()
+    if (!path) throw new Error('La descarga del PDF no generó un archivo local')
+    const texto = await extraerTextoPDF(path)
+    expect(texto).toContain('Nota actualizada solo en Horarios')
+    expect(texto).not.toContain('Nota inicial del Planificador')
   })
 })

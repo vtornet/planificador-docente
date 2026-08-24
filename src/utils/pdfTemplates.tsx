@@ -12,6 +12,7 @@ import {
 import type { Horario, Semana, Reunion, Nota, CuadernoDocente, CeldaHorario, Evento } from '../types'
 import { PALETA_ASIGNATURAS } from '../types/constants'
 import { fechasOcurrencias } from './recurrencia'
+import { resolverDiasSemana } from './horarios'
 
 // Intentar registrar fuentes (opcional, si no existen usa fuentes por defecto)
 try {
@@ -429,10 +430,15 @@ export function NotasPDFDocument({ notas, metadata }: NotasPDFProps) {
 interface SemanaPDFProps {
   semana: Semana
   metadata: CuadernoDocente['metadata']
+  // Para resolver el contenido de cada periodo en vivo contra el horario
+  // vigente esa semana, en vez de la foto fija guardada la última vez que
+  // se editó desde Planificación — ver resolverDiasSemana en utils/horarios.ts.
+  horarios?: Horario[]
 }
 
-export function SemanaPDFDocument({ semana, metadata }: SemanaPDFProps) {
+export function SemanaPDFDocument({ semana, metadata, horarios = [] }: SemanaPDFProps) {
   const diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes']
+  const dias = resolverDiasSemana(semana, horarios)
 
   return (
     <Document>
@@ -450,7 +456,7 @@ export function SemanaPDFDocument({ semana, metadata }: SemanaPDFProps) {
         </View>
 
         {/* Días de la semana */}
-        {semana.dias.map((dia, idx) => (
+        {dias.map((dia, idx) => (
           <View key={idx} style={styles.section}>
             <Text style={styles.sectionTitle}>
               {diasSemana[idx]} {new Date(dia.fecha).toLocaleDateString('es-ES')}
@@ -606,7 +612,7 @@ export function CuadernoCompletoPDF({ cuaderno }: CuadernoCompletoPDFProps) {
 
       {/* Planificación (primeras semanas) */}
       {cuaderno.planificacion.semanal.slice(0, 5).map((semana) => (
-        <SemanaPDFDocument key={semana.id} semana={semana} metadata={cuaderno.metadata} />
+        <SemanaPDFDocument key={semana.id} semana={semana} metadata={cuaderno.metadata} horarios={cuaderno.horarios} />
       ))}
 
       {/* Reuniones */}

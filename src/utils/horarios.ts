@@ -1,6 +1,6 @@
 import { addDays, format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import type { Horario } from '../types'
+import type { Horario, Semana } from '../types'
 
 // ¿El horario está vigente en algún punto del rango [desde, hasta]?
 export function horarioActivoEnRango(horario: Horario, desde: Date, hasta: Date): boolean {
@@ -90,6 +90,31 @@ export function aplicarNotasEnDatos(datos: Horario['datos'], notas: Record<strin
 export function contenidoParaSemana(asignatura: string, nota: string): string {
   if (!nota.trim()) return asignatura
   return asignatura ? `${asignatura}: ${nota}` : nota
+}
+
+// Devuelve `semana.dias` con el contenido de cada periodo resuelto EN VIVO
+// contra el horario vigente esa semana (si lo hay), en vez de confiar en el
+// valor guardado la última vez que se editó desde Planificación. Sin esto,
+// el PDF de la semana (el único consumidor externo que no pasa por
+// SemanaEditor.tsx/VistaSemanal.tsx) mostraría una foto fija desactualizada
+// si la celda se edita más tarde directamente desde Horarios — ver
+// "PLANIFICACIÓN ↔ HORARIO: FUENTE ÚNICA" en CLAUDE.md. Sin horario vigente,
+// devuelve `semana.dias` tal cual (comportamiento de siempre).
+export function resolverDiasSemana(semana: Semana, horarios: Horario[]): Semana['dias'] {
+  const inicio = new Date(semana.fechaInicio)
+  const fin = new Date(semana.fechaFin)
+  const horariosVigentes = horarios.filter((h) => horarioActivoEnRango(h, inicio, fin))
+  const horarioVigente = horariosVigentes.find((h) => h.tipo === 'docente') || horariosVigentes[0]
+  if (!horarioVigente) return semana.dias
+
+  return semana.dias.map((dia, diaIndex) => ({
+    ...dia,
+    periodos: dia.periodos.map((periodo, periodoIndex) => {
+      const celda = horarioVigente.datos[periodoIndex]?.[diaIndex]
+      if (!celda) return periodo
+      return { contenido: contenidoParaSemana(celda.contenido || '', celda.nota || '') }
+    }),
+  }))
 }
 
 export function formatRangoFechas(fechaInicio?: Date, fechaFin?: Date): string {

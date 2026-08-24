@@ -135,9 +135,13 @@ export async function exportNotasToPDF(notas: Nota[], metadata: CuadernoDocente[
 /**
  * Genera un PDF (sin descargarlo) de una semana — ver generarHorariosPDF.
  */
-export async function generarSemanaPDF(semana: Semana, metadata: CuadernoDocente['metadata']): Promise<PDFGenerado> {
+export async function generarSemanaPDF(
+  semana: Semana,
+  metadata: CuadernoDocente['metadata'],
+  horarios: Horario[] = []
+): Promise<PDFGenerado> {
   try {
-    const doc = <SemanaPDFDocument semana={semana} metadata={metadata} />
+    const doc = <SemanaPDFDocument semana={semana} metadata={metadata} horarios={horarios} />
     const blob = await pdf(doc).toBlob()
     return { blob, filename: `semana-${semana.numeroSemana}.pdf` }
   } catch (error) {
@@ -149,8 +153,12 @@ export async function generarSemanaPDF(semana: Semana, metadata: CuadernoDocente
 /**
  * Genera y descarga un PDF de una semana
  */
-export async function exportSemanaToPDF(semana: Semana, metadata: CuadernoDocente['metadata']): Promise<void> {
-  const { blob, filename } = await generarSemanaPDF(semana, metadata)
+export async function exportSemanaToPDF(
+  semana: Semana,
+  metadata: CuadernoDocente['metadata'],
+  horarios: Horario[] = []
+): Promise<void> {
+  const { blob, filename } = await generarSemanaPDF(semana, metadata, horarios)
   saveAs(blob, filename)
 }
 
@@ -228,10 +236,14 @@ export async function exportReunionesToPDF(reuniones: Reunion[], metadata: Cuade
 /**
  * Genera un PDF de todas las semanas de planificación
  */
-export async function exportSemanasToPDF(semanas: Semana[], metadata: CuadernoDocente['metadata']): Promise<void> {
+export async function exportSemanasToPDF(
+  semanas: Semana[],
+  metadata: CuadernoDocente['metadata'],
+  horarios: Horario[] = []
+): Promise<void> {
   try {
     for (const semana of semanas) {
-      await exportSemanaToPDF(semana, metadata)
+      await exportSemanaToPDF(semana, metadata, horarios)
     }
   } catch (error) {
     console.error('Error generating semanas PDF:', error)
