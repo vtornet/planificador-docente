@@ -97,12 +97,31 @@ async function resolverUserIdPorCustomer(customerId: string): Promise<string | n
 }
 
 async function actualizarSuscripcion(userId: string, subscription: Stripe.Subscription) {
+  // Bug real (27-08-2026): `current_period_end` en el nivel superior del
+  // objeto Subscription solo viene garantizado cuando NOSOTROS lo pedimos
+  // vía stripe.subscriptions.retrieve() (respeta la apiVersion fijada arriba
+  // en este archivo). El objeto que llega dentro del propio evento del
+  // webhook (`event.data.object`, el `subscription` que se recibe aquí para
+  // customer.subscription.updated/deleted) lo serializa Stripe con la
+  // versión de API configurada en la cuenta/el propio endpoint, que puede
+  // ser más reciente — y en esas versiones ese campo se movió a
+  // subscription.items.data[].current_period_end. Sin este fallback,
+  // `new Date(undefined * 1000).toISOString()` lanzaba
+  // "RangeError: Invalid time value" y el webhook devolvía 500 en cada
+  // customer.subscription.updated real (confirmado en los logs: el pago
+  // inicial vía checkout.session.completed sí funcionaba, por pasar por
+  // retrieve(); cancelar desde el Portal, que solo dispara
+  // customer.subscription.updated, fallaba siempre).
+  const currentPeriodEndUnix = subscription.current_period_end ?? subscription.items?.data?.[0]?.current_period_end
+
   const { data, error } = await supabaseAdmin
     .from('profiles')
     .update({
       stripe_subscription_id: subscription.id,
       subscription_status: subscription.status,
-      subscription_current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+      subscription_current_period_end: currentPeriodEndUnix
+        ? new Date(currentPeriodEndUnix * 1000).toISOString()
+        : null,
       // Cancelar desde el Portal de Facturación no cambia subscription_status
       // de inmediato (sigue "active" hasta que el periodo ya pagado termina
       // de verdad) — sin este flag, "Mi Suscripción" no podría distinguir
@@ -111,6 +130,10 @@ async function actualizarSuscripcion(userId: string, subscription: Stripe.Subscr
     })
     .eq('id', userId)
     .select('id')
+
+  if (!currentPeriodEndUnix) {
+    console.error(`subscription ${subscription.id}: no se encontró current_period_end ni en el nivel superior ni en items[0], se ha guardado null`)
+  }
 
   if (error) {
     console.error(`Error actualizando profile ${userId}:`, error)
