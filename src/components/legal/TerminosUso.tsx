@@ -56,11 +56,13 @@ export function TerminosUso({ open, onOpenChange }: TerminosUsoProps) {
               módulo (un horario, una reunión, una nota, una semana de planificación y un evento).
               Superado ese límite, hace falta una suscripción de pago recurrente (anual) para seguir
               creando contenido nuevo y para usar el asistente de IA. La suscripción se renueva
-              automáticamente salvo que la canceles. Ahora mismo, la única vía de autoservicio para
-              dejar de pagar es eliminar tu cuenta por completo (Perfil → Eliminar mi cuenta), que
-              cancela la suscripción de inmediato pero también borra tu cuenta y todos tus cuadernos
-              de forma irreversible. Si quieres cancelar la renovación sin perder tu cuenta ni tus
-              datos, escríbenos a{' '}
+              automáticamente salvo que la canceles. Puedes cancelarla en cualquier momento desde
+              "Mi Suscripción" → "Gestionar suscripción", que te lleva al portal de facturación de
+              Stripe: seguirás teniendo acceso completo hasta el final del periodo ya pagado, sin
+              perder tu cuenta ni tus datos. Alternativamente, eliminar tu cuenta por completo
+              (Perfil → Eliminar mi cuenta) también cancela la suscripción, pero de inmediato y
+              borrando además todos tus cuadernos de forma irreversible — solo recomendable si
+              quieres dejar de usar Docenza del todo. Para cualquier duda, escríbenos a{' '}
               <a href="mailto:contact@appstracta.app" className="text-primary underline">
                 contact@appstracta.app
               </a>

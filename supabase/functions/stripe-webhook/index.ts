@@ -103,6 +103,11 @@ async function actualizarSuscripcion(userId: string, subscription: Stripe.Subscr
       stripe_subscription_id: subscription.id,
       subscription_status: subscription.status,
       subscription_current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+      // Cancelar desde el Portal de Facturación no cambia subscription_status
+      // de inmediato (sigue "active" hasta que el periodo ya pagado termina
+      // de verdad) — sin este flag, "Mi Suscripción" no podría distinguir
+      // "se renueva sola" de "termina el DD/MM y no se renovará".
+      cancel_at_period_end: subscription.cancel_at_period_end,
     })
     .eq('id', userId)
     .select('id')

@@ -5,6 +5,10 @@ import { supabase } from '../lib/supabaseClient'
 interface AuthState {
   user: User | null
   hasPaid: boolean
+  // Solo con sentido si hasPaid es true — para "Mi Suscripción" (fecha de
+  // renovación / de fin, y si está programada para cancelarse).
+  subscriptionCurrentPeriodEnd: string | null
+  cancelAtPeriodEnd: boolean
   isLoading: boolean
   error: string | null
   // true mientras la sesión viene de un enlace de "restablecer contraseña"
@@ -40,13 +44,15 @@ export const useAuthStore = create<AuthState>((set, get) => {
     if (session?.user) {
       get().refreshProfile()
     } else {
-      set({ hasPaid: false })
+      set({ hasPaid: false, subscriptionCurrentPeriodEnd: null, cancelAtPeriodEnd: false })
     }
   })
 
   return {
     user: null,
     hasPaid: false,
+    subscriptionCurrentPeriodEnd: null,
+    cancelAtPeriodEnd: false,
     isLoading: true,
     error: null,
     passwordRecovery: false,
@@ -110,7 +116,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
 
     signOut: async () => {
       await supabase.auth.signOut()
-      set({ user: null, hasPaid: false })
+      set({ user: null, hasPaid: false, subscriptionCurrentPeriodEnd: null, cancelAtPeriodEnd: false })
     },
 
     requestPasswordReset: async (email) => {
@@ -141,9 +147,17 @@ export const useAuthStore = create<AuthState>((set, get) => {
     refreshProfile: async () => {
       const user = get().user
       if (!user) return
-      const { data, error } = await supabase.from('profiles').select('has_paid').eq('id', user.id).single()
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('has_paid, subscription_current_period_end, cancel_at_period_end')
+        .eq('id', user.id)
+        .single()
       if (!error && data) {
-        set({ hasPaid: data.has_paid })
+        set({
+          hasPaid: data.has_paid,
+          subscriptionCurrentPeriodEnd: data.subscription_current_period_end,
+          cancelAtPeriodEnd: data.cancel_at_period_end,
+        })
       }
     },
   }

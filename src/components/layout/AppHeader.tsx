@@ -1,12 +1,13 @@
 import { useState, lazy, Suspense } from 'react'
 import { useCuadernoStore } from '../../stores/useCuadernoStore'
 import { cn } from '../../utils/cn'
-import { Calendar, CalendarDays, Users, FileText, Moon, Sun, UserCircle, Upload, HelpCircle, Download } from 'lucide-react'
+import { Calendar, CalendarDays, Users, FileText, Moon, Sun, UserCircle, Upload, HelpCircle, Download, CreditCard } from 'lucide-react'
 import { ImportDialog } from '../export/ImportDialog'
 import { Button } from '../ui/button'
 import { useTheme } from '../../hooks/useTheme'
 import { PerfilDialog } from '../perfil/PerfilDialog'
 import { AyudaDialog } from '../ayuda/AyudaDialog'
+import { MiSuscripcionDialog } from '../suscripcion/MiSuscripcionDialog'
 
 // Perezoso: es el único sitio de la app que usa el menú desplegable de Radix
 // (react-dropdown-menu + floating-ui, ~100 KB sin minificar) — igual que las
@@ -31,6 +32,7 @@ export function AppHeader({ className }: AppHeaderProps) {
   const [showPerfil, setShowPerfil] = useState(false)
   const [showImportar, setShowImportar] = useState(false)
   const [showAyuda, setShowAyuda] = useState(false)
+  const [showSuscripcion, setShowSuscripcion] = useState(false)
 
   if (!cuadernoActual) return null
 
@@ -44,21 +46,21 @@ export function AppHeader({ className }: AppHeaderProps) {
         className
       )}
     >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/10 to-primary/20 flex items-center justify-center text-primary shadow-sm">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/10 to-primary/20 flex items-center justify-center text-primary shadow-sm flex-shrink-0">
             <config.icon className="w-5 h-5" />
           </div>
-          <div>
-            <h1 className="text-xl md:text-2xl font-bold text-foreground tracking-tight">
+          <div className="min-w-0">
+            <h1 className="text-xl md:text-2xl font-bold text-foreground tracking-tight truncate">
               {config.title}
             </h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
+            <p className="text-sm text-muted-foreground mt-0.5 truncate">
               {cuadernoActual.metadata.centro} · {cuadernoActual.metadata.cursoEscolar}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           <Button
             variant="ghost"
             size="icon"
@@ -67,6 +69,15 @@ export function AppHeader({ className }: AppHeaderProps) {
             title="Ayuda"
           >
             <HelpCircle className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowSuscripcion(true)}
+            aria-label="Mi Suscripción"
+            title="Mi Suscripción"
+          >
+            <CreditCard className="w-4 h-4" />
           </Button>
           <Button
             variant="ghost"
@@ -109,6 +120,7 @@ export function AppHeader({ className }: AppHeaderProps) {
       <PerfilDialog open={showPerfil} onOpenChange={setShowPerfil} />
       <ImportDialog open={showImportar} onOpenChange={setShowImportar} />
       <AyudaDialog open={showAyuda} onOpenChange={setShowAyuda} />
+      <MiSuscripcionDialog open={showSuscripcion} onOpenChange={setShowSuscripcion} />
     </header>
   )
 }
