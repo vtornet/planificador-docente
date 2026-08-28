@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { X, RefreshCw, Search, Loader2 } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
@@ -91,7 +92,12 @@ export function AdminPanel({ open, onOpenChange }: AdminPanelProps) {
 
   const totalPaginas = usersPage ? Math.max(1, Math.ceil(usersPage.total / usersPage.pageSize)) : 1
 
-  return (
+  // Portal a document.body: si se renderiza donde está montado (dentro de
+  // <header>, que lleva `backdrop-blur`), ese `backdrop-filter` crea un bloque
+  // contenedor para `position: fixed` y el panel queda atrapado dentro del
+  // recuadro de la cabecera en vez de ocupar la pantalla. Mismo motivo por el
+  // que ui/dialog.tsx también usa createPortal.
+  return createPortal(
     <div className="fixed inset-0 z-50 bg-background overflow-y-auto">
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
         <div className="flex items-center justify-between gap-4 mb-6">
@@ -216,7 +222,8 @@ export function AdminPanel({ open, onOpenChange }: AdminPanelProps) {
         onClose={() => setDetalleUserId(null)}
         onCambiado={onUsuarioCambiado}
       />
-    </div>
+    </div>,
+    document.body
   )
 }
 
