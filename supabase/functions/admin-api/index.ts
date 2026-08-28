@@ -36,7 +36,7 @@ const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE
 // Precio anual de la suscripción, para la estimación de ingresos del resumen.
 // (No se lee de Stripe en cada carga del panel para no añadir una llamada de
 // red lenta a algo que cambia como mucho una vez al año.)
-const PRECIO_ANUAL_EUR = 19.99
+const PRECIO_ANUAL_EUR = 29.99
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
