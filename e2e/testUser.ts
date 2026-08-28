@@ -17,8 +17,10 @@ export interface TestUser {
  * Cada test crea la suya y la borra al terminar (ver eliminarUsuarioPrueba)
  * — nunca se reutiliza entre tests.
  */
-export async function crearUsuarioPrueba(opts: { suscripcion?: 'active' | 'trial' } = {}): Promise<TestUser> {
-  const { suscripcion = 'active' } = opts
+export async function crearUsuarioPrueba(
+  opts: { suscripcion?: 'active' | 'trial'; admin?: boolean } = {}
+): Promise<TestUser> {
+  const { suscripcion = 'active', admin: esAdmin = false } = opts
   const admin = getSupabaseAdmin()
   const email = `e2e-${randomUUID()}@docenza-e2e.test`
   // Generada por cuenta, no fija: evita tener una contraseña en texto plano
@@ -38,13 +40,14 @@ export async function crearUsuarioPrueba(opts: { suscripcion?: 'active' | 'trial
     throw new Error(`No se pudo crear la usuaria de prueba: ${error?.message}`)
   }
 
-  if (suscripcion === 'active') {
-    const { error: profileError } = await admin
-      .from('profiles')
-      .update({ subscription_status: 'active' })
-      .eq('id', data.user.id)
+  const updates: Record<string, unknown> = {}
+  if (suscripcion === 'active') updates.subscription_status = 'active'
+  // Requiere la migración 0005 (columna is_admin) aplicada en el proyecto.
+  if (esAdmin) updates.is_admin = true
+  if (Object.keys(updates).length > 0) {
+    const { error: profileError } = await admin.from('profiles').update(updates).eq('id', data.user.id)
     if (profileError) {
-      throw new Error(`No se pudo activar la suscripción de la usuaria de prueba: ${profileError.message}`)
+      throw new Error(`No se pudo preparar el perfil de la usuaria de prueba: ${profileError.message}`)
     }
   }
 

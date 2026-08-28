@@ -1,13 +1,20 @@
 import { useState, lazy, Suspense } from 'react'
 import { useCuadernoStore } from '../../stores/useCuadernoStore'
+import { useAuthStore } from '../../stores/useAuthStore'
 import { cn } from '../../utils/cn'
-import { Calendar, CalendarDays, Users, FileText, Moon, Sun, UserCircle, Upload, HelpCircle, Download, CreditCard } from 'lucide-react'
+import { Calendar, CalendarDays, Users, FileText, Moon, Sun, UserCircle, Upload, HelpCircle, Download, CreditCard, ShieldCheck } from 'lucide-react'
 import { ImportDialog } from '../export/ImportDialog'
 import { Button } from '../ui/button'
 import { useTheme } from '../../hooks/useTheme'
 import { PerfilDialog } from '../perfil/PerfilDialog'
 import { AyudaDialog } from '../ayuda/AyudaDialog'
 import { MiSuscripcionDialog } from '../suscripcion/MiSuscripcionDialog'
+
+// Perezoso: el panel de administración solo lo abre una cuenta con is_admin
+// (en la práctica, el propietario) — no tiene sentido enviarlo en el bundle
+// de todas las docentes. AdminPanel devuelve null si open=false, así que el
+// import() solo se dispara al abrirlo.
+const AdminPanel = lazy(() => import('../admin/AdminPanel').then((m) => ({ default: m.AdminPanel })))
 
 // Perezoso: es el único sitio de la app que usa el menú desplegable de Radix
 // (react-dropdown-menu + floating-ui, ~100 KB sin minificar) — igual que las
@@ -28,11 +35,13 @@ const viewConfig = {
 
 export function AppHeader({ className }: AppHeaderProps) {
   const { cuadernoActual, view } = useCuadernoStore()
+  const isAdmin = useAuthStore((s) => s.isAdmin)
   const { theme, toggleTheme } = useTheme()
   const [showPerfil, setShowPerfil] = useState(false)
   const [showImportar, setShowImportar] = useState(false)
   const [showAyuda, setShowAyuda] = useState(false)
   const [showSuscripcion, setShowSuscripcion] = useState(false)
+  const [showAdmin, setShowAdmin] = useState(false)
 
   if (!cuadernoActual) return null
 
@@ -61,6 +70,17 @@ export function AppHeader({ className }: AppHeaderProps) {
           </div>
         </div>
         <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+          {isAdmin && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowAdmin(true)}
+              aria-label="Panel de administración"
+              title="Panel de administración"
+            >
+              <ShieldCheck className="w-4 h-4 text-primary" />
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"
@@ -121,6 +141,11 @@ export function AppHeader({ className }: AppHeaderProps) {
       <ImportDialog open={showImportar} onOpenChange={setShowImportar} />
       <AyudaDialog open={showAyuda} onOpenChange={setShowAyuda} />
       <MiSuscripcionDialog open={showSuscripcion} onOpenChange={setShowSuscripcion} />
+      {isAdmin && (
+        <Suspense fallback={null}>
+          <AdminPanel open={showAdmin} onOpenChange={setShowAdmin} />
+        </Suspense>
+      )}
     </header>
   )
 }

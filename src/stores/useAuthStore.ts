@@ -5,6 +5,9 @@ import { supabase } from '../lib/supabaseClient'
 interface AuthState {
   user: User | null
   hasPaid: boolean
+  // profiles.is_admin — habilita el panel de administración (icono en la
+  // cabecera + acceso a la Edge Function admin-api). Se marca a mano por SQL.
+  isAdmin: boolean
   // Solo con sentido si hasPaid es true — para "Mi Suscripción" (fecha de
   // renovación / de fin, y si está programada para cancelarse).
   subscriptionCurrentPeriodEnd: string | null
@@ -44,13 +47,14 @@ export const useAuthStore = create<AuthState>((set, get) => {
     if (session?.user) {
       get().refreshProfile()
     } else {
-      set({ hasPaid: false, subscriptionCurrentPeriodEnd: null, cancelAtPeriodEnd: false })
+      set({ hasPaid: false, isAdmin: false, subscriptionCurrentPeriodEnd: null, cancelAtPeriodEnd: false })
     }
   })
 
   return {
     user: null,
     hasPaid: false,
+    isAdmin: false,
     subscriptionCurrentPeriodEnd: null,
     cancelAtPeriodEnd: false,
     isLoading: true,
@@ -116,7 +120,7 @@ export const useAuthStore = create<AuthState>((set, get) => {
 
     signOut: async () => {
       await supabase.auth.signOut()
-      set({ user: null, hasPaid: false, subscriptionCurrentPeriodEnd: null, cancelAtPeriodEnd: false })
+      set({ user: null, hasPaid: false, isAdmin: false, subscriptionCurrentPeriodEnd: null, cancelAtPeriodEnd: false })
     },
 
     requestPasswordReset: async (email) => {
@@ -149,12 +153,13 @@ export const useAuthStore = create<AuthState>((set, get) => {
       if (!user) return
       const { data, error } = await supabase
         .from('profiles')
-        .select('has_paid, subscription_current_period_end, cancel_at_period_end')
+        .select('has_paid, is_admin, subscription_current_period_end, cancel_at_period_end')
         .eq('id', user.id)
         .single()
       if (!error && data) {
         set({
           hasPaid: data.has_paid,
+          isAdmin: !!data.is_admin,
           subscriptionCurrentPeriodEnd: data.subscription_current_period_end,
           cancelAtPeriodEnd: data.cancel_at_period_end,
         })
