@@ -179,6 +179,28 @@ export const CONFIG_HORARIOS_PREDEFINIDOS = {
   },
 }
 
+// Etapas educativas para el perfil. Cada una apunta a la plantilla de intervalos
+// horarios que se usa por defecto al crear un horario (clave de
+// CONFIG_HORARIOS_PREDEFINIDOS). Infantil y Primaria comparten la jornada de
+// primaria; el resto usa la de secundaria. Es solo un valor por defecto: la
+// docente siempre puede personalizar los intervalos al crear el horario.
+export const ETAPAS_EDUCATIVAS = [
+  { id: 'infantil', nombre: 'Educación Infantil', config: 'primaria' as const },
+  { id: 'primaria', nombre: 'Educación Primaria', config: 'primaria' as const },
+  { id: 'eso', nombre: 'ESO', config: 'secundaria' as const },
+  { id: 'bachillerato', nombre: 'Bachillerato', config: 'secundaria' as const },
+  { id: 'fp', nombre: 'Formación Profesional', config: 'secundaria' as const },
+  { id: 'otra', nombre: 'Otra', config: 'secundaria' as const },
+] as const
+
+// Devuelve la plantilla de intervalos por defecto para una etapa educativa.
+// Si la etapa no está definida o no se reconoce, cae en 'secundaria' (el
+// comportamiento que tenía la app antes de existir este campo).
+export function configHorarioPorEtapa(etapaId?: string) {
+  const etapa = ETAPAS_EDUCATIVAS.find((e) => e.id === etapaId)
+  return CONFIG_HORARIOS_PREDEFINIDOS[etapa?.config ?? 'secundaria']
+}
+
 export const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB para imágenes
 
 export const DB_NAME = 'PlafinicadorDB'

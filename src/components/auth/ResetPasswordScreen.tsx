@@ -3,7 +3,7 @@ import { useAuthStore } from '../../stores/useAuthStore'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Eye, EyeOff } from 'lucide-react'
-import docenzaIcon from '../../assets/docenza-icon.png'
+import docenzaIcon from '../../assets/docenza-icon.webp'
 
 export function ResetPasswordScreen() {
   const completarNuevaPassword = useAuthStore((s) => s.completarNuevaPassword)

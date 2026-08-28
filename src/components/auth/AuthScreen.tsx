@@ -6,7 +6,7 @@ import { cn } from '../../utils/cn'
 import { Eye, EyeOff } from 'lucide-react'
 import { PoliticaPrivacidad } from '../legal/PoliticaPrivacidad'
 import { TerminosUso } from '../legal/TerminosUso'
-import docenzaIcon from '../../assets/docenza-icon.png'
+import docenzaIcon from '../../assets/docenza-icon.webp'
 
 type Modo = 'login' | 'registro'
 
@@ -87,7 +87,14 @@ export function AuthScreen() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-accent/10 flex items-center justify-center p-4">
       <div className="bg-card text-card-foreground rounded-2xl shadow-[var(--shadow-strong)] border border-border p-8 max-w-lg w-full text-center animate-scale-in">
-        <img src={docenzaIcon} alt="Docenza" className="w-20 h-20 mx-auto mb-6 drop-shadow-lg" />
+        <img
+          src={docenzaIcon}
+          alt="Docenza"
+          width={80}
+          height={80}
+          fetchPriority="high"
+          className="w-20 h-20 mx-auto mb-6 drop-shadow-lg"
+        />
         <h1 className="text-3xl font-bold text-foreground mb-3 tracking-tight">Docenza</h1>
         <p className="text-muted-foreground mb-8">Planificador Docente</p>
 

@@ -4,7 +4,7 @@ import { es } from 'date-fns/locale'
 import { useCuadernoStore } from '../../stores/useCuadernoStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { TRIAL_LIMIT_PER_MODULE } from '../../constants/trial'
-import { CONFIG_HORARIOS_PREDEFINIDOS, MESES } from '../../types/constants'
+import { CONFIG_HORARIOS_PREDEFINIDOS, MESES, configHorarioPorEtapa } from '../../types/constants'
 import { Button } from '../ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog'
@@ -79,9 +79,10 @@ export function HorarioManager() {
   const [recreoPeriodo, setRecreoPeriodo] = useState(3)
   const [recreoDuracion, setRecreoDuracion] = useState(30)
 
+  const configPorEtapa = configHorarioPorEtapa(cuadernoActual?.metadata.etapaEducativa)
   const totalPeriodos = configPersonalizada
     ? numPeriodos + (conRecreo ? 1 : 0)
-    : 6 + 1 // secundaria tiene 6 periodos + recreo
+    : configPorEtapa.numPeriodos + (configPorEtapa.recreo ? 1 : 0)
 
   const [anioInicio, anioFin] = useMemo(() => {
     const partes = (cuadernoActual?.metadata.cursoEscolar || '').split('-').map(Number)
@@ -108,6 +109,18 @@ export function HorarioManager() {
     setNuevoNombre('')
     setNuevoTipo('docente')
     setConfigPersonalizada(false)
+    // Sembrar los campos de "Personalizar intervalos" con la plantilla que
+    // corresponde a la etapa educativa del perfil, para que al marcar la
+    // casilla se vean los mismos valores que se usarían sin marcarla.
+    const plantilla = configHorarioPorEtapa(cuadernoActual?.metadata.etapaEducativa)
+    setNumPeriodos(plantilla.numPeriodos)
+    setHoraInicio(plantilla.horaInicio)
+    setDuracionPeriodo(plantilla.duracionPeriodo)
+    setConRecreo(!!plantilla.recreo)
+    if (plantilla.recreo) {
+      setRecreoPeriodo(plantilla.recreo.periodo)
+      setRecreoDuracion(plantilla.recreo.duracion)
+    }
     if (rango) {
       setFechaInicio(format(rango.inicio, 'yyyy-MM-dd'))
       setFechaFin(format(rango.fin, 'yyyy-MM-dd'))
@@ -128,7 +141,7 @@ export function HorarioManager() {
           duracionPeriodo,
           recreo: conRecreo ? { periodo: recreoPeriodo, duracion: recreoDuracion } : undefined,
         }
-      : CONFIG_HORARIOS_PREDEFINIDOS.secundaria
+      : configHorarioPorEtapa(cuadernoActual?.metadata.etapaEducativa)
 
     const nuevoHorario: Omit<Horario, 'id' | 'actualizado'> = {
       tipo: nuevoTipo,

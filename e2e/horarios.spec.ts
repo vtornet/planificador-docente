@@ -114,4 +114,31 @@ test.describe('Horarios', () => {
     ])
     expect(download.suggestedFilename()).toMatch(/^horario-.*\.pdf$/)
   })
+
+  test('la etapa educativa del perfil elige la plantilla de intervalos por defecto al crear un horario', async ({ page, testUser }) => {
+    // Cuaderno con etapa "Educación Primaria" desde el onboarding.
+    await crearCuaderno(page, testUser, { etapaEducativa: 'Educación Primaria' })
+
+    // Crear un horario sin tocar "Personalizar intervalos": debe usar la
+    // plantilla de primaria (7 periodos + recreo = 8 filas), no la de
+    // secundaria (6 + recreo = 7) que era el valor fijo anterior.
+    await page.getByRole('button', { name: '+ Nuevo horario' }).click()
+    await page.getByPlaceholder('Ej: Horario 1º ESO A').fill('Horario Primaria E2E')
+    const fechas = page.locator('input[type="date"]')
+    await fechas.first().fill('')
+    await fechas.nth(1).fill('')
+    await page.getByRole('button', { name: 'Crear' }).click()
+    await expect(page.getByRole('heading', { name: 'Nuevo horario' })).not.toBeVisible()
+
+    await page.getByText(/Ver 1 horario sin periodo asignado/).click()
+    await expect(page.getByRole('heading', { name: 'Horario Primaria E2E' }).first()).toBeVisible()
+    await expect(page.locator('table tbody tr')).toHaveCount(8)
+
+    // Y al marcar "Personalizar intervalos" al crear otro, los campos vienen
+    // sembrados con la plantilla de primaria (7 periodos), no con 6.
+    await page.getByRole('button', { name: 'Volver a meses' }).click()
+    await page.getByRole('button', { name: '+ Nuevo horario' }).click()
+    await page.getByLabel('Personalizar intervalos horarios').check()
+    await expect(page.getByText('Total: 8 periodos')).toBeVisible()
+  })
 })

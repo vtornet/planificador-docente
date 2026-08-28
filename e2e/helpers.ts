@@ -30,9 +30,9 @@ export async function iniciarSesion(page: Page, testUser: TestUser) {
 export async function crearCuaderno(
   page: Page,
   testUser: TestUser,
-  datos: { centro?: string; docente?: string; cursoEscolar?: string } = {}
+  datos: { centro?: string; docente?: string; cursoEscolar?: string; etapaEducativa?: string } = {}
 ) {
-  const { centro = 'IES Prueba E2E', docente = 'Docente de Prueba', cursoEscolar = '2026-2027' } = datos
+  const { centro = 'IES Prueba E2E', docente = 'Docente de Prueba', cursoEscolar = '2026-2027', etapaEducativa } = datos
 
   await iniciarSesion(page, testUser)
 
@@ -41,6 +41,12 @@ export async function crearCuaderno(
   const cursoInput = page.getByPlaceholder('Curso escolar (ej: 2026-2027)')
   await cursoInput.fill('')
   await cursoInput.fill(cursoEscolar)
+
+  if (etapaEducativa) {
+    await page
+      .locator('select', { has: page.locator('option', { hasText: 'Etapa educativa (opcional)' }) })
+      .selectOption({ label: etapaEducativa })
+  }
 
   await page.getByRole('button', { name: 'Crear cuaderno' }).click()
 

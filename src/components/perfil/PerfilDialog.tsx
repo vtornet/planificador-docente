@@ -6,6 +6,7 @@ import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { X, LogOut, Trash2 } from 'lucide-react'
 import { COMUNIDADES_AUTONOMAS, festivoAutonomicoParaCursoEscolar } from '../../types/festivosOficiales'
+import { ETAPAS_EDUCATIVAS } from '../../types/constants'
 import { TerminosUso } from '../legal/TerminosUso'
 import { PoliticaPrivacidad } from '../legal/PoliticaPrivacidad'
 import { EliminarCuentaDialog } from './EliminarCuentaDialog'
@@ -27,6 +28,9 @@ export function PerfilDialog({ open, onOpenChange }: PerfilDialogProps) {
   const [cursos, setCursos] = useState<string[]>([])
   const [nuevoCurso, setNuevoCurso] = useState('')
   const [comunidadAutonoma, setComunidadAutonoma] = useState('')
+  const [etapaEducativa, setEtapaEducativa] = useState('')
+  const [asignaturas, setAsignaturas] = useState<string[]>([])
+  const [nuevaAsignatura, setNuevaAsignatura] = useState('')
   const [showTerminos, setShowTerminos] = useState(false)
   const [showPrivacidad, setShowPrivacidad] = useState(false)
   const [showEliminarCuenta, setShowEliminarCuenta] = useState(false)
@@ -38,7 +42,10 @@ export function PerfilDialog({ open, onOpenChange }: PerfilDialogProps) {
       setCursoEscolar(cuadernoActual.metadata.cursoEscolar)
       setCursos(cuadernoActual.metadata.cursos || [])
       setComunidadAutonoma(cuadernoActual.metadata.comunidadAutonoma || '')
+      setEtapaEducativa(cuadernoActual.metadata.etapaEducativa || '')
+      setAsignaturas(cuadernoActual.metadata.asignaturas || [])
       setNuevoCurso('')
+      setNuevaAsignatura('')
     }
   }, [open, cuadernoActual])
 
@@ -54,6 +61,18 @@ export function PerfilDialog({ open, onOpenChange }: PerfilDialogProps) {
     setCursos(cursos.filter((c) => c !== curso))
   }
 
+  const handleAgregarAsignatura = () => {
+    const asignatura = nuevaAsignatura.trim()
+    if (asignatura && !asignaturas.includes(asignatura)) {
+      setAsignaturas([...asignaturas, asignatura])
+    }
+    setNuevaAsignatura('')
+  }
+
+  const handleEliminarAsignatura = (asignatura: string) => {
+    setAsignaturas(asignaturas.filter((a) => a !== asignatura))
+  }
+
   const handleGuardar = () => {
     const comunidadAnterior = cuadernoActual?.metadata.comunidadAutonoma
     const comunidadNueva = comunidadAutonoma || undefined
@@ -64,6 +83,8 @@ export function PerfilDialog({ open, onOpenChange }: PerfilDialogProps) {
       cursoEscolar: cursoEscolar.trim(),
       cursos,
       comunidadAutonoma: comunidadNueva,
+      etapaEducativa: etapaEducativa || undefined,
+      asignaturas,
     })
 
     // Si cambia la comunidad autónoma, sustituir el festivo autonómico
@@ -154,6 +175,27 @@ export function PerfilDialog({ open, onOpenChange }: PerfilDialogProps) {
 
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">
+              Etapa educativa
+            </label>
+            <p className="text-xs text-muted-foreground mb-2">
+              Se usa para elegir la plantilla de intervalos por defecto al crear un horario.
+            </p>
+            <select
+              value={etapaEducativa}
+              onChange={(e) => setEtapaEducativa(e.target.value)}
+              className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+            >
+              <option value="">Sin especificar</option>
+              {ETAPAS_EDUCATIVAS.map((etapa) => (
+                <option key={etapa.id} value={etapa.id}>
+                  {etapa.nombre}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1">
               Cursos / Grupos
             </label>
             <p className="text-xs text-muted-foreground mb-2">
@@ -186,6 +228,50 @@ export function PerfilDialog({ open, onOpenChange }: PerfilDialogProps) {
                     <button
                       type="button"
                       onClick={() => handleEliminarCurso(curso)}
+                      className="hover:text-primary/70"
+                    >
+                      <X size={14} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1">
+              Asignaturas que impartes
+            </label>
+            <p className="text-xs text-muted-foreground mb-2">
+              Opcional. Sirven de referencia rápida al rellenar el horario y como contexto para el asistente.
+            </p>
+            <div className="flex gap-2 mb-2">
+              <Input
+                value={nuevaAsignatura}
+                onChange={(e) => setNuevaAsignatura(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    handleAgregarAsignatura()
+                  }
+                }}
+                placeholder="Ej: Matemáticas"
+              />
+              <Button type="button" variant="outline" onClick={handleAgregarAsignatura}>
+                Añadir
+              </Button>
+            </div>
+            {asignaturas.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {asignaturas.map((asignatura) => (
+                  <span
+                    key={asignatura}
+                    className="inline-flex items-center gap-1 px-3 py-1 bg-primary/15 text-primary rounded-full text-sm"
+                  >
+                    {asignatura}
+                    <button
+                      type="button"
+                      onClick={() => handleEliminarAsignatura(asignatura)}
                       className="hover:text-primary/70"
                     >
                       <X size={14} />

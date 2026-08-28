@@ -26,6 +26,11 @@ export default defineConfig({
     }),
     VitePWA({
       registerType: 'autoUpdate',
+      // 'script-defer' añade defer al <script> de registro del Service Worker
+      // para que no bloquee el primer render (Lighthouse lo marcaba como
+      // recurso que bloquea el renderizado). El registro del SW no necesita
+      // ocurrir antes de pintar.
+      injectRegister: 'script-defer',
       includeAssets: ['favicon.ico', 'favicon-256.png', 'icons/*.png'],
       manifest: {
         name: 'Docenza',

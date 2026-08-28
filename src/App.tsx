@@ -10,7 +10,8 @@ import { Button } from './components/ui/button'
 import { Input } from './components/ui/input'
 import { useTheme } from './hooks/useTheme'
 import { COMUNIDADES_AUTONOMAS } from './types/festivosOficiales'
-import docenzaIcon from './assets/docenza-icon.png'
+import { ETAPAS_EDUCATIVAS } from './types/constants'
+import docenzaIcon from './assets/docenza-icon.webp'
 
 function cursoEscolarPorDefecto(): string {
   const hoy = new Date()
@@ -46,6 +47,7 @@ function App() {
   const [docente, setDocente] = useState('')
   const [cursoEscolar, setCursoEscolar] = useState(cursoEscolarPorDefecto())
   const [comunidadAutonoma, setComunidadAutonoma] = useState('')
+  const [etapaEducativa, setEtapaEducativa] = useState('')
   useTheme() // aplica el tema guardado también en las pantallas previas al Layout
 
   useEffect(() => {
@@ -174,6 +176,9 @@ function App() {
           <img
             src={docenzaIcon}
             alt="Docenza"
+            width={80}
+            height={80}
+            fetchPriority="high"
             className="w-20 h-20 mx-auto mb-6 drop-shadow-lg"
           />
           <h1 className="text-3xl font-bold text-foreground mb-3 tracking-tight">
@@ -238,6 +243,24 @@ function App() {
                 cambiarla más adelante desde Perfil.
               </p>
             </div>
+            <div>
+              <select
+                value={etapaEducativa}
+                onChange={(e) => setEtapaEducativa(e.target.value)}
+                className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="">Etapa educativa (opcional)</option>
+                {ETAPAS_EDUCATIVAS.map((etapa) => (
+                  <option key={etapa.id} value={etapa.id}>
+                    {etapa.nombre}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground mt-1">
+                Elige la plantilla de intervalos por defecto al crear un horario. Puedes cambiarla más
+                adelante desde Perfil.
+              </p>
+            </div>
             <Button
               size="lg"
               className="w-full"
@@ -248,6 +271,7 @@ function App() {
                   centro: centro.trim(),
                   docente: docente.trim(),
                   comunidadAutonoma: comunidadAutonoma || undefined,
+                  etapaEducativa: etapaEducativa || undefined,
                   creado: new Date(),
                   actualizado: new Date(),
                 })

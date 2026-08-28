@@ -7,6 +7,8 @@ interface CuadernoMetadata {
   docente: string
   cursos?: string[] // Ej: ["1º ESO A", "2º ESO B"] - usado como desplegable al crear horarios
   comunidadAutonoma?: string // id de COMUNIDADES_AUTONOMAS - para cargar el festivo autonómico correspondiente
+  etapaEducativa?: string // id de ETAPAS_EDUCATIVAS - elige la plantilla de intervalos por defecto al crear un horario
+  asignaturas?: string[] // Ej: ["Matemáticas", "Física y Química"] - asignaturas que imparte la docente
   creado: Date
   actualizado: Date
 }

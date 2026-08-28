@@ -1,7 +1,7 @@
 import { useCuadernoStore } from '../../stores/useCuadernoStore'
 import { cn } from '../../utils/cn'
 import { Calendar, CalendarDays, Users, FileText } from 'lucide-react'
-import docenzaIcon from '../../assets/docenza-icon.png'
+import docenzaIcon from '../../assets/docenza-icon.webp'
 
 interface SidebarProps {
   className?: string
