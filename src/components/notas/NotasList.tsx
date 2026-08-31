@@ -327,6 +327,30 @@ export function NotasList() {
                       >
                         <Download size={14} />
                       </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="w-7 h-7 text-muted-foreground hover:text-foreground"
+                        title="Editar esta nota"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setEditingNota(nota.id)
+                        }}
+                      >
+                        <Edit size={14} />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="w-7 h-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        title="Eliminar esta nota"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleEliminar(nota.id, nota.titulo)
+                        }}
+                      >
+                        <Trash2 size={14} />
+                      </Button>
                     </div>
                   </div>
 

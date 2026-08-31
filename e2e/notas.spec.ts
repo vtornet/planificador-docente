@@ -104,6 +104,25 @@ test.describe('Notas', () => {
     await expect(page.locator('.ProseMirror img')).toBeVisible()
   })
 
+  test('la tarjeta en vista de cuadrícula (la predefinida) tiene botón de eliminar', async ({ page, testUser }) => {
+    await crearCuaderno(page, testUser)
+    await irASeccion(page, 'Notas')
+
+    await page.getByRole('button', { name: 'Crear nota' }).click()
+    const titulo = 'Nota a eliminar desde grid E2E'
+    await page.getByPlaceholder('Ej: Proyecto de fin de curso').fill(titulo)
+    await page.locator('.ProseMirror').click()
+    await page.keyboard.type('Se va a borrar.')
+    await page.getByRole('button', { name: 'Guardar' }).click()
+    await expect(page.getByText(titulo)).toBeVisible()
+
+    // Vista grid = la predefinida, sin cambiar a lista.
+    page.on('dialog', (d) => d.accept())
+    await page.getByTitle('Eliminar esta nota').click()
+
+    await expect(page.getByText(titulo)).not.toBeVisible()
+  })
+
   test('insertar un dibujo a mano alzada en una nota, con grosor de pincel seleccionable, y que persista', async ({ page, testUser }) => {
     await crearCuaderno(page, testUser)
     await irASeccion(page, 'Notas')
