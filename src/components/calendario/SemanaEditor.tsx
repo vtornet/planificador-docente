@@ -12,7 +12,7 @@ import { Button } from '../ui/button'
 import { CONFIG_HORARIOS_PREDEFINIDOS } from '../../types/constants'
 import { esDiaFestivo, esDiaVacaciones } from '../../utils/festivos'
 import {
-  horarioActivoEnRango,
+  horarioVigenteDeSemana,
   horarioAbarcaMasDeLaSemana,
   dividirHorarioParaSemana,
   aplicarCeldasEnDatos,
@@ -49,11 +49,10 @@ export function SemanaEditor({
   const finSemana = semana ? new Date(semana.fechaFin) : addDays(inicioSemana, 4)
   const rangoSemana = { inicio: inicioSemana, fin: finSemana }
 
-  const horariosVigentes = (cuadernoActual?.horarios || []).filter((h) =>
-    horarioActivoEnRango(h, inicioSemana, finSemana)
+  const horarioVigente: Horario | undefined = horarioVigenteDeSemana(
+    cuadernoActual?.horarios || [],
+    rangoSemana
   )
-  const horarioVigente: Horario | undefined =
-    horariosVigentes.find((h) => h.tipo === 'docente') || horariosVigentes[0]
   const configHorariosBase = horarioVigente?.configHorarios || CONFIG_HORARIOS_PREDEFINIDOS.secundaria
   const periodosHorarios = generarPeriodos(configHorariosBase)
 

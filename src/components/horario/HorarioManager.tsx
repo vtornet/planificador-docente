@@ -13,7 +13,7 @@ import { HorarioTable } from './HorarioTable'
 import { PaywallDialog } from '../paywall/PaywallDialog'
 import { PdfPreviewDialog } from '../export/PdfPreviewDialog'
 import type { PDFGenerado } from '../../utils/pdf.tsx'
-import type { Horario, ConfigHorarios } from '../../types'
+import type { Horario, ConfigHorarios, Semana } from '../../types'
 import { Calendar, Trash2, Clock, Edit2, ChevronRight, ChevronLeft, Download } from 'lucide-react'
 import { horarioActivoEnRango, horarioAbarcaMasDeLaSemana, dividirHorarioParaSemana, formatRangoFechas } from '../../utils/horarios'
 import { parseFechaInput } from '../../utils/fechas'
@@ -49,7 +49,7 @@ function esConfigPredefinidaSecundaria(config: ConfigHorarios): boolean {
 type Vista = 'meses' | 'semanas' | 'semana' | 'sinFecha'
 
 export function HorarioManager() {
-  const { cuadernoActual, addHorario, updateHorario, deleteHorario } = useCuadernoStore()
+  const { cuadernoActual, addHorario, updateHorario, deleteHorario, deleteSemana } = useCuadernoStore()
   const hasPaid = useAuthStore((s) => s.hasPaid)
   const horarios = cuadernoActual?.horarios || []
 
@@ -65,6 +65,7 @@ export function HorarioManager() {
   const [showEditar, setShowEditar] = useState(false)
   const [horarioEditando, setHorarioEditando] = useState<Horario | null>(null)
   const [horarioEliminando, setHorarioEliminando] = useState<Horario | null>(null)
+  const [faseEliminar, setFaseEliminar] = useState<'confirmar' | 'alcance' | 'semanas'>('confirmar')
   const [nuevoNombre, setNuevoNombre] = useState('')
   const [nuevoTipo, setNuevoTipo] = useState<'docente' | 'alumnado'>('docente')
   const [fechaInicio, setFechaInicio] = useState('')
@@ -174,16 +175,35 @@ export function HorarioManager() {
     }
   }
 
-  // Si el horario abarca más semanas que la que se está viendo, pregunta el
-  // alcance (mismo criterio y mismo diálogo que "Guardar cambios", ver
-  // HorarioTable.tsx) en vez de borrar directamente todo el periodo.
+  // Semanas planificadas del calendario que caen dentro del periodo de un
+  // horario — para poder ofrecer borrarlas también al eliminar el horario
+  // (antes quedaban huérfanas: seguían en el calendario y, como ahora leen su
+  // contenido del horario, se abrían vacías).
+  const semanasVinculadas = (horario: Horario): Semana[] => {
+    if (!horario.fechaInicio) return []
+    const inicio = new Date(horario.fechaInicio)
+    const fin = horario.fechaFin ? new Date(horario.fechaFin) : null
+    return (cuadernoActual?.planificacion.semanal || []).filter((s) => {
+      const sInicio = new Date(s.fechaInicio)
+      const sFin = new Date(s.fechaFin)
+      return sInicio <= (fin ?? sFin) && sFin >= inicio
+    })
+  }
+
+  // Flujo de borrado (todo en un Dialog, sin confirm() nativo):
+  //  - 'alcance': solo si se ve una semana y el horario abarca más → elegir
+  //    "todo el periodo" o "solo esta semana" (split, mismo patrón que Guardar).
+  //  - 'semanas': si el borrado es del horario entero y hay semanas planificadas
+  //    dentro de su periodo → elegir si se borran también.
+  //  - 'confirmar': caso simple, sin nada de lo anterior.
   const handleDelete = (horario: Horario) => {
+    setHorarioEliminando(horario)
     if (vista === 'semana' && semanaSeleccionada && horarioAbarcaMasDeLaSemana(horario, semanaSeleccionada)) {
-      setHorarioEliminando(horario)
-      return
-    }
-    if (confirm('¿Eliminar este horario?')) {
-      deleteHorario(horario.id)
+      setFaseEliminar('alcance')
+    } else if (semanasVinculadas(horario).length > 0) {
+      setFaseEliminar('semanas')
+    } else {
+      setFaseEliminar('confirmar')
     }
   }
 
@@ -192,11 +212,14 @@ export function HorarioManager() {
   // independiente (dividirHorarioParaSemana), pero descarta esa copia en vez
   // de guardarla — el original queda recortado para excluir la semana, y el
   // resto del periodo (antes y/o después) sigue intacto.
-  const confirmarEliminar = (alcance: 'periodo' | 'semana') => {
+  const confirmarEliminar = (alcance: 'periodo' | 'semana', borrarSemanas = false) => {
     if (!horarioEliminando) return
 
     if (alcance === 'periodo' || !semanaSeleccionada) {
       deleteHorario(horarioEliminando.id)
+      if (borrarSemanas) {
+        semanasVinculadas(horarioEliminando).forEach((s) => deleteSemana(s.id))
+      }
     } else {
       const { actualizacionOriginal, nuevos } = dividirHorarioParaSemana(horarioEliminando, semanaSeleccionada)
       updateHorario(horarioEliminando.id, actualizacionOriginal)
@@ -204,6 +227,17 @@ export function HorarioManager() {
     }
 
     setHorarioEliminando(null)
+  }
+
+  // Desde la pregunta de alcance, "Todo el periodo": si hay semanas
+  // planificadas dentro, encadena la pregunta de si borrarlas; si no, borra ya.
+  const alcanceTodoElPeriodo = () => {
+    if (!horarioEliminando) return
+    if (semanasVinculadas(horarioEliminando).length > 0) {
+      setFaseEliminar('semanas')
+    } else {
+      confirmarEliminar('periodo')
+    }
   }
 
   const handleExportarPDF = async (horario: Horario) => {
@@ -538,29 +572,99 @@ export function HorarioManager() {
 
       <Dialog open={horarioEliminando !== null} onOpenChange={(open) => !open && setHorarioEliminando(null)}>
         <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>¿Eliminar todo el periodo o solo esta semana?</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            Este horario abarca varias semanas. Elige si se elimina por completo o solo la semana
-            que estás viendo ahora mismo (el resto del periodo seguirá intacto).
-          </p>
-          <DialogFooter className="flex-col sm:flex-row gap-2">
-            <Button
-              variant="outline"
-              className="w-full sm:w-auto"
-              onClick={() => confirmarEliminar('semana')}
-            >
-              Solo esta semana
-            </Button>
-            <Button
-              variant="destructive"
-              className="w-full sm:w-auto"
-              onClick={() => confirmarEliminar('periodo')}
-            >
-              Todo el periodo
-            </Button>
-          </DialogFooter>
+          {faseEliminar === 'alcance' && (
+            <>
+              <DialogHeader>
+                <DialogTitle>¿Eliminar todo el periodo o solo esta semana?</DialogTitle>
+              </DialogHeader>
+              <p className="text-sm text-muted-foreground">
+                Este horario abarca varias semanas. Elige si se elimina por completo o solo la semana
+                que estás viendo ahora mismo (el resto del periodo seguirá intacto).
+              </p>
+              <DialogFooter className="flex-col sm:flex-row gap-2">
+                <Button
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                  onClick={() => confirmarEliminar('semana')}
+                >
+                  Solo esta semana
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="w-full sm:w-auto"
+                  onClick={alcanceTodoElPeriodo}
+                >
+                  Todo el periodo
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+
+          {faseEliminar === 'confirmar' && (
+            <>
+              <DialogHeader>
+                <DialogTitle>¿Eliminar este horario?</DialogTitle>
+              </DialogHeader>
+              <p className="text-sm text-muted-foreground">
+                "{horarioEliminando?.nombre}" se eliminará de forma permanente.
+              </p>
+              <DialogFooter className="flex-col sm:flex-row gap-2">
+                <Button
+                  variant="ghost"
+                  className="w-full sm:w-auto"
+                  onClick={() => setHorarioEliminando(null)}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="w-full sm:w-auto"
+                  onClick={() => confirmarEliminar('periodo')}
+                >
+                  Eliminar
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+
+          {faseEliminar === 'semanas' && horarioEliminando && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Este horario tiene planificación en el calendario</DialogTitle>
+              </DialogHeader>
+              <p className="text-sm text-muted-foreground">
+                {(() => {
+                  const n = semanasVinculadas(horarioEliminando).length
+                  return n === 1
+                    ? 'Hay 1 semana planificada dentro del periodo de este horario. ¿Quieres eliminarla también del calendario?'
+                    : `Hay ${n} semanas planificadas dentro del periodo de este horario. ¿Quieres eliminarlas también del calendario?`
+                })()}
+              </p>
+              <DialogFooter className="flex-col sm:flex-row gap-2">
+                <Button
+                  variant="ghost"
+                  className="w-full sm:w-auto"
+                  onClick={() => setHorarioEliminando(null)}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                  onClick={() => confirmarEliminar('periodo', false)}
+                >
+                  Solo el horario
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="w-full sm:w-auto"
+                  onClick={() => confirmarEliminar('periodo', true)}
+                >
+                  Horario y semanas
+                </Button>
+              </DialogFooter>
+            </>
+          )}
         </DialogContent>
       </Dialog>
 

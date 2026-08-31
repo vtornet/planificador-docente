@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Textarea } from '../ui/textarea'
 import { CONFIG_HORARIOS_PREDEFINIDOS, COLOR_VACACIONES } from '../../types/constants'
 import {
-  horarioActivoEnRango,
+  horarioVigenteDeSemana,
   horarioAbarcaMasDeLaSemana,
   dividirHorarioParaSemana,
   aplicarCeldasEnDatos,
@@ -17,7 +17,7 @@ import {
   contenidoParaSemana,
 } from '../../utils/horarios'
 import { cn } from '../../utils/cn'
-import { Save, StickyNote } from 'lucide-react'
+import { Save, StickyNote, Trash2 } from 'lucide-react'
 import { CeldaHorarioForm } from '../horario/CeldaHorarioForm'
 
 interface VistaSemanalProps {
@@ -26,7 +26,7 @@ interface VistaSemanalProps {
 }
 
 export function VistaSemanal({ semana, onClose }: VistaSemanalProps) {
-  const { updateSemana, updateHorario, addHorario, cuadernoActual } = useCuadernoStore()
+  const { updateSemana, updateHorario, addHorario, deleteSemana, cuadernoActual } = useCuadernoStore()
 
   // Horario vigente esa semana — si existe, se edita con las mismas
   // opciones que en Horarios (ver CeldaHorarioForm.tsx); si no, se crea uno
@@ -35,11 +35,10 @@ export function VistaSemanal({ semana, onClose }: VistaSemanalProps) {
   // plantilla "secundaria" a ciegas, aunque la semana se hubiera creado con
   // otro horario.
   const rangoSemana = { inicio: new Date(semana.fechaInicio), fin: new Date(semana.fechaFin) }
-  const horariosVigentes = (cuadernoActual?.horarios || []).filter((h) =>
-    horarioActivoEnRango(h, rangoSemana.inicio, rangoSemana.fin)
+  const horarioVigente: Horario | undefined = horarioVigenteDeSemana(
+    cuadernoActual?.horarios || [],
+    rangoSemana
   )
-  const horarioVigente: Horario | undefined =
-    horariosVigentes.find((h) => h.tipo === 'docente') || horariosVigentes[0]
   const configHorarios = horarioVigente?.configHorarios || CONFIG_HORARIOS_PREDEFINIDOS.secundaria
   const periodosHorarios = generarPeriodos(configHorarios)
 
@@ -48,6 +47,7 @@ export function VistaSemanal({ semana, onClose }: VistaSemanalProps) {
   const [celdaEditando, setCeldaEditando] = useState<{ periodoIndex: number; diaIndex: number } | null>(null)
   const [dirty, setDirty] = useState(false)
   const [mostrarAlcance, setMostrarAlcance] = useState(false)
+  const [confirmarBorrado, setConfirmarBorrado] = useState(false)
 
   const celdaActual = (periodoIndex: number, diaIndex: number): CeldaHorario => {
     const key = `${periodoIndex}-${diaIndex}`
@@ -132,6 +132,35 @@ export function VistaSemanal({ semana, onClose }: VistaSemanalProps) {
     )
   }
 
+  if (confirmarBorrado) {
+    return (
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold text-foreground tracking-tight">
+          ¿Eliminar la planificación de esta semana?
+        </h3>
+        <p className="text-sm text-muted-foreground">
+          Se eliminará esta semana del calendario, incluidas sus observaciones. El horario de
+          clase asociado no se borra — puedes gestionarlo desde la sección Horarios.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
+          <Button variant="ghost" className="w-full sm:w-auto" onClick={() => setConfirmarBorrado(false)}>
+            Volver
+          </Button>
+          <Button
+            variant="destructive"
+            className="w-full sm:w-auto"
+            onClick={() => {
+              deleteSemana(semana.id)
+              onClose()
+            }}
+          >
+            Eliminar planificación
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
   if (celdaEditando) {
     const { periodoIndex, diaIndex } = celdaEditando
     return (
@@ -172,7 +201,15 @@ export function VistaSemanal({ semana, onClose }: VistaSemanalProps) {
             </p>
           )}
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="ghost"
+            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+            onClick={() => setConfirmarBorrado(true)}
+          >
+            <Trash2 className="w-4 h-4" />
+            Eliminar planificación
+          </Button>
           <Button variant="outline" onClick={onClose}>
             Cancelar
           </Button>

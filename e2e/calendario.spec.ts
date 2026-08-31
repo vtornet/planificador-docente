@@ -365,6 +365,127 @@ test.describe('Planificación ↔ Horario', () => {
     await expect(celdaLunesHorario).toContainText('Ejercicios página 20')
   })
 
+  test('el Planificador usa el horario anual, no el horario suelto creado al planificar antes de tenerlo', async ({
+    page,
+    testUser,
+  }) => {
+    await crearCuaderno(page, testUser)
+
+    // 1) Planificar la semana del 7 de septiembre SIN ningún horario todavía —
+    //    al guardar se crea uno automático con la plantilla por defecto
+    //    (empieza a las 08:00).
+    await irASeccion(page, 'Calendario')
+    await page.getByRole('button', { name: '▶' }).click()
+    await page.locator('.rbc-date-cell', { hasText: /^0?7$/ }).click()
+    await expect(page.getByRole('heading', { name: 'Nueva Semana' })).toBeVisible()
+    await expect(page.getByText('Sin horario para esta semana todavía')).toBeVisible()
+    await page.locator('table tbody tr').first().locator('td').nth(1).click()
+    await expect(page.getByRole('heading', { name: 'Editar celda' })).toBeVisible()
+    await page.locator('select').first().selectOption({ label: 'Lengua' })
+    await page.getByRole('button', { name: 'Guardar', exact: true }).click()
+    await page.getByRole('button', { name: 'Guardar', exact: true }).click()
+    await expect(page.getByRole('heading', { name: 'Nueva Semana' })).not.toBeVisible()
+
+    // 2) Crear el horario "real" para 3 semanas (7-25 sept) con intervalos
+    //    personalizados: empieza a las 09:00, media hora por periodo.
+    await irASeccion(page, 'Horarios')
+    await page.getByRole('button', { name: '+ Nuevo horario' }).click()
+    await page.getByPlaceholder('Ej: Horario 1º ESO A').fill('Horario anual media hora')
+    const fechas = page.locator('input[type="date"]')
+    await fechas.first().fill('2026-09-07')
+    await fechas.nth(1).fill('2026-09-25')
+    await page.getByLabel('Personalizar intervalos horarios').check()
+    await page.locator('input[type="time"]').fill('09:00')
+    await page.locator('input[type="number"]').nth(1).fill('30') // Duración (minutos)
+    await page.getByRole('button', { name: 'Crear' }).click()
+    await expect(page.getByRole('heading', { name: 'Nuevo horario' })).not.toBeVisible()
+
+    // 3) Reabrir el Planificador de esa semana: la distribución debe venir del
+    //    horario anual (09:00), no del suelto automático (08:00).
+    await irASeccion(page, 'Calendario')
+    await page.getByRole('button', { name: '▶' }).click()
+    await page.getByText('Semana 1', { exact: true }).click()
+    await expect(page.getByText('Vinculada al horario "Horario anual media hora"')).toBeVisible()
+    const primeraFilaHora = page.locator('table tbody tr').first().locator('td').first()
+    await expect(primeraFilaHora).toContainText('09:00')
+    await expect(primeraFilaHora).not.toContainText('08:00')
+  })
+
+  test('borrar un horario ofrece eliminar también sus semanas planificadas del calendario', async ({
+    page,
+    testUser,
+  }) => {
+    await crearCuaderno(page, testUser)
+
+    await page.getByRole('button', { name: '+ Nuevo horario' }).click()
+    await page.getByPlaceholder('Ej: Horario 1º ESO A').fill('Horario a borrar E2E')
+    const fechas = page.locator('input[type="date"]')
+    await fechas.first().fill('2026-09-07')
+    await fechas.nth(1).fill('2026-09-11')
+    await page.getByRole('button', { name: 'Crear' }).click()
+    await expect(page.getByRole('heading', { name: 'Nuevo horario' })).not.toBeVisible()
+
+    // Planificar esa semana (crea la Semana vinculada).
+    await irASeccion(page, 'Calendario')
+    await page.getByRole('button', { name: '▶' }).click()
+    await page.locator('.rbc-date-cell', { hasText: /^0?7$/ }).click()
+    await expect(page.getByRole('heading', { name: 'Nueva Semana' })).toBeVisible()
+    // El horario está vacío, así que la celda se abre directamente en modo Editar.
+    await page.locator('table tbody tr').first().locator('td').nth(1).click()
+    await expect(page.getByRole('heading', { name: 'Editar celda' })).toBeVisible()
+    await page.getByPlaceholder('Ej: Traer material de plástica...').fill('Algo planificado')
+    await page.getByRole('button', { name: 'Guardar', exact: true }).click()
+    await page.getByRole('button', { name: 'Guardar', exact: true }).click()
+    await expect(page.getByRole('heading', { name: 'Nueva Semana' })).not.toBeVisible()
+    await expect(page.getByText('Semana 1', { exact: true })).toBeVisible()
+
+    // Borrar el horario → pregunta por las semanas planificadas.
+    await irASeccion(page, 'Horarios')
+    await page.getByText('Septiembre', { exact: true }).click()
+    await page.getByText('Del 7 al 11 de septiembre').click()
+    await page.getByRole('button', { name: 'Eliminar horario' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Este horario tiene planificación en el calendario' })
+    ).toBeVisible()
+    await page.getByRole('button', { name: 'Horario y semanas' }).click()
+
+    // El horario ya no está...
+    await expect(page.getByRole('heading', { name: 'No hay horario para esta semana' })).toBeVisible()
+    // ...y la semana desapareció del calendario.
+    await irASeccion(page, 'Calendario')
+    await page.getByRole('button', { name: '▶' }).click()
+    await expect(page.getByText('Semana 1', { exact: true })).not.toBeVisible()
+  })
+
+  test('la vista de semana del calendario tiene un botón para eliminar la planificación', async ({
+    page,
+    testUser,
+  }) => {
+    await crearCuaderno(page, testUser)
+
+    await irASeccion(page, 'Calendario')
+    await page.getByRole('button', { name: '▶' }).click()
+    await page.locator('.rbc-date-cell', { hasText: /^0?7$/ }).click()
+    await expect(page.getByRole('heading', { name: 'Nueva Semana' })).toBeVisible()
+    await page.locator('table tbody tr').first().locator('td').nth(1).click()
+    await expect(page.getByRole('heading', { name: 'Editar celda' })).toBeVisible()
+    await page.locator('select').first().selectOption({ label: 'Lengua' })
+    await page.getByRole('button', { name: 'Guardar', exact: true }).click()
+    await page.getByRole('button', { name: 'Guardar', exact: true }).click()
+    await expect(page.getByText('Semana 1', { exact: true })).toBeVisible()
+
+    // Reabrir la semana y eliminar su planificación.
+    await page.getByText('Semana 1', { exact: true }).click()
+    await expect(page.getByRole('heading', { name: 'Semana 1' })).toBeVisible()
+    await page.getByRole('button', { name: 'Eliminar planificación' }).click()
+    await expect(
+      page.getByRole('heading', { name: '¿Eliminar la planificación de esta semana?' })
+    ).toBeVisible()
+    await page.getByRole('button', { name: 'Eliminar planificación' }).click()
+
+    await expect(page.getByText('Semana 1', { exact: true })).not.toBeVisible()
+  })
+
   test('un día festivo bloquea la edición en Planificar, igual que en Horarios, en creación y en edición', async ({
     page,
     testUser,

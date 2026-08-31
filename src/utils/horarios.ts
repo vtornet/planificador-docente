@@ -10,6 +10,37 @@ export function horarioActivoEnRango(horario: Horario, desde: Date, hasta: Date)
   return inicio <= hasta && (fin === null || fin >= desde)
 }
 
+// Elige el horario "principal" vigente en una semana cuando puede haber varios
+// que la cubren (p. ej. un horario anual creado a mano y un horario suelto de
+// una sola semana generado automáticamente al planificar antes de tener el
+// anual). Sin un criterio estable, Horarios y el Planificador podían quedarse
+// con horarios distintos para la misma semana y mostrar distribuciones
+// horarias que no cuadraban. Prioridad: docente antes que alumnado, rango más
+// amplio antes que uno de una sola semana, y el más recientemente editado como
+// desempate. HorarioSemanaDialog y PasoExportarHorario NO usan esto a propósito:
+// cuando hay varios ofrecen un selector explícito al usuario.
+export function horarioVigenteDeSemana(
+  horarios: Horario[],
+  rango: { inicio: Date; fin: Date }
+): Horario | undefined {
+  const vigentes = horarios.filter((h) => horarioActivoEnRango(h, rango.inicio, rango.fin))
+  if (vigentes.length <= 1) return vigentes[0]
+
+  const span = (h: Horario) => {
+    if (!h.fechaInicio) return 0
+    if (!h.fechaFin) return Number.POSITIVE_INFINITY
+    return new Date(h.fechaFin).getTime() - new Date(h.fechaInicio).getTime()
+  }
+
+  return [...vigentes].sort((a, b) => {
+    if (a.tipo !== b.tipo) return a.tipo === 'docente' ? -1 : 1
+    const sa = span(a)
+    const sb = span(b)
+    if (sa !== sb) return sb > sa ? 1 : -1
+    return new Date(b.actualizado).getTime() - new Date(a.actualizado).getTime()
+  })[0]
+}
+
 // ¿El horario abarca más semanas que la indicada? (para ofrecer "modificar solo esta semana")
 export function horarioAbarcaMasDeLaSemana(horario: Horario, semana: { inicio: Date; fin: Date }): boolean {
   if (!horario.fechaInicio) return false
@@ -111,8 +142,7 @@ export function contenidoParaSemana(asignatura: string, nota: string): string {
 export function resolverDiasSemana(semana: Semana, horarios: Horario[]): Semana['dias'] {
   const inicio = new Date(semana.fechaInicio)
   const fin = new Date(semana.fechaFin)
-  const horariosVigentes = horarios.filter((h) => horarioActivoEnRango(h, inicio, fin))
-  const horarioVigente = horariosVigentes.find((h) => h.tipo === 'docente') || horariosVigentes[0]
+  const horarioVigente = horarioVigenteDeSemana(horarios, { inicio, fin })
   if (!horarioVigente) return semana.dias
 
   return semana.dias.map((dia, diaIndex) => ({

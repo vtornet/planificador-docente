@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   horarioActivoEnRango,
+  horarioVigenteDeSemana,
   horarioAbarcaMasDeLaSemana,
   dividirHorarioParaSemana,
   formatRangoFechas,
@@ -50,6 +51,65 @@ describe('horarioActivoEnRango', () => {
   it('sin fechaFin (rango abierto), sigue activo indefinidamente hacia el futuro', () => {
     const horario = crearHorario({ fechaInicio: local(2026, 9, 7), fechaFin: undefined })
     expect(horarioActivoEnRango(horario, local(2027, 6, 1), local(2027, 6, 30))).toBe(true)
+  })
+})
+
+describe('horarioVigenteDeSemana', () => {
+  const semana = { inicio: local(2026, 9, 7), fin: local(2026, 9, 11) }
+
+  it('devuelve undefined si ningún horario cubre la semana', () => {
+    const h = crearHorario({ id: 'a', fechaInicio: local(2026, 10, 1), fechaFin: local(2026, 10, 31) })
+    expect(horarioVigenteDeSemana([h], semana)).toBeUndefined()
+  })
+
+  it('con un solo horario vigente, lo devuelve', () => {
+    const h = crearHorario({ id: 'a', fechaInicio: local(2026, 9, 1), fechaFin: local(2026, 12, 20) })
+    expect(horarioVigenteDeSemana([h], semana)?.id).toBe('a')
+  })
+
+  it('prefiere el de rango más amplio frente a uno de una sola semana (el caso del horario automático)', () => {
+    const suelto = crearHorario({
+      id: 'auto',
+      fechaInicio: local(2026, 9, 7),
+      fechaFin: local(2026, 9, 11),
+      configHorarios: { numPeriodos: 6, horaInicio: '08:00', duracionPeriodo: 55 },
+    })
+    const anual = crearHorario({
+      id: 'anual',
+      fechaInicio: local(2026, 9, 1),
+      fechaFin: local(2026, 12, 20),
+      configHorarios: { numPeriodos: 8, horaInicio: '08:00', duracionPeriodo: 30 },
+    })
+    // Orden de inserción con el suelto primero (como pasaría en la práctica).
+    expect(horarioVigenteDeSemana([suelto, anual], semana)?.id).toBe('anual')
+  })
+
+  it('prefiere docente frente a alumnado', () => {
+    const alumnado = crearHorario({ id: 'al', tipo: 'alumnado', fechaInicio: local(2026, 9, 1), fechaFin: local(2026, 12, 20) })
+    const docente = crearHorario({ id: 'do', tipo: 'docente', fechaInicio: local(2026, 9, 1), fechaFin: local(2026, 12, 20) })
+    expect(horarioVigenteDeSemana([alumnado, docente], semana)?.id).toBe('do')
+  })
+
+  it('a igualdad de tipo y rango, gana el más recientemente editado', () => {
+    const viejo = crearHorario({
+      id: 'viejo',
+      fechaInicio: local(2026, 9, 1),
+      fechaFin: local(2026, 12, 20),
+      actualizado: local(2026, 8, 1),
+    })
+    const nuevo = crearHorario({
+      id: 'nuevo',
+      fechaInicio: local(2026, 9, 1),
+      fechaFin: local(2026, 12, 20),
+      actualizado: local(2026, 8, 20),
+    })
+    expect(horarioVigenteDeSemana([viejo, nuevo], semana)?.id).toBe('nuevo')
+  })
+
+  it('trata un horario sin fechaFin (rango abierto) como el más amplio', () => {
+    const cerrado = crearHorario({ id: 'cerrado', fechaInicio: local(2026, 9, 1), fechaFin: local(2026, 12, 20) })
+    const abierto = crearHorario({ id: 'abierto', fechaInicio: local(2026, 9, 1), fechaFin: undefined })
+    expect(horarioVigenteDeSemana([cerrado, abierto], semana)?.id).toBe('abierto')
   })
 })
 
