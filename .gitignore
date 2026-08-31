@@ -25,6 +25,10 @@ dist-ssr
 # Estado local de la CLI de Supabase (vinculación al proyecto, cachés)
 supabase/.temp/
 
+# Material de referencia personal, no forma parte de la app
+/Agenda escolar.jpg
+/logos/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
