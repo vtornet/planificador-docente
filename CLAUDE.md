@@ -273,6 +273,10 @@ Tests E2E: cada uno crea su cuenta Supabase efímera vía Admin API (`e2e/testUs
   Reunión / Nota / Evento / Perfil, **"Guardar" guarda sin cerrar** (los `add*` de
   `useCuadernoStore` devuelven el id nuevo para no duplicar al re-guardar); se cierra con
   el aspa o "Cerrar". La celda de horario NO: ahí guardar-y-cerrar sigue siendo lo normal.
+- **Avisos y confirmaciones (`ui/dialogos.tsx`):** NO usar `window.alert` / `window.confirm`
+  (aspecto de sistema). Usar `avisarDialogo('...')` y `await confirmarDialogo({ titulo,
+  mensaje, peligroso })` — API imperativa (no hooks, sirve en handlers async y catch).
+  Necesita `<DialogosHost />` montado (main.tsx); si no lo está aún, cae a los nativos.
 
 ---
 
