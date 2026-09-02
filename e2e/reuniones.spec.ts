@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures'
-import { crearCuaderno, irASeccion } from './helpers'
+import { crearCuaderno, irASeccion, cerrarModal } from './helpers'
 
 test.describe('Reuniones', () => {
   test('crear una reunión y verla en la lista', async ({ page, testUser }) => {
@@ -13,6 +13,10 @@ test.describe('Reuniones', () => {
     await page.getByPlaceholder('Ej: Claustro mensual de septiembre').fill(titulo)
     await page.getByRole('button', { name: 'Guardar' }).click()
 
+    // "Guardar" ya no cierra el modal: guarda y se queda abierto.
+    await expect(page.getByText('Guardado')).toBeVisible()
+    await cerrarModal(page)
+
     await expect(page.getByRole('heading', { name: 'Nueva Reunión' })).not.toBeVisible()
     await expect(page.getByText(titulo)).toBeVisible()
   })
@@ -25,6 +29,7 @@ test.describe('Reuniones', () => {
     const titulo = 'Reunión para exportar E2E'
     await page.getByPlaceholder('Ej: Claustro mensual de septiembre').fill(titulo)
     await page.getByRole('button', { name: 'Guardar' }).click()
+    await cerrarModal(page)
     await expect(page.getByText(titulo)).toBeVisible()
 
     await page.getByRole('button', { name: 'Descargar esta reunión en PDF' }).click()

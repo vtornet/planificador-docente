@@ -57,3 +57,14 @@ export async function crearCuaderno(
 export async function irASeccion(page: Page, seccion: 'Horarios' | 'Calendario' | 'Reuniones' | 'Notas') {
   await page.locator('aside').getByRole('button', { name: seccion, exact: true }).click()
 }
+
+/**
+ * Cierra el modal abierto pulsando el aspa. Los formularios de creación/edición
+ * (Reunión, Nota, Evento, Perfil) ya NO se cierran al pulsar "Guardar" ni al
+ * pulsar fuera del modal: guardan y siguen abiertos, y se cierran con el aspa
+ * o el botón "Cerrar". `.first()` apunta al aspa (aria-label "Cerrar"), que
+ * está siempre y va antes en el DOM que el botón "Cerrar" del pie.
+ */
+export async function cerrarModal(page: Page) {
+  await page.getByRole('button', { name: 'Cerrar' }).first().click()
+}

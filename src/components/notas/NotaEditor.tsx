@@ -7,25 +7,34 @@ import { CATEGORIAS_NOTAS } from '../../types/constants'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
+import { useDialogCloseGuard } from '../ui/dialog'
 import { TiptapEditor } from './TiptapEditor'
 import type { Nota } from '../../types'
-import { X } from 'lucide-react'
+import { X, Check } from 'lucide-react'
 import { stripHtml } from '../../utils/texto'
 
 interface NotaEditorProps {
   nota?: Nota
-  onSave: () => void
-  onCancel: () => void
 }
 
-export function NotaEditor({ nota, onSave, onCancel }: NotaEditorProps) {
+export function NotaEditor({ nota }: NotaEditorProps) {
   const { addNota, updateNota } = useCuadernoStore()
 
+  // Puede empezar sin id (nota nueva) y adquirirlo tras el primer "Guardar":
+  // los siguientes guardados actualizan esa misma nota, no crean copias.
+  const [notaId, setNotaId] = useState<string | undefined>(nota?.id)
   const [titulo, setTitulo] = useState(nota?.titulo || '')
   const [categoria, setCategoria] = useState(nota?.categoria || 'Otro')
   const [contenido, setContenido] = useState(nota?.contenido || '')
   const [tagInput, setTagInput] = useState('')
   const [tags, setTags] = useState<string[]>(nota?.tags || [])
+
+  const firmaActual = JSON.stringify({ titulo, categoria, contenido, tags })
+  const [firmaGuardada, setFirmaGuardada] = useState(firmaActual)
+  const [guardadoOk, setGuardadoOk] = useState(false)
+  const hayCambiosSinGuardar = firmaActual !== firmaGuardada
+
+  const cerrar = useDialogCloseGuard(hayCambiosSinGuardar)
 
   const publicarContexto = useEditorContextStore((s) => s.publicar)
 
@@ -55,13 +64,19 @@ export function NotaEditor({ nota, onSave, onCancel }: NotaEditorProps) {
       tags,
     }
 
-    if (nota) {
-      updateNota(nota.id, notaData)
+    if (notaId) {
+      updateNota(notaId, notaData)
     } else {
-      addNota(notaData)
+      const nuevoId = addNota(notaData)
+      if (!nuevoId) {
+        alert('No se ha podido guardar la nota. Si estás en la versión de prueba, revisa el límite de notas.')
+        return
+      }
+      setNotaId(nuevoId)
     }
 
-    onSave()
+    setFirmaGuardada(firmaActual)
+    setGuardadoOk(true)
   }
 
   const handleAgregarTag = () => {
@@ -86,8 +101,14 @@ export function NotaEditor({ nota, onSave, onCancel }: NotaEditorProps) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-end gap-2">
-        <Button variant="outline" onClick={onCancel}>
-          Cancelar
+        {guardadoOk && !hayCambiosSinGuardar && (
+          <span className="flex items-center gap-1 text-sm text-green-600 dark:text-green-400 mr-auto">
+            <Check className="w-4 h-4" />
+            Guardado
+          </span>
+        )}
+        <Button variant="outline" onClick={cerrar}>
+          Cerrar
         </Button>
         <Button onClick={handleGuardar}>Guardar</Button>
       </div>

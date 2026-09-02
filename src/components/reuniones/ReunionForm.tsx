@@ -6,20 +6,22 @@ import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Textarea } from '../ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, useDialogCloseGuard } from '../ui/dialog'
 import { FirmaCanvas } from './FirmaCanvas'
 import type { Reunion } from '../../types'
 import { parseFechaInput } from '../../utils/fechas'
+import { Check } from 'lucide-react'
 
 interface ReunionFormProps {
   reunion?: Reunion
-  onSave: () => void
-  onCancel: () => void
 }
 
-export function ReunionForm({ reunion, onSave, onCancel }: ReunionFormProps) {
+export function ReunionForm({ reunion }: ReunionFormProps) {
   const { cuadernoActual, addReunion, updateReunion } = useCuadernoStore()
 
+  // Puede empezar sin id (reunión nueva) y adquirirlo tras el primer "Guardar":
+  // así los siguientes guardados actualizan esa misma reunión, no crean copias.
+  const [reunionId, setReunionId] = useState<string | undefined>(reunion?.id)
   const [titulo, setTitulo] = useState(reunion?.titulo || '')
   const [fecha, setFecha] = useState(
     reunion?.fecha
@@ -36,6 +38,15 @@ export function ReunionForm({ reunion, onSave, onCancel }: ReunionFormProps) {
   const [acuerdos, setAcuerdos] = useState(reunion?.acuerdos || '')
   const [firmas, setFirmas] = useState<Reunion['firmas']>(reunion?.firmas || [])
   const [showFirmaDialog, setShowFirmaDialog] = useState(false)
+
+  const firmaActual = JSON.stringify({ titulo, fecha, tipo, asistentes, asuntosTratados, acuerdos, firmas })
+  const [firmaGuardada, setFirmaGuardada] = useState(firmaActual)
+  const [guardadoOk, setGuardadoOk] = useState(false)
+  const hayCambiosSinGuardar = firmaActual !== firmaGuardada
+
+  // Cerrar con el aspa, Escape o el botón "Cerrar" pide confirmación si hay
+  // cambios sin guardar.
+  const cerrar = useDialogCloseGuard(hayCambiosSinGuardar)
 
   const handleGuardar = () => {
     if (!titulo.trim()) {
@@ -56,13 +67,19 @@ export function ReunionForm({ reunion, onSave, onCancel }: ReunionFormProps) {
       firmas,
     }
 
-    if (reunion) {
-      updateReunion(reunion.id, reunionData)
+    if (reunionId) {
+      updateReunion(reunionId, reunionData)
     } else {
-      addReunion(reunionData)
+      const nuevoId = addReunion(reunionData)
+      if (!nuevoId) {
+        alert('No se ha podido guardar la reunión. Si estás en la versión de prueba, revisa el límite de reuniones.')
+        return
+      }
+      setReunionId(nuevoId)
     }
 
-    onSave()
+    setFirmaGuardada(firmaActual)
+    setGuardadoOk(true)
   }
 
   const handleGuardarFirma = (nombre: string, imagen: string) => {
@@ -84,8 +101,14 @@ export function ReunionForm({ reunion, onSave, onCancel }: ReunionFormProps) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-end gap-2">
-        <Button variant="outline" onClick={onCancel}>
-          Cancelar
+        {guardadoOk && !hayCambiosSinGuardar && (
+          <span className="flex items-center gap-1 text-sm text-green-600 dark:text-green-400 mr-auto">
+            <Check className="w-4 h-4" />
+            Guardado
+          </span>
+        )}
+        <Button variant="outline" onClick={cerrar}>
+          Cerrar
         </Button>
         <Button onClick={handleGuardar}>Guardar</Button>
       </div>

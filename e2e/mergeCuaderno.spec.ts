@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures'
-import { crearCuaderno, iniciarSesion, irASeccion } from './helpers'
+import { crearCuaderno, iniciarSesion, irASeccion, cerrarModal } from './helpers'
 
 // Verifica en vivo el punto 3 de los riesgos abiertos: "pérdida de datos en
 // ediciones concurrentes en dos dispositivos offline a la vez (gana el
@@ -48,6 +48,7 @@ test.describe('Fusión de cuadernos entre dispositivos (mergeCuaderno)', () => {
     await pageB.getByRole('button', { name: 'Crear reunión' }).click()
     await pageB.getByPlaceholder('Ej: Claustro mensual de septiembre').fill('Reunión Dispositivo B')
     await pageB.getByRole('button', { name: 'Guardar', exact: true }).click()
+    await cerrarModal(pageB)
     await expect(pageB.getByText('Reunión Dispositivo B')).toBeVisible()
 
     // Dispositivo B recupera la conexión primero y recarga: su reconcile no
@@ -90,6 +91,7 @@ test.describe('Fusión de cuadernos entre dispositivos (mergeCuaderno)', () => {
     await page.locator('.ProseMirror').click()
     await page.keyboard.type('Contenido de prueba.')
     await page.getByRole('button', { name: 'Guardar' }).click()
+    await cerrarModal(page)
     await expect(page.getByText(titulo)).toBeVisible()
 
     // Dispositivo B: inicia sesión y recibe la nota (todavía no se ha

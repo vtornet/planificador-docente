@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures'
-import { crearCuaderno } from './helpers'
+import { crearCuaderno, cerrarModal } from './helpers'
 
 // Cubre el arreglo del botón/gesto físico de "atrás" de Android, que antes
 // cerraba la app entera en vez de navegar hacia atrás dentro de ella (la app
@@ -106,6 +106,7 @@ test.describe('Botón atrás (History API)', () => {
     await page.locator('.ProseMirror').click()
     await page.keyboard.type('Contenido de prueba.')
     await page.getByRole('button', { name: 'Guardar' }).click()
+    await cerrarModal(page)
     await expect(page.getByText(titulo)).toBeVisible()
 
     await page.getByText(titulo).click()

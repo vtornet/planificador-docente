@@ -265,6 +265,14 @@ Tests E2E: cada uno crea su cuenta Supabase efímera vía Admin API (`e2e/testUs
   no por `onSelectSlot` (que en táctil exige mantener pulsado).
 - **Modo claro/oscuro:** toggle en el header, `useTheme`, `localStorage`. No se sincroniza
   entre dispositivos a propósito (preferencia local, igual que el historial del asistente).
+- **Modales (`ui/dialog.tsx`):** pulsar fuera del modal NO cierra (una docente perdió una
+  reunión casi acabada por un toque accidental). El aspa y Escape pasan por `requestClose`
+  → si un formulario registró un guardián con `useDialogCloseGuard(hayCambios)`, pide
+  confirmación. El botón atrás de Android cierra directo (sin guardián: rebobinar la pila
+  de historial es justo lo delicado que avisa este archivo). En los formularios de
+  Reunión / Nota / Evento / Perfil, **"Guardar" guarda sin cerrar** (los `add*` de
+  `useCuadernoStore` devuelven el id nuevo para no duplicar al re-guardar); se cierra con
+  el aspa o "Cerrar". La celda de horario NO: ahí guardar-y-cerrar sigue siendo lo normal.
 
 ---
 

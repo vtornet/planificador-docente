@@ -127,12 +127,7 @@ export function ReunionList() {
             <DialogHeader>
               <DialogTitle>Nueva Reunión</DialogTitle>
             </DialogHeader>
-            <ReunionForm
-              onSave={() => {
-                setShowCrear(false)
-              }}
-              onCancel={() => setShowCrear(false)}
-            />
+            <ReunionForm />
           </DialogContent>
         </Dialog>
         <PaywallDialog open={showPaywall} onOpenChange={setShowPaywall} modulo="reuniones" />
@@ -153,26 +148,10 @@ export function ReunionList() {
             <DialogHeader>
               <DialogTitle>{editingReunion ? 'Editar Reunión' : 'Nueva Reunión'}</DialogTitle>
             </DialogHeader>
-            {editingReunion ? (
-              <ReunionForm
-                reunion={reuniones.find((r) => r.id === editingReunion)}
-                onSave={() => {
-                  setEditingReunion(null)
-                  setShowCrear(false)
-                }}
-                onCancel={() => {
-                  setEditingReunion(null)
-                  setShowCrear(false)
-                }}
-              />
-            ) : (
-              <ReunionForm
-                onSave={() => {
-                  setShowCrear(false)
-                }}
-                onCancel={() => setShowCrear(false)}
-              />
-            )}
+            <ReunionForm
+              key={editingReunion ?? 'nueva'}
+              reunion={editingReunion ? reuniones.find((r) => r.id === editingReunion) : undefined}
+            />
           </DialogContent>
         </Dialog>
         <PaywallDialog open={showPaywall} onOpenChange={setShowPaywall} modulo="reuniones" />

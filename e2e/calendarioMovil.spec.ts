@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures'
-import { crearCuaderno } from './helpers'
+import { crearCuaderno, cerrarModal } from './helpers'
 
 // Planificar en móvil (24-08-2026): el usuario reportó cuatro problemas
 // reales, verificados uno a uno contra la app real antes de arreglarlos
@@ -65,6 +65,7 @@ test.describe('Planificar en móvil', () => {
     await page.getByPlaceholder('Ej: Reunión con familias').fill('Evento móvil E2E')
     await page.locator('input[type="date"]').first().fill('2026-09-07')
     await page.getByRole('button', { name: 'Guardar' }).click()
+    await cerrarModal(page)
 
     // Zona alta de la columna del día 7, lejos del chip del evento (que
     // queda pegado a la parte baja de la celda, junto al número).
@@ -87,6 +88,7 @@ test.describe('Planificar en móvil', () => {
     await page.getByPlaceholder('Ej: Reunión con familias').fill(titulo)
     await page.locator('input[type="date"]').first().fill('2026-09-07')
     await page.getByRole('button', { name: 'Guardar' }).click()
+    await cerrarModal(page)
 
     const eventoChip = page.locator('.rbc-event', { hasText: titulo }).first()
     const box = await eventoChip.boundingBox()

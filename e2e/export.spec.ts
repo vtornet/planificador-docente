@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures'
-import { crearCuaderno, irASeccion } from './helpers'
+import { crearCuaderno, irASeccion, cerrarModal } from './helpers'
 
 test.describe('Exportación', () => {
   test('la opción "Agenda" está deshabilitada sin eventos y exporta un PDF al crear uno', async ({ page, testUser }) => {
@@ -13,6 +13,7 @@ test.describe('Exportación', () => {
     await page.getByRole('button', { name: 'Nuevo evento' }).click()
     await page.getByPlaceholder('Ej: Reunión con familias').fill('Evento de prueba E2E')
     await page.getByRole('button', { name: 'Guardar' }).click()
+    await cerrarModal(page)
 
     await page.getByRole('button', { name: 'Exportar' }).click()
     await page.getByRole('menuitem', { name: 'Agenda (eventos)' }).click()

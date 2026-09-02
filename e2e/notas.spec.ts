@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures'
-import { crearCuaderno, irASeccion } from './helpers'
+import { crearCuaderno, irASeccion, cerrarModal } from './helpers'
 
 test.describe('Notas', () => {
   test('crear una nota con el editor de texto rico y verla en la lista', async ({ page, testUser }) => {
@@ -16,6 +16,10 @@ test.describe('Notas', () => {
 
     await page.getByRole('button', { name: 'Guardar' }).click()
 
+    // "Guardar" ya no cierra el modal: guarda y se queda abierto.
+    await expect(page.getByText('Guardado')).toBeVisible()
+    await cerrarModal(page)
+
     await expect(page.getByRole('heading', { name: 'Nueva Nota' })).not.toBeVisible()
     await expect(page.getByText(titulo)).toBeVisible()
   })
@@ -30,6 +34,7 @@ test.describe('Notas', () => {
     await page.locator('.ProseMirror').click()
     await page.keyboard.type('Contenido de la nota.')
     await page.getByRole('button', { name: 'Guardar' }).click()
+    await cerrarModal(page)
     await expect(page.getByText(titulo)).toBeVisible()
 
     // Click en la tarjeta abre el modo Ver, no el editor directamente: no debe
@@ -63,6 +68,7 @@ test.describe('Notas', () => {
     await expect(page.locator('.ProseMirror img')).toBeVisible()
 
     await page.getByRole('button', { name: 'Guardar' }).click()
+    await cerrarModal(page)
     await expect(page.getByText(titulo)).toBeVisible()
 
     await page.getByTitle('Descargar esta nota en PDF').first().click()
@@ -94,6 +100,7 @@ test.describe('Notas', () => {
     await expect(page.locator('.ProseMirror img')).toBeVisible()
 
     await page.getByRole('button', { name: 'Guardar' }).click()
+    await cerrarModal(page)
     await expect(page.getByText(titulo)).toBeVisible()
 
     // Las imágenes se guardan como data: URL — el parser de HTML de Tiptap las
@@ -114,6 +121,7 @@ test.describe('Notas', () => {
     await page.locator('.ProseMirror').click()
     await page.keyboard.type('Se va a borrar.')
     await page.getByRole('button', { name: 'Guardar' }).click()
+    await cerrarModal(page)
     await expect(page.getByText(titulo)).toBeVisible()
 
     // Vista grid = la predefinida, sin cambiar a lista.
@@ -153,6 +161,7 @@ test.describe('Notas', () => {
     await expect(page.locator('.ProseMirror img')).toBeVisible()
 
     await page.getByRole('button', { name: 'Guardar' }).click()
+    await cerrarModal(page)
     await expect(page.getByText(titulo)).toBeVisible()
 
     // Persiste igual que una imagen subida: sobrevive a reconstruirse desde el HTML guardado.

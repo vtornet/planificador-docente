@@ -11,6 +11,8 @@ import { Textarea } from '../ui/textarea'
 import { Trash2, Check } from 'lucide-react'
 import { cn } from '../../utils/cn'
 
+const MENSAJE_CERRAR_SIN_GUARDAR = '¿Cerrar sin guardar? Se perderán los cambios que no hayas guardado.'
+
 interface EventoDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -21,6 +23,10 @@ interface EventoDialogProps {
 export function EventoDialog({ open, onOpenChange, evento, fechaInicial }: EventoDialogProps) {
   const { addEvento, updateEvento, deleteEvento } = useCuadernoStore()
 
+  // id del evento que se está editando: puede empezar sin él (evento nuevo) y
+  // pasar a tenerlo tras el primer "Guardar", para que los siguientes guardados
+  // actualicen ese mismo evento en vez de crear duplicados.
+  const [eventoId, setEventoId] = useState<string | undefined>(evento?.id)
   const [titulo, setTitulo] = useState('')
   const [descripcion, setDescripcion] = useState('')
   const [fecha, setFecha] = useState('')
@@ -31,20 +37,49 @@ export function EventoDialog({ open, onOpenChange, evento, fechaInicial }: Event
   const [recordatorio, setRecordatorio] = useState<RecordatorioEvento>('ninguno')
   const [repetir, setRepetir] = useState<'nunca' | RecurrenciaEvento['frecuencia']>('nunca')
   const [repetirHasta, setRepetirHasta] = useState('')
+  // Firma de los valores en el último guardado (o al abrir): si la actual
+  // difiere, hay cambios sin guardar.
+  const [firmaGuardada, setFirmaGuardada] = useState('')
+  const [guardadoOk, setGuardadoOk] = useState(false)
+
+  const firmaActual = JSON.stringify({
+    titulo, descripcion, fecha, todoElDia, horaInicio, horaFin, color, recordatorio, repetir, repetirHasta,
+  })
+  const hayCambiosSinGuardar = firmaActual !== firmaGuardada
 
   useEffect(() => {
     if (!open) return
-    setTitulo(evento?.titulo || '')
-    setDescripcion(evento?.descripcion || '')
-    setFecha(format(evento?.fecha ? new Date(evento.fecha) : fechaInicial || new Date(), 'yyyy-MM-dd'))
-    setTodoElDia(evento?.todoElDia ?? true)
-    setHoraInicio(evento?.horaInicio || '09:00')
-    setHoraFin(evento?.horaFin || '')
-    setColor(evento?.color || COLOR_EVENTO_POR_DEFECTO)
-    setRecordatorio(evento?.recordatorio || 'ninguno')
-    setRepetir(evento?.recurrencia?.frecuencia || 'nunca')
-    setRepetirHasta(evento?.recurrencia ? format(new Date(evento.recurrencia.hasta), 'yyyy-MM-dd') : '')
+    const init = {
+      titulo: evento?.titulo || '',
+      descripcion: evento?.descripcion || '',
+      fecha: format(evento?.fecha ? new Date(evento.fecha) : fechaInicial || new Date(), 'yyyy-MM-dd'),
+      todoElDia: evento?.todoElDia ?? true,
+      horaInicio: evento?.horaInicio || '09:00',
+      horaFin: evento?.horaFin || '',
+      color: evento?.color || COLOR_EVENTO_POR_DEFECTO,
+      recordatorio: (evento?.recordatorio || 'ninguno') as RecordatorioEvento,
+      repetir: (evento?.recurrencia?.frecuencia || 'nunca') as 'nunca' | RecurrenciaEvento['frecuencia'],
+      repetirHasta: evento?.recurrencia ? format(new Date(evento.recurrencia.hasta), 'yyyy-MM-dd') : '',
+    }
+    setEventoId(evento?.id)
+    setTitulo(init.titulo)
+    setDescripcion(init.descripcion)
+    setFecha(init.fecha)
+    setTodoElDia(init.todoElDia)
+    setHoraInicio(init.horaInicio)
+    setHoraFin(init.horaFin)
+    setColor(init.color)
+    setRecordatorio(init.recordatorio)
+    setRepetir(init.repetir)
+    setRepetirHasta(init.repetirHasta)
+    setFirmaGuardada(JSON.stringify(init))
+    setGuardadoOk(false)
   }, [open, evento, fechaInicial])
+
+  const cerrar = () => {
+    if (hayCambiosSinGuardar && !window.confirm(MENSAJE_CERRAR_SIN_GUARDAR)) return
+    onOpenChange(false)
+  }
 
   const handleGuardar = () => {
     if (!titulo.trim() || !fecha) return
@@ -77,30 +112,36 @@ export function EventoDialog({ open, onOpenChange, evento, fechaInicial }: Event
         repetir !== 'nunca' ? { frecuencia: repetir, hasta: parseFechaInput(repetirHasta) } : undefined,
     }
 
-    if (evento) {
-      updateEvento(evento.id, datos)
+    if (eventoId) {
+      updateEvento(eventoId, datos)
     } else {
-      addEvento(datos)
+      const nuevoId = addEvento(datos)
+      if (!nuevoId) {
+        alert('No se ha podido guardar el evento. Si estás en la versión de prueba, revisa el límite de eventos.')
+        return
+      }
+      setEventoId(nuevoId)
     }
-    onOpenChange(false)
+    setFirmaGuardada(firmaActual)
+    setGuardadoOk(true)
   }
 
   const handleEliminar = () => {
-    if (!evento) return
-    const mensaje = evento.recurrencia
+    if (!eventoId) return
+    const mensaje = repetir !== 'nunca'
       ? '¿Eliminar este evento? Se eliminarán todas sus repeticiones, no solo esta.'
       : '¿Eliminar este evento?'
     if (confirm(mensaje)) {
-      deleteEvento(evento.id)
+      deleteEvento(eventoId)
       onOpenChange(false)
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={cerrar}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{evento ? 'Editar evento' : 'Nuevo evento'}</DialogTitle>
+          <DialogTitle>{eventoId ? 'Editar evento' : 'Nuevo evento'}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -226,16 +267,22 @@ export function EventoDialog({ open, onOpenChange, evento, fechaInicial }: Event
           </div>
         </div>
 
-        <DialogFooter className={evento ? 'sm:justify-between' : undefined}>
-          {evento && (
+        <DialogFooter className={eventoId ? 'sm:justify-between' : undefined}>
+          {eventoId && (
             <Button variant="outline" onClick={handleEliminar} className="text-destructive hover:text-destructive">
               <Trash2 className="w-4 h-4" />
               Eliminar
             </Button>
           )}
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
+          <div className="flex items-center gap-2">
+            {guardadoOk && !hayCambiosSinGuardar && (
+              <span className="flex items-center gap-1 text-sm text-green-600 dark:text-green-400">
+                <Check className="w-4 h-4" />
+                Guardado
+              </span>
+            )}
+            <Button variant="outline" onClick={cerrar}>
+              Cerrar
             </Button>
             <Button onClick={handleGuardar}>Guardar</Button>
           </div>

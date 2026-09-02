@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures'
-import { crearCuaderno, irASeccion } from './helpers'
+import { crearCuaderno, irASeccion, cerrarModal } from './helpers'
 import { extraerTextoPDF } from './pdfText'
 
 test.describe('Calendario', () => {
@@ -14,6 +14,10 @@ test.describe('Calendario', () => {
     const titulo = 'Reunión de prueba E2E'
     await page.getByPlaceholder('Ej: Reunión con familias').fill(titulo)
     await page.getByRole('button', { name: 'Guardar' }).click()
+
+    // "Guardar" ya no cierra el modal: guarda y se queda abierto.
+    await expect(page.getByText('Guardado')).toBeVisible()
+    await cerrarModal(page)
 
     await expect(page.getByRole('heading', { name: 'Nuevo evento' })).not.toBeVisible()
     await expect(page.getByText(titulo)).toBeVisible()
@@ -41,6 +45,7 @@ test.describe('Calendario', () => {
     await expect(page.getByText('Editar o eliminar este evento afecta a todas sus repeticiones')).toBeVisible()
 
     await page.getByRole('button', { name: 'Guardar' }).click()
+    await cerrarModal(page)
     await expect(page.getByRole('heading', { name: 'Nuevo evento' })).not.toBeVisible()
 
     // La vista "Agenda" muestra los próximos 30 días desde hoy, así que las 4

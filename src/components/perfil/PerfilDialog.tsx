@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useCuadernoStore } from '../../stores/useCuadernoStore'
 import { useAuthStore } from '../../stores/useAuthStore'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
-import { X, LogOut, Trash2 } from 'lucide-react'
+import { X, LogOut, Trash2, Check } from 'lucide-react'
 import { COMUNIDADES_AUTONOMAS, festivoAutonomicoParaCursoEscolar } from '../../types/festivosOficiales'
 import { ETAPAS_EDUCATIVAS } from '../../types/constants'
 import { TerminosUso } from '../legal/TerminosUso'
@@ -34,20 +34,59 @@ export function PerfilDialog({ open, onOpenChange }: PerfilDialogProps) {
   const [showTerminos, setShowTerminos] = useState(false)
   const [showPrivacidad, setShowPrivacidad] = useState(false)
   const [showEliminarCuenta, setShowEliminarCuenta] = useState(false)
+  const [firmaGuardada, setFirmaGuardada] = useState('')
+  const [guardadoOk, setGuardadoOk] = useState(false)
 
+  const firmaActual = JSON.stringify({
+    centro, docente, cursoEscolar, cursos, comunidadAutonoma, etapaEducativa, asignaturas,
+  })
+  const hayCambiosSinGuardar = firmaActual !== firmaGuardada
+
+  // Cargar el formulario una sola vez por apertura (esperando a que
+  // cuadernoActual exista). Así un cambio de fondo en el cuaderno —por
+  // ejemplo la sincronización— no pisa lo que la docente está editando ni
+  // hace parpadear el "Guardado".
+  const inicializado = useRef(false)
   useEffect(() => {
-    if (open && cuadernoActual) {
-      setCentro(cuadernoActual.metadata.centro)
-      setDocente(cuadernoActual.metadata.docente)
-      setCursoEscolar(cuadernoActual.metadata.cursoEscolar)
-      setCursos(cuadernoActual.metadata.cursos || [])
-      setComunidadAutonoma(cuadernoActual.metadata.comunidadAutonoma || '')
-      setEtapaEducativa(cuadernoActual.metadata.etapaEducativa || '')
-      setAsignaturas(cuadernoActual.metadata.asignaturas || [])
+    if (!open) {
+      inicializado.current = false
+      return
+    }
+    if (inicializado.current || !cuadernoActual) return
+    inicializado.current = true
+    {
+      const init = {
+        centro: cuadernoActual.metadata.centro,
+        docente: cuadernoActual.metadata.docente,
+        cursoEscolar: cuadernoActual.metadata.cursoEscolar,
+        cursos: cuadernoActual.metadata.cursos || [],
+        comunidadAutonoma: cuadernoActual.metadata.comunidadAutonoma || '',
+        etapaEducativa: cuadernoActual.metadata.etapaEducativa || '',
+        asignaturas: cuadernoActual.metadata.asignaturas || [],
+      }
+      setCentro(init.centro)
+      setDocente(init.docente)
+      setCursoEscolar(init.cursoEscolar)
+      setCursos(init.cursos)
+      setComunidadAutonoma(init.comunidadAutonoma)
+      setEtapaEducativa(init.etapaEducativa)
+      setAsignaturas(init.asignaturas)
       setNuevoCurso('')
       setNuevaAsignatura('')
+      setFirmaGuardada(JSON.stringify(init))
+      setGuardadoOk(false)
     }
   }, [open, cuadernoActual])
+
+  const cerrar = () => {
+    if (
+      hayCambiosSinGuardar &&
+      !window.confirm('¿Cerrar sin guardar? Se perderán los cambios que no hayas guardado.')
+    ) {
+      return
+    }
+    onOpenChange(false)
+  }
 
   const handleAgregarCurso = () => {
     const curso = nuevoCurso.trim()
@@ -109,11 +148,12 @@ export function PerfilDialog({ open, onOpenChange }: PerfilDialogProps) {
       })
     }
 
-    onOpenChange(false)
+    setFirmaGuardada(firmaActual)
+    setGuardadoOk(true)
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={cerrar}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Perfil</DialogTitle>
@@ -318,9 +358,15 @@ export function PerfilDialog({ open, onOpenChange }: PerfilDialogProps) {
             </button>
           </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
+        <DialogFooter className="sm:items-center">
+          {guardadoOk && !hayCambiosSinGuardar && (
+            <span className="flex items-center gap-1 text-sm text-green-600 dark:text-green-400 sm:mr-auto">
+              <Check className="w-4 h-4" />
+              Guardado
+            </span>
+          )}
+          <Button variant="outline" onClick={cerrar}>
+            Cerrar
           </Button>
           <Button onClick={handleGuardar}>Guardar</Button>
         </DialogFooter>

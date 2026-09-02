@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures'
-import { crearCuaderno, irASeccion } from './helpers'
+import { crearCuaderno, irASeccion, cerrarModal } from './helpers'
 
 // La Edge Function real depende de Groq — se intercepta para no depender de
 // una API externa en la suite E2E, igual que se hace con Stripe/Resend en
@@ -265,6 +265,7 @@ test.describe('Asistente de IA: exportar a distintos destinos', () => {
     await page.getByRole('button', { name: 'Crear reunión' }).click()
     await page.getByPlaceholder('Ej: Claustro mensual de septiembre').fill('Claustro para exportar E2E')
     await page.getByRole('button', { name: 'Guardar' }).click()
+    await cerrarModal(page)
     await expect(page.getByText('Claustro para exportar E2E')).toBeVisible()
 
     await mockearAsistente(page, 'Revisar el calendario de exámenes del segundo trimestre.')

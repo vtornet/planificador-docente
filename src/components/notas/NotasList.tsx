@@ -139,12 +139,7 @@ export function NotasList() {
             <DialogHeader>
               <DialogTitle>Nueva Nota</DialogTitle>
             </DialogHeader>
-            <NotaEditor
-              onSave={() => {
-                setShowCrear(false)
-              }}
-              onCancel={() => setShowCrear(false)}
-            />
+            <NotaEditor />
           </DialogContent>
         </Dialog>
         <PaywallDialog open={showPaywall} onOpenChange={setShowPaywall} modulo="notas" />
@@ -165,26 +160,10 @@ export function NotasList() {
             <DialogHeader>
               <DialogTitle>{editingNota ? 'Editar Nota' : 'Nueva Nota'}</DialogTitle>
             </DialogHeader>
-            {editingNota ? (
-              <NotaEditor
-                nota={notas.find((n) => n.id === editingNota)}
-                onSave={() => {
-                  setEditingNota(null)
-                  setShowCrear(false)
-                }}
-                onCancel={() => {
-                  setEditingNota(null)
-                  setShowCrear(false)
-                }}
-              />
-            ) : (
-              <NotaEditor
-                onSave={() => {
-                  setShowCrear(false)
-                }}
-                onCancel={() => setShowCrear(false)}
-              />
-            )}
+            <NotaEditor
+              key={editingNota ?? 'nueva'}
+              nota={editingNota ? notas.find((n) => n.id === editingNota) : undefined}
+            />
           </DialogContent>
         </Dialog>
         <Dialog open={!!viewingNota} onOpenChange={(open) => !open && setViewingNota(null)}>

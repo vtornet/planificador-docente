@@ -4,9 +4,20 @@ import { X } from 'lucide-react'
 import { cn } from '../../utils/cn'
 import { useHistoryBack } from '../../hooks/useHistoryBack'
 
+type CloseGuard = () => boolean
+
 interface DialogContextValue {
   isOpen: boolean
   setIsOpen: (open: boolean) => void
+  /**
+   * Cierre "amable": ejecuta el guardián de cierre registrado (si lo hay) y
+   * solo cierra si este devuelve true. Lo usan el aspa y la tecla Escape.
+   * El pulsar fuera del modal ya NO cierra (petición de las docentes: se
+   * perdían reuniones/notas casi acabadas por un toque accidental).
+   */
+  requestClose: () => void
+  /** Registra/limpia el guardián de cierre. `null` para quitarlo. */
+  setCloseGuard: (guard: CloseGuard | null) => void
 }
 
 const DialogContext = React.createContext<DialogContextValue | undefined>(undefined)
@@ -19,11 +30,43 @@ function useDialog() {
   return context
 }
 
+/**
+ * Para un formulario dentro de un <Dialog>: mientras `hayCambiosSinGuardar`
+ * sea true, cerrar con el aspa o Escape pide confirmación. Devuelve la función
+ * de cierre amable, para usarla también en un botón "Cerrar" propio.
+ */
+export function useDialogCloseGuard(
+  hayCambiosSinGuardar: boolean,
+  mensaje = '¿Cerrar sin guardar? Se perderán los cambios que no hayas guardado.'
+) {
+  const { requestClose, setCloseGuard } = useDialog()
+  React.useEffect(() => {
+    setCloseGuard(hayCambiosSinGuardar ? () => window.confirm(mensaje) : null)
+    return () => setCloseGuard(null)
+  }, [hayCambiosSinGuardar, mensaje, setCloseGuard])
+  return requestClose
+}
+
 const Dialog = ({ isOpen, open, onOpenChange, children }: { isOpen?: boolean; open?: boolean; onOpenChange: (open: boolean) => void; children: React.ReactNode }) => {
   const isOpenValue = open !== undefined ? open : (isOpen !== undefined ? isOpen : false)
+  const guardRef = React.useRef<CloseGuard | null>(null)
+
+  const setCloseGuard = React.useCallback((guard: CloseGuard | null) => {
+    guardRef.current = guard
+  }, [])
+
+  const requestClose = React.useCallback(() => {
+    if (guardRef.current && guardRef.current() === false) return
+    onOpenChange(false)
+  }, [onOpenChange])
+
+  // El botón atrás físico de Android cierra sin pasar por el guardián: tocar
+  // la pila de historial (backNavigationStack) para "deshacer" un cierre
+  // cancelado es justo lo que CLAUDE.md avisa de no hacer a la ligera.
   useHistoryBack(isOpenValue, () => onOpenChange(false))
+
   return (
-    <DialogContext.Provider value={{ isOpen: isOpenValue, setIsOpen: onOpenChange }}>
+    <DialogContext.Provider value={{ isOpen: isOpenValue, setIsOpen: onOpenChange, requestClose, setCloseGuard }}>
       {children}
     </DialogContext.Provider>
   )
@@ -43,16 +86,16 @@ const DialogTrigger = ({ asChild, children, ...props }: { asChild?: boolean; chi
 
 const DialogContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, children, ...props }, ref) => {
-    const { isOpen, setIsOpen } = useDialog()
+    const { isOpen, requestClose } = useDialog()
 
     React.useEffect(() => {
       if (!isOpen) return
       const onKeyDown = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') setIsOpen(false)
+        if (e.key === 'Escape') requestClose()
       }
       window.addEventListener('keydown', onKeyDown)
       return () => window.removeEventListener('keydown', onKeyDown)
-    }, [isOpen, setIsOpen])
+    }, [isOpen, requestClose])
 
     if (!isOpen) return null
 
@@ -61,8 +104,8 @@ const DialogContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTML
     // containing block nuevo que rompe `position: fixed` y recorta el modal.
     return createPortal(
       <div className="fixed inset-0 z-50 overflow-y-auto">
-        {/* Backdrop */}
-        <div className="fixed inset-0 bg-black/50" onClick={() => setIsOpen(false)} />
+        {/* Backdrop — no cierra al pulsarlo (ver requestClose en DialogContext) */}
+        <div className="fixed inset-0 bg-black/50" />
 
         {/* Content */}
         <div className="flex min-h-full items-start justify-center p-4 sm:items-center">
@@ -76,7 +119,7 @@ const DialogContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTML
           >
             <button
               type="button"
-              onClick={() => setIsOpen(false)}
+              onClick={() => requestClose()}
               aria-label="Cerrar"
               className="absolute right-3 top-3 rounded-sm p-2 text-muted-foreground opacity-70 transition-opacity hover:opacity-100 hover:text-foreground hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring"
             >

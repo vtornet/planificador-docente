@@ -30,17 +30,20 @@ interface CuadernoState {
   duplicateSemana: (semanaId: string, nuevaFechaInicio: Date) => void
 
   // Acciones - Reuniones
-  addReunion: (reunion: Omit<Reunion, 'id' | 'creada' | 'actualizado'>) => void
+  // add* devuelve el id del elemento creado, o undefined si no se creó (sin
+  // cuaderno, o tope de prueba alcanzado). Sirve para que un formulario que
+  // "guarda sin cerrar" siga editando ese mismo elemento en vez de duplicarlo.
+  addReunion: (reunion: Omit<Reunion, 'id' | 'creada' | 'actualizado'>) => string | undefined
   updateReunion: (id: string, updates: Partial<Reunion>) => void
   deleteReunion: (id: string) => void
 
   // Acciones - Notas
-  addNota: (nota: Omit<Nota, 'id' | 'creado' | 'actualizado'>) => void
+  addNota: (nota: Omit<Nota, 'id' | 'creado' | 'actualizado'>) => string | undefined
   updateNota: (id: string, updates: Partial<Nota>) => void
   deleteNota: (id: string) => void
 
   // Acciones - Eventos (agenda)
-  addEvento: (evento: Omit<Evento, 'id' | 'creado' | 'actualizado'>) => void
+  addEvento: (evento: Omit<Evento, 'id' | 'creado' | 'actualizado'>) => string | undefined
   updateEvento: (id: string, updates: Partial<Evento>) => void
   deleteEvento: (id: string) => void
 
@@ -356,9 +359,9 @@ export const useCuadernoStore = create<CuadernoState>((set, get) => ({
   // Reuniones
   addReunion: (reunion) => {
     const { cuadernoActual } = get()
-    if (!cuadernoActual) return
+    if (!cuadernoActual) return undefined
     if (!useAuthStore.getState().hasPaid && cuadernoActual.reuniones.length >= TRIAL_LIMIT_PER_MODULE) {
-      return
+      return undefined
     }
 
     const nuevaReunion: Reunion = {
@@ -373,6 +376,7 @@ export const useCuadernoStore = create<CuadernoState>((set, get) => ({
     }
     set({ cuadernoActual: actualizado })
     saveCuadernoAsync(actualizado)
+    return nuevaReunion.id
   },
 
   updateReunion: (id, updates) => {
@@ -405,9 +409,9 @@ export const useCuadernoStore = create<CuadernoState>((set, get) => ({
   // Notas
   addNota: (nota) => {
     const { cuadernoActual } = get()
-    if (!cuadernoActual) return
+    if (!cuadernoActual) return undefined
     if (!useAuthStore.getState().hasPaid && cuadernoActual.notas.length >= TRIAL_LIMIT_PER_MODULE) {
-      return
+      return undefined
     }
 
     const ahora = new Date()
@@ -423,6 +427,7 @@ export const useCuadernoStore = create<CuadernoState>((set, get) => ({
     }
     set({ cuadernoActual: actualizado })
     saveCuadernoAsync(actualizado)
+    return nuevaNota.id
   },
 
   updateNota: (id, updates) => {
@@ -455,9 +460,9 @@ export const useCuadernoStore = create<CuadernoState>((set, get) => ({
   // Eventos (agenda)
   addEvento: (evento) => {
     const { cuadernoActual } = get()
-    if (!cuadernoActual) return
+    if (!cuadernoActual) return undefined
     if (!useAuthStore.getState().hasPaid && (cuadernoActual.eventos || []).length >= TRIAL_LIMIT_PER_MODULE) {
-      return
+      return undefined
     }
 
     const nuevoEvento: Evento = { ...evento, id: generateId(), creado: new Date(), actualizado: new Date() }
@@ -467,6 +472,7 @@ export const useCuadernoStore = create<CuadernoState>((set, get) => ({
     }
     set({ cuadernoActual: actualizado })
     saveCuadernoAsync(actualizado)
+    return nuevoEvento.id
   },
 
   updateEvento: (id, updates) => {
