@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useCuadernoStore } from '../../stores/useCuadernoStore'
 import { useAuthStore } from '../../stores/useAuthStore'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogCloseButton, DialogUnsavedGuard } from '../ui/dialog'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { X, LogOut, Trash2, Check } from 'lucide-react'
@@ -78,16 +78,6 @@ export function PerfilDialog({ open, onOpenChange }: PerfilDialogProps) {
     }
   }, [open, cuadernoActual])
 
-  const cerrar = () => {
-    if (
-      hayCambiosSinGuardar &&
-      !window.confirm('¿Cerrar sin guardar? Se perderán los cambios que no hayas guardado.')
-    ) {
-      return
-    }
-    onOpenChange(false)
-  }
-
   const handleAgregarCurso = () => {
     const curso = nuevoCurso.trim()
     if (curso && !cursos.includes(curso)) {
@@ -153,8 +143,9 @@ export function PerfilDialog({ open, onOpenChange }: PerfilDialogProps) {
   }
 
   return (
-    <Dialog open={open} onOpenChange={cerrar}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogUnsavedGuard active={hayCambiosSinGuardar} />
         <DialogHeader>
           <DialogTitle>Perfil</DialogTitle>
         </DialogHeader>
@@ -365,9 +356,7 @@ export function PerfilDialog({ open, onOpenChange }: PerfilDialogProps) {
               Guardado
             </span>
           )}
-          <Button variant="outline" onClick={cerrar}>
-            Cerrar
-          </Button>
+          <DialogCloseButton variant="outline">Cerrar</DialogCloseButton>
           <Button onClick={handleGuardar}>Guardar</Button>
         </DialogFooter>
       </DialogContent>

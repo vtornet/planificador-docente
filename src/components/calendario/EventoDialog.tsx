@@ -4,14 +4,12 @@ import { useCuadernoStore } from '../../stores/useCuadernoStore'
 import { COLORES_EVENTOS, COLOR_EVENTO_POR_DEFECTO, RECORDATORIOS } from '../../types/constants'
 import { parseFechaInput } from '../../utils/fechas'
 import type { Evento, RecordatorioEvento, RecurrenciaEvento } from '../../types'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogCloseButton, DialogUnsavedGuard } from '../ui/dialog'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Textarea } from '../ui/textarea'
 import { Trash2, Check } from 'lucide-react'
 import { cn } from '../../utils/cn'
-
-const MENSAJE_CERRAR_SIN_GUARDAR = '¿Cerrar sin guardar? Se perderán los cambios que no hayas guardado.'
 
 interface EventoDialogProps {
   open: boolean
@@ -76,11 +74,6 @@ export function EventoDialog({ open, onOpenChange, evento, fechaInicial }: Event
     setGuardadoOk(false)
   }, [open, evento, fechaInicial])
 
-  const cerrar = () => {
-    if (hayCambiosSinGuardar && !window.confirm(MENSAJE_CERRAR_SIN_GUARDAR)) return
-    onOpenChange(false)
-  }
-
   const handleGuardar = () => {
     if (!titulo.trim() || !fecha) return
 
@@ -138,8 +131,9 @@ export function EventoDialog({ open, onOpenChange, evento, fechaInicial }: Event
   }
 
   return (
-    <Dialog open={open} onOpenChange={cerrar}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogUnsavedGuard active={hayCambiosSinGuardar} />
         <DialogHeader>
           <DialogTitle>{eventoId ? 'Editar evento' : 'Nuevo evento'}</DialogTitle>
         </DialogHeader>
@@ -281,9 +275,7 @@ export function EventoDialog({ open, onOpenChange, evento, fechaInicial }: Event
                 Guardado
               </span>
             )}
-            <Button variant="outline" onClick={cerrar}>
-              Cerrar
-            </Button>
+            <DialogCloseButton variant="outline">Cerrar</DialogCloseButton>
             <Button onClick={handleGuardar}>Guardar</Button>
           </div>
         </DialogFooter>
