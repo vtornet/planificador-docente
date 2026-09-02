@@ -8,6 +8,7 @@ import { esDiaFestivo, esDiaVacaciones } from '../../utils/festivos'
 import { UserCircle, GraduationCap, Copy, StickyNote, Save } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog'
+import { confirmarDialogo } from '../ui/dialogos'
 import { CeldaHorarioDialog } from './CeldaHorarioDialog'
 
 interface HorarioTableProps {
@@ -199,9 +200,15 @@ export function HorarioTable({ horario, onGuardar, preguntarAlcance, onDuplicate
             <Button
               variant="secondary"
               size="sm"
-              onClick={() => {
+              onClick={async () => {
                 const nuevoTipo = horario.tipo === 'docente' ? 'alumnado' : 'docente'
-                if (confirm(`¿Duplicar este horario como horario de ${nuevoTipo}?`)) {
+                if (
+                  await confirmarDialogo({
+                    titulo: 'Duplicar horario',
+                    mensaje: `Se creará una copia de este horario como horario de ${nuevoTipo}.`,
+                    textoConfirmar: 'Duplicar',
+                  })
+                ) {
                   const duplicado: Omit<Horario, 'id' | 'actualizado'> = {
                     tipo: nuevoTipo,
                     nombre: `${horario.nombre} (${nuevoTipo})`,

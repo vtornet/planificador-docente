@@ -7,6 +7,7 @@ import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Card, CardContent } from '../ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog'
+import { avisarDialogo, confirmarDialogo } from '../ui/dialogos'
 import { PaywallDialog } from '../paywall/PaywallDialog'
 import { PdfPreviewDialog } from '../export/PdfPreviewDialog'
 import type { PDFGenerado } from '../../utils/pdf.tsx'
@@ -74,8 +75,15 @@ export function NotasList() {
     )
   }, [notas, filtroCategoria, filtroTag, busqueda])
 
-  const handleEliminar = (id: string, titulo: string) => {
-    if (confirm(`¿Eliminar la nota "${titulo}"?`)) {
+  const handleEliminar = async (id: string, titulo: string) => {
+    if (
+      await confirmarDialogo({
+        titulo: 'Eliminar nota',
+        mensaje: `¿Seguro que quieres eliminar la nota "${titulo}"?`,
+        textoConfirmar: 'Eliminar',
+        peligroso: true,
+      })
+    ) {
       deleteNota(id)
     }
   }
@@ -87,7 +95,7 @@ export function NotasList() {
       setPreviewPdf(await generarNotaPDF(nota, cuadernoActual.metadata))
     } catch (error) {
       console.error('Error exportando nota a PDF:', error)
-      alert('Error al exportar la nota a PDF. Inténtalo de nuevo.')
+      avisarDialogo('Error al exportar la nota a PDF. Inténtalo de nuevo.')
     }
   }
 

@@ -8,6 +8,7 @@ import { CONFIG_HORARIOS_PREDEFINIDOS, MESES, configHorarioPorEtapa } from '../.
 import { Button } from '../ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog'
+import { avisarDialogo } from '../ui/dialogos'
 import { Input } from '../ui/input'
 import { HorarioTable } from './HorarioTable'
 import { PaywallDialog } from '../paywall/PaywallDialog'
@@ -247,7 +248,7 @@ export function HorarioManager() {
       setPreviewPdf(await generarHorarioPDF(horario, cuadernoActual.metadata))
     } catch (error) {
       console.error('Error exportando horario a PDF:', error)
-      alert('Error al exportar el horario a PDF. Inténtalo de nuevo.')
+      avisarDialogo('Error al exportar el horario a PDF. Inténtalo de nuevo.')
     }
   }
 

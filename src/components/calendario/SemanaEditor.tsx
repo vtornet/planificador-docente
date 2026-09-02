@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Input } from '../ui/input'
 import { Textarea } from '../ui/textarea'
 import { Button } from '../ui/button'
+import { confirmarDialogo } from '../ui/dialogos'
 import { CONFIG_HORARIOS_PREDEFINIDOS } from '../../types/constants'
 import { esDiaFestivo, esDiaVacaciones } from '../../utils/festivos'
 import {
@@ -414,8 +415,15 @@ export function SemanaEditor({
       <div className="flex gap-2">
         <Button
           variant="outline"
-          onClick={() => {
-            if (confirm('¿Limpiar todos los periodos?')) {
+          onClick={async () => {
+            if (
+              await confirmarDialogo({
+                titulo: '¿Limpiar todos los periodos?',
+                mensaje: 'Se borrará el contenido de todas las celdas de esta semana.',
+                textoConfirmar: 'Limpiar',
+                peligroso: true,
+              })
+            ) {
               setCeldas((prev) => {
                 const limpio = { ...prev }
                 periodosHorarios.forEach((periodo, periodoIndex) => {

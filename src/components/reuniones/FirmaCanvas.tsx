@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState } from 'react'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
+import { avisarDialogo } from '../ui/dialogos'
 
 interface FirmaCanvasProps {
   onGuardar: (nombre: string, imagen: string) => void
@@ -97,12 +98,12 @@ export function FirmaCanvas({ onGuardar, onCancel }: FirmaCanvasProps) {
 
   const handleGuardar = () => {
     if (!nombre.trim()) {
-      alert('Por favor, indica el nombre de la persona que firma')
+      avisarDialogo('Por favor, indica el nombre de la persona que firma')
       return
     }
 
     if (isEmpty) {
-      alert('Por favor, realiza una firma antes de guardar')
+      avisarDialogo('Por favor, realiza una firma antes de guardar')
       return
     }
 

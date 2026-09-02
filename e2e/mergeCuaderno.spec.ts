@@ -105,11 +105,11 @@ test.describe('Fusión de cuadernos entre dispositivos (mergeCuaderno)', () => {
 
     // Dispositivo A borra la nota mientras está sin conexión. El borrado solo
     // está disponible en la vista de lista (no en la de cuadrícula, por
-    // defecto) y pasa por un confirm() nativo del navegador.
+    // defecto) y pide confirmación en un modal de la app.
     await context.setOffline(true)
     await page.getByTitle('Vista de lista').click()
-    page.once('dialog', (dialog) => dialog.accept())
     await page.getByTitle('Eliminar esta nota').click()
+    await page.getByRole('button', { name: 'Eliminar', exact: true }).click()
     await expect(page.getByText(titulo)).not.toBeVisible()
 
     // A recupera la conexión y sube el borrado (con su tombstone).

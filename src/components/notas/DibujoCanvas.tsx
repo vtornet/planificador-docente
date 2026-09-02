@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState } from 'react'
 import { Button } from '../ui/button'
+import { avisarDialogo } from '../ui/dialogos'
 
 const GROSORES = [
   { id: 'fino', label: 'Fino', valor: 1.5 },
@@ -101,7 +102,7 @@ export function DibujoCanvas({ onInsertar, onCancel }: DibujoCanvasProps) {
 
   const handleInsertar = () => {
     if (isEmpty) {
-      alert('Dibuja algo antes de insertarlo')
+      avisarDialogo('Dibuja algo antes de insertarlo')
       return
     }
     const canvas = canvasRef.current

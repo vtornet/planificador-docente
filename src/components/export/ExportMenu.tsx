@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu'
 import { Button } from '../ui/button'
+import { avisarDialogo } from '../ui/dialogos'
 import { Download, FileText, Calendar, CalendarClock, Users, BookOpen, FileJson, Loader2 } from 'lucide-react'
 import { exportCuadernoToJSON } from '../../utils/export'
 import { PdfPreviewDialog } from './PdfPreviewDialog'
@@ -96,7 +97,7 @@ export function ExportMenu() {
       }
     } catch (error) {
       console.error('Error exporting:', error)
-      alert('Error al exportar. Por favor, inténtalo de nuevo.')
+      avisarDialogo('Error al exportar. Por favor, inténtalo de nuevo.')
     } finally {
       setExporting(null)
     }

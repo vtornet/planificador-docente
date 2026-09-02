@@ -26,6 +26,7 @@ import {
   PenTool,
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog'
+import { avisarDialogo } from '../ui/dialogos'
 import { DibujoCanvas } from './DibujoCanvas'
 import './TiptapEditor.css'
 
@@ -150,7 +151,7 @@ export function TiptapEditor({
       const dataUrl = await archivoAImagenComprimida(file)
       editor.chain().focus().setImage({ src: dataUrl }).run()
     } catch {
-      window.alert('No se pudo cargar la imagen. Prueba con otro archivo.')
+      avisarDialogo('No se pudo cargar la imagen. Prueba con otro archivo.')
     }
   }
 

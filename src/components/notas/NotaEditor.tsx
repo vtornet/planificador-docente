@@ -8,6 +8,7 @@ import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { useDialogCloseGuard } from '../ui/dialog'
+import { avisarDialogo } from '../ui/dialogos'
 import { TiptapEditor } from './TiptapEditor'
 import type { Nota } from '../../types'
 import { X, Check } from 'lucide-react'
@@ -47,12 +48,12 @@ export function NotaEditor({ nota }: NotaEditorProps) {
 
   const handleGuardar = () => {
     if (!titulo.trim()) {
-      alert('El título es obligatorio')
+      avisarDialogo('El título es obligatorio')
       return
     }
 
     if (!contenido.trim()) {
-      alert('El contenido no puede estar vacío')
+      avisarDialogo('El contenido no puede estar vacío')
       return
     }
 
@@ -69,7 +70,7 @@ export function NotaEditor({ nota }: NotaEditorProps) {
     } else {
       const nuevoId = addNota(notaData)
       if (!nuevoId) {
-        alert('No se ha podido guardar la nota. Si estás en la versión de prueba, revisa el límite de notas.')
+        avisarDialogo('No se ha podido guardar la nota. Si estás en la versión de prueba, revisa el límite de notas.')
         return
       }
       setNotaId(nuevoId)

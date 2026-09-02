@@ -125,8 +125,8 @@ test.describe('Notas', () => {
     await expect(page.getByText(titulo)).toBeVisible()
 
     // Vista grid = la predefinida, sin cambiar a lista.
-    page.on('dialog', (d) => d.accept())
     await page.getByTitle('Eliminar esta nota').click()
+    await page.getByRole('button', { name: 'Eliminar', exact: true }).click()
 
     await expect(page.getByText(titulo)).not.toBeVisible()
   })

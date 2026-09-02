@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { cn } from '../../utils/cn'
 import { Button, type ButtonProps } from './button'
+import { ModalMensaje } from './dialogos'
 import { useHistoryBack } from '../../hooks/useHistoryBack'
 
 /** Devuelve true si cerrar el modal debería pedir confirmación (hay cambios sin guardar). */
@@ -82,42 +83,16 @@ const DialogCloseButton = React.forwardRef<HTMLButtonElement, ButtonProps>(
 DialogCloseButton.displayName = 'DialogCloseButton'
 
 function ConfirmarSalidaModal({ onConfirmar, onCancelar }: { onConfirmar: () => void; onCancelar: () => void }) {
-  React.useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onCancelar()
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [onCancelar])
-
-  return createPortal(
-    <div className="fixed inset-0 z-[70] overflow-y-auto">
-      <div className="fixed inset-0 bg-black/50" onClick={onCancelar} />
-      <div className="flex min-h-full items-center justify-center p-4">
-        <div
-          role="alertdialog"
-          aria-modal="true"
-          aria-labelledby="confirmar-salida-titulo"
-          className="relative z-[71] grid w-full max-w-sm gap-3 border bg-background p-6 shadow-lg sm:rounded-lg"
-        >
-          <h2 id="confirmar-salida-titulo" className="text-lg font-semibold leading-none tracking-tight">
-            ¿Cerrar sin guardar?
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Tienes cambios sin guardar. Si cierras ahora, se perderán.
-          </p>
-          <div className="mt-2 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <Button variant="outline" onClick={onCancelar} autoFocus>
-              Seguir editando
-            </Button>
-            <Button variant="destructive" onClick={onConfirmar}>
-              Cerrar sin guardar
-            </Button>
-          </div>
-        </div>
-      </div>
-    </div>,
-    document.body
+  return (
+    <ModalMensaje
+      titulo="¿Cerrar sin guardar?"
+      mensaje="Tienes cambios sin guardar. Si cierras ahora, se perderán."
+      textoConfirmar="Cerrar sin guardar"
+      textoCancelar="Seguir editando"
+      peligroso
+      onConfirmar={onConfirmar}
+      onCancelar={onCancelar}
+    />
   )
 }
 

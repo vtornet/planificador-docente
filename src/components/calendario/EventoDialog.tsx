@@ -5,6 +5,7 @@ import { COLORES_EVENTOS, COLOR_EVENTO_POR_DEFECTO, RECORDATORIOS } from '../../
 import { parseFechaInput } from '../../utils/fechas'
 import type { Evento, RecordatorioEvento, RecurrenciaEvento } from '../../types'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogCloseButton, DialogUnsavedGuard } from '../ui/dialog'
+import { avisarDialogo, confirmarDialogo } from '../ui/dialogos'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Textarea } from '../ui/textarea'
@@ -79,11 +80,11 @@ export function EventoDialog({ open, onOpenChange, evento, fechaInicial }: Event
 
     if (repetir !== 'nunca') {
       if (!repetirHasta) {
-        alert('Elige hasta cuándo se repite el evento')
+        avisarDialogo('Elige hasta cuándo se repite el evento')
         return
       }
       if (parseFechaInput(repetirHasta) < parseFechaInput(fecha)) {
-        alert('La fecha de "Repetir hasta" no puede ser anterior a la del evento')
+        avisarDialogo('La fecha de "Repetir hasta" no puede ser anterior a la del evento')
         return
       }
     }
@@ -110,7 +111,7 @@ export function EventoDialog({ open, onOpenChange, evento, fechaInicial }: Event
     } else {
       const nuevoId = addEvento(datos)
       if (!nuevoId) {
-        alert('No se ha podido guardar el evento. Si estás en la versión de prueba, revisa el límite de eventos.')
+        avisarDialogo('No se ha podido guardar el evento. Si estás en la versión de prueba, revisa el límite de eventos.')
         return
       }
       setEventoId(nuevoId)
@@ -119,12 +120,18 @@ export function EventoDialog({ open, onOpenChange, evento, fechaInicial }: Event
     setGuardadoOk(true)
   }
 
-  const handleEliminar = () => {
+  const handleEliminar = async () => {
     if (!eventoId) return
-    const mensaje = repetir !== 'nunca'
-      ? '¿Eliminar este evento? Se eliminarán todas sus repeticiones, no solo esta.'
-      : '¿Eliminar este evento?'
-    if (confirm(mensaje)) {
+    const aceptado = await confirmarDialogo({
+      titulo: 'Eliminar evento',
+      mensaje:
+        repetir !== 'nunca'
+          ? '¿Seguro? Se eliminarán todas sus repeticiones, no solo esta.'
+          : '¿Seguro que quieres eliminar este evento?',
+      textoConfirmar: 'Eliminar',
+      peligroso: true,
+    })
+    if (aceptado) {
       deleteEvento(eventoId)
       onOpenChange(false)
     }

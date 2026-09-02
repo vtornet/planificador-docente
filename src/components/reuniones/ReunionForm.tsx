@@ -7,6 +7,7 @@ import { Input } from '../ui/input'
 import { Textarea } from '../ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, useDialogCloseGuard } from '../ui/dialog'
+import { avisarDialogo, confirmarDialogo } from '../ui/dialogos'
 import { FirmaCanvas } from './FirmaCanvas'
 import type { Reunion } from '../../types'
 import { parseFechaInput } from '../../utils/fechas'
@@ -50,7 +51,7 @@ export function ReunionForm({ reunion }: ReunionFormProps) {
 
   const handleGuardar = () => {
     if (!titulo.trim()) {
-      alert('El título es obligatorio')
+      avisarDialogo('El título es obligatorio')
       return
     }
 
@@ -72,7 +73,7 @@ export function ReunionForm({ reunion }: ReunionFormProps) {
     } else {
       const nuevoId = addReunion(reunionData)
       if (!nuevoId) {
-        alert('No se ha podido guardar la reunión. Si estás en la versión de prueba, revisa el límite de reuniones.')
+        avisarDialogo('No se ha podido guardar la reunión. Si estás en la versión de prueba, revisa el límite de reuniones.')
         return
       }
       setReunionId(nuevoId)
@@ -92,8 +93,8 @@ export function ReunionForm({ reunion }: ReunionFormProps) {
     setShowFirmaDialog(false)
   }
 
-  const handleEliminarFirma = (index: number) => {
-    if (confirm('¿Eliminar esta firma?')) {
+  const handleEliminarFirma = async (index: number) => {
+    if (await confirmarDialogo({ titulo: '¿Eliminar esta firma?', textoConfirmar: 'Eliminar', peligroso: true })) {
       setFirmas(firmas.filter((_, i) => i !== index))
     }
   }

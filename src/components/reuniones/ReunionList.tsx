@@ -8,6 +8,7 @@ import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { Card, CardContent } from '../ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog'
+import { avisarDialogo, confirmarDialogo } from '../ui/dialogos'
 import { PaywallDialog } from '../paywall/PaywallDialog'
 import { PdfPreviewDialog } from '../export/PdfPreviewDialog'
 import type { PDFGenerado } from '../../utils/pdf.tsx'
@@ -77,8 +78,15 @@ export function ReunionList() {
     )
   }, [reuniones, filtroTipo, busqueda, filtroMes])
 
-  const handleEliminar = (id: string, titulo: string) => {
-    if (confirm(`¿Eliminar la reunión "${titulo}"?`)) {
+  const handleEliminar = async (id: string, titulo: string) => {
+    if (
+      await confirmarDialogo({
+        titulo: 'Eliminar reunión',
+        mensaje: `¿Seguro que quieres eliminar la reunión "${titulo}"?`,
+        textoConfirmar: 'Eliminar',
+        peligroso: true,
+      })
+    ) {
       deleteReunion(id)
     }
   }
@@ -90,7 +98,7 @@ export function ReunionList() {
       setPreviewPdf(await generarReunionPDF(reunion, cuadernoActual.metadata))
     } catch (error) {
       console.error('Error exportando reunión a PDF:', error)
-      alert('Error al exportar la reunión a PDF. Inténtalo de nuevo.')
+      avisarDialogo('Error al exportar la reunión a PDF. Inténtalo de nuevo.')
     }
   }
 
