@@ -14,7 +14,7 @@ export function PoliticaPrivacidad({ open, onOpenChange }: PoliticaPrivacidadPro
         </DialogHeader>
         <div className="text-sm text-muted-foreground space-y-4 text-left">
           <p className="text-xs bg-muted rounded-lg p-3 text-foreground">
-            Última actualización: agosto de 2026. Este documento es un borrador redactado para el
+            Última actualización: septiembre de 2026. Este documento es un borrador redactado para el
             periodo de pruebas de Docenza y está pendiente de revisión por un profesional legal
             antes de un lanzamiento comercial.
           </p>
@@ -139,7 +139,51 @@ export function PoliticaPrivacidad({ open, onOpenChange }: PoliticaPrivacidadPro
           </section>
 
           <section>
-            <h3 className="font-semibold text-foreground mb-1">9. Cambios en esta política</h3>
+            <h3 className="font-semibold text-foreground mb-1">
+              9. Cookies y almacenamiento en tu dispositivo
+            </h3>
+            <p>
+              Docenza <strong>no usa cookies de seguimiento, de publicidad ni de analítica</strong>.
+              No hay Google Analytics ni ninguna herramienta parecida: no medimos tu comportamiento
+              ni se lo pasamos a nadie. Por eso no verás un aviso de «aceptar cookies»: no habría
+              nada que aceptar.
+            </p>
+            <p className="mt-1">
+              Para funcionar, la app sí guarda información en tu propio navegador. Todo lo que
+              aparece abajo es <strong>técnicamente imprescindible</strong> para el servicio que has
+              pedido, así que la normativa de cookies no exige tu consentimiento previo:
+            </p>
+            <ul className="list-disc pl-5 space-y-1 mt-1">
+              <li>
+                <strong>Tu cuaderno completo</strong> (IndexedDB) — horarios, planificación,
+                reuniones y notas se guardan en tu dispositivo para que la app funcione sin
+                conexión. Es el núcleo del servicio.
+              </li>
+              <li>
+                <strong>Tu sesión iniciada</strong> (almacenamiento local) — un identificador que
+                mantiene tu cuenta conectada entre visitas para no pedirte la contraseña cada vez.
+                Se borra al cerrar sesión.
+              </li>
+              <li>
+                <strong>Tus preferencias de este dispositivo</strong> (almacenamiento local) — el
+                modo claro/oscuro y el historial de tus conversaciones con el asistente, que no
+                salen de aquí ni se sincronizan.
+              </li>
+              <li>
+                <strong>Archivos de la aplicación</strong> (caché del navegador / Service Worker) —
+                una copia de la propia app para que cargue al instante y funcione offline.
+              </li>
+            </ul>
+            <p className="mt-1">
+              Puedes borrar todo esto cuando quieras desde los ajustes de tu navegador («borrar
+              datos del sitio») o eliminando tu cuenta desde Perfil. Cuando pagas la suscripción, el
+              proceso ocurre en una página de Stripe: las cookies que Stripe use allí para prevenir
+              el fraude se rigen por la política de Stripe y su dominio, no por Docenza.
+            </p>
+          </section>
+
+          <section>
+            <h3 className="font-semibold text-foreground mb-1">10. Cambios en esta política</h3>
             <p>
               Podemos actualizar esta política para reflejar cambios en el servicio o en la
               normativa aplicable. Te avisaremos de cambios relevantes dentro de la propia
