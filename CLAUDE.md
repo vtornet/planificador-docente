@@ -249,6 +249,15 @@ Tests E2E: cada uno crea su cuenta Supabase efímera vía Admin API (`e2e/testUs
   (ya puesto). Sin eso, abrir para editar una nota con imagen la borraba en silencio.
 - **`vite-plugin-pwa` no corre en `npm run dev`** — el SW / la PWA solo se prueban con
   `build && preview` (por eso el `webServer` de Playwright hace eso).
+- **Aviso de instalación de la PWA** (`components/layout/InstallPrompt.tsx` +
+  `utils/pwaInstall.ts`, montado en `main.tsx` para salir también antes del login).
+  Chrome ya no enseña infobar nativo: hay que capturar `beforeinstallprompt` a nivel de
+  módulo (se dispara pronto y **una sola vez** — si no se hace `preventDefault()` + guardar
+  ahí, se pierde). Tres variantes: botón "Instalar" (evento disponible), instrucciones
+  Compartir (iOS/iPadOS, no soporta el evento) o instrucciones del menú (resto, tras 4 s
+  de espera). Insistente a propósito: reaparece cada sesión hasta instalar; "Más tarde" =
+  `sessionStorage`, no `localStorage`. No se renderiza si `navigator.webdriver` (para no
+  molestar a Playwright, donde el evento no se dispara y saldría siempre la 3ª variante).
 - **Assets de `public/`:** revisar de vez en cuando que no sean placeholders. Los iconos
   PWA fueron archivos de 5 bytes ("dummy") durante meses (rompía la instalación en
   Android) sin que ningún test lo detectara.
