@@ -9,6 +9,7 @@ import {
   rejillaVacia,
   contenidoParaSemana,
   resolverDiasSemana,
+  generarPeriodos,
 } from './horarios'
 import type { Horario, Semana } from '../types'
 
@@ -247,6 +248,35 @@ describe('rejillaVacia', () => {
       recreo: { periodo: 2, duracion: 30 },
     })
     expect(rejilla).toHaveLength(4)
+  })
+})
+
+describe('generarPeriodos', () => {
+  // El índice de fila de esta lista tiene que coincidir exactamente con el
+  // de Horario.datos (ver rejillaVacia) — HorarioTable.tsx, SemanaEditor.tsx,
+  // VistaSemanal.tsx, PasoExportarHorario.tsx y el PDF de horario (ver
+  // pdfTemplates.tsx) dependen todos de esta misma alineación.
+  it('sin recreo, una fila por periodo, en orden', () => {
+    const periodos = generarPeriodos({ numPeriodos: 3, horaInicio: '08:00', duracionPeriodo: 55 })
+    expect(periodos).toEqual([
+      { inicio: '08:00', fin: '08:55' },
+      { inicio: '08:55', fin: '09:50' },
+      { inicio: '09:50', fin: '10:45' },
+    ])
+  })
+
+  it('inserta la fila del recreo justo después del periodo indicado', () => {
+    const periodos = generarPeriodos({
+      numPeriodos: 3,
+      horaInicio: '08:00',
+      duracionPeriodo: 55,
+      recreo: { periodo: 2, duracion: 30 },
+    })
+    expect(periodos).toHaveLength(4)
+    expect(periodos[2]).toEqual({ inicio: '09:50', fin: '10:20', esRecreo: true })
+    // El periodo siguiente al recreo arranca cuando este termina, no donde
+    // habría arrancado si no hubiera recreo.
+    expect(periodos[3]).toEqual({ inicio: '10:20', fin: '11:15' })
   })
 })
 

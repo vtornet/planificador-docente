@@ -3,8 +3,8 @@ import { addDays, format, getDay, startOfWeek } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { useCuadernoStore } from '../../stores/useCuadernoStore'
 import { DIAS_SEMANA } from '../../types/constants'
-import type { ConfigHorarios, Horario } from '../../types'
-import { horarioActivoEnRango, horarioAbarcaMasDeLaSemana, dividirHorarioParaSemana } from '../../utils/horarios'
+import type { Horario } from '../../types'
+import { horarioActivoEnRango, horarioAbarcaMasDeLaSemana, dividirHorarioParaSemana, generarPeriodos } from '../../utils/horarios'
 import { parseFechaInput } from '../../utils/fechas'
 import { esDiaFestivo, esDiaVacaciones, festivoDelDia, vacacionDelDia } from '../../utils/festivos'
 import { DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog'
@@ -218,7 +218,6 @@ export function PasoExportarHorario({ texto, onVolver, onCerrar, onExportado }: 
             </label>
             <div className="space-y-1 max-h-56 overflow-y-auto">
               {periodos.map((periodo, fila) => {
-                if (periodo.esRecreo) return null
                 const c = horario.datos[fila]?.[columna]
                 const seleccionado = periodoSeleccionado === fila
                 return (
@@ -231,7 +230,9 @@ export function PasoExportarHorario({ texto, onVolver, onCerrar, onExportado }: 
                       seleccionado ? 'border-primary bg-primary/10' : 'border-border hover:bg-accent/50'
                     )}
                   >
-                    <span className="text-muted-foreground">{periodo.inicio} - {periodo.fin}</span>
+                    <span className="text-muted-foreground">
+                      {periodo.esRecreo ? 'Recreo' : `${periodo.inicio} - ${periodo.fin}`}
+                    </span>
                     <span className="truncate text-foreground">{c?.contenido || 'Sin asignar'}</span>
                   </button>
                 )
@@ -266,35 +267,4 @@ export function PasoExportarHorario({ texto, onVolver, onCerrar, onExportado }: 
       </DialogFooter>
     </>
   )
-}
-
-function generarPeriodos(config: ConfigHorarios) {
-  const periodos: { inicio: string; fin: string; esRecreo?: boolean }[] = []
-  let [hora, minuto] = config.horaInicio.split(':').map(Number)
-
-  for (let i = 0; i < config.numPeriodos; i++) {
-    const inicio = `${String(hora).padStart(2, '0')}:${String(minuto).padStart(2, '0')}`
-    minuto += config.duracionPeriodo
-    if (minuto >= 60) {
-      hora += Math.floor(minuto / 60)
-      minuto = minuto % 60
-    }
-    const fin = `${String(hora).padStart(2, '0')}:${String(minuto).padStart(2, '0')}`
-
-    periodos.push({ inicio, fin })
-
-    if (config.recreo && config.recreo.periodo === i + 1) {
-      const inicioRecreo = fin
-      minuto += config.recreo.duracion
-      if (minuto >= 60) {
-        hora += Math.floor(minuto / 60)
-        minuto = minuto % 60
-      }
-      const finRecreo = `${String(hora).padStart(2, '0')}:${String(minuto).padStart(2, '0')}`
-
-      periodos.push({ inicio: inicioRecreo, fin: finRecreo, esRecreo: true })
-    }
-  }
-
-  return periodos
 }

@@ -5,6 +5,7 @@ import type { CeldaHorario, Horario } from '../../types'
 import { cn } from '../../utils/cn'
 import { useCuadernoStore } from '../../stores/useCuadernoStore'
 import { esDiaFestivo, esDiaVacaciones } from '../../utils/festivos'
+import { generarPeriodos } from '../../utils/horarios'
 import { UserCircle, GraduationCap, Copy, StickyNote, Save } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog'
@@ -52,7 +53,6 @@ export function HorarioTable({ horario, onGuardar, preguntarAlcance, onDuplicate
   const handleCeldaClick = (fila: number, columna: number) => {
     const dia = diasSemana?.[columna]
     if (dia && (dia.esFestivo || dia.esVacaciones)) return
-    if (periodos[fila]?.esRecreo) return
     setCeldaEditando({ fila, columna })
   }
 
@@ -156,13 +156,13 @@ export function HorarioTable({ horario, onGuardar, preguntarAlcance, onDuplicate
                     ? PALETA_ASIGNATURAS.find((c) => c.id === celda.color)?.clase
                     : undefined
                   const diaNoLectivo = diasSemana?.[columna]?.esFestivo || diasSemana?.[columna]?.esVacaciones
-                  const noEditable = diaNoLectivo || periodo.esRecreo
+                  const noEditable = diaNoLectivo
 
                   return (
                     <td
                       key={columna}
                       onClick={() => handleCeldaClick(fila, columna)}
-                      title={diaNoLectivo ? 'Día no lectivo, no se puede editar' : periodo.esRecreo ? 'Recreo, no se puede editar' : undefined}
+                      title={diaNoLectivo ? 'Día no lectivo, no se puede editar' : undefined}
                       className={cn(
                         'border border-border p-1 align-top min-h-[60px] transition-colors',
                         noEditable
@@ -241,6 +241,7 @@ export function HorarioTable({ horario, onGuardar, preguntarAlcance, onDuplicate
           if (!open) setCeldaEditando(null)
         }}
         celda={celdaEditando ? datos[celdaEditando.fila]?.[celdaEditando.columna] : undefined}
+        esRecreo={celdaEditando ? periodos[celdaEditando.fila]?.esRecreo : false}
         onGuardar={handleGuardarCelda}
       />
 
@@ -269,36 +270,4 @@ export function HorarioTable({ horario, onGuardar, preguntarAlcance, onDuplicate
       </Dialog>
     </div>
   )
-}
-
-function generarPeriodos(config: Horario['configHorarios']) {
-  const periodos: { inicio: string; fin: string; esRecreo?: boolean }[] = []
-  let [hora, minuto] = config.horaInicio.split(':').map(Number)
-
-  for (let i = 0; i < config.numPeriodos; i++) {
-    const inicio = `${String(hora).padStart(2, '0')}:${String(minuto).padStart(2, '0')}`
-    minuto += config.duracionPeriodo
-    if (minuto >= 60) {
-      hora += Math.floor(minuto / 60)
-      minuto = minuto % 60
-    }
-    const fin = `${String(hora).padStart(2, '0')}:${String(minuto).padStart(2, '0')}`
-
-    periodos.push({ inicio, fin })
-
-    // Insertar recreo DESPUÉS del periodo especificado
-    if (config.recreo && config.recreo.periodo === i + 1) {
-      const inicioRecreo = fin
-      minuto += config.recreo.duracion
-      if (minuto >= 60) {
-        hora += Math.floor(minuto / 60)
-        minuto = minuto % 60
-      }
-      const finRecreo = `${String(hora).padStart(2, '0')}:${String(minuto).padStart(2, '0')}`
-
-      periodos.push({ inicio: inicioRecreo, fin: finRecreo, esRecreo: true })
-    }
-  }
-
-  return periodos
 }

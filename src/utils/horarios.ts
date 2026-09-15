@@ -113,11 +113,58 @@ export function aplicarCeldasEnDatos(datos: Horario['datos'], celdas: Record<str
 }
 
 // Rejilla vacía (sin ninguna celda asignada) para un horario nuevo, con la
-// forma que espera Horario.datos: filas x columnas (incluido el recreo,
-// aunque nunca se edite) según numPeriodos + recreo.
+// forma que espera Horario.datos: filas x columnas (incluida la fila del
+// recreo, editable como anotación libre — ver CeldaHorarioForm.tsx) según
+// numPeriodos + recreo.
 export function rejillaVacia(configHorarios: Horario['configHorarios']): Horario['datos'] {
   const filas = configHorarios.numPeriodos + (configHorarios.recreo ? 1 : 0)
   return Array.from({ length: filas }, () => Array.from({ length: 5 }, () => ({ contenido: '' })))
+}
+
+export interface PeriodoHorario {
+  inicio: string
+  fin: string
+  esRecreo?: boolean
+}
+
+// Traduce la configuración de un horario (hora de inicio, duración de
+// periodo, recreo opcional) a la lista de filas que se muestran/editan —
+// una fila más que `numPeriodos` cuando hay recreo, insertada justo después
+// del periodo que indica `configHorarios.recreo.periodo`. Único punto de
+// esta lógica: antes estaba copiada literal en HorarioTable.tsx,
+// SemanaEditor.tsx, VistaSemanal.tsx y PasoExportarHorario.tsx, con riesgo de
+// que se desincronizaran entre sí (el índice de fila aquí tiene que
+// coincidir exactamente con el de `Horario.datos`, ver `rejillaVacia`).
+export function generarPeriodos(config: Horario['configHorarios']): PeriodoHorario[] {
+  const periodos: PeriodoHorario[] = []
+  let [hora, minuto] = config.horaInicio.split(':').map(Number)
+
+  for (let i = 0; i < config.numPeriodos; i++) {
+    const inicio = `${String(hora).padStart(2, '0')}:${String(minuto).padStart(2, '0')}`
+    minuto += config.duracionPeriodo
+    if (minuto >= 60) {
+      hora += Math.floor(minuto / 60)
+      minuto = minuto % 60
+    }
+    const fin = `${String(hora).padStart(2, '0')}:${String(minuto).padStart(2, '0')}`
+
+    periodos.push({ inicio, fin })
+
+    // Insertar recreo DESPUÉS del periodo especificado
+    if (config.recreo && config.recreo.periodo === i + 1) {
+      const inicioRecreo = fin
+      minuto += config.recreo.duracion
+      if (minuto >= 60) {
+        hora += Math.floor(minuto / 60)
+        minuto = minuto % 60
+      }
+      const finRecreo = `${String(hora).padStart(2, '0')}:${String(minuto).padStart(2, '0')}`
+
+      periodos.push({ inicio: inicioRecreo, fin: finRecreo, esRecreo: true })
+    }
+  }
+
+  return periodos
 }
 
 // Texto que se guarda en Semana.dias[].periodos[].contenido cuando el

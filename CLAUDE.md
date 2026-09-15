@@ -100,7 +100,11 @@ Los horarios sin fecha (o con fecha fuera del curso escolar) aparecen en "sin pe
 asignado". Un horario que abarca más que la semana vista dispara la pregunta de alcance
 al guardar/borrar ("todo el periodo" / "solo esta semana"; `dividirHorarioParaSemana`).
 En días festivos/vacaciones la celda no se puede editar (mismo criterio en Horarios,
-Planificar y el exportador del asistente).
+Planificar y el exportador del asistente). El recreo, en cambio, **sí es editable**: es una
+fila más en `Horario.datos` (ver `rejillaVacia`/`generarPeriodos` en `utils/horarios.ts`,
+única fuente de la posición de esa fila — antes estaba copiada literal en 5 sitios, con
+riesgo real de desincronizarse), pero sin asignatura ni color — solo anotación libre en
+texto (`CeldaHorarioForm.tsx` con `esRecreo`, ej. "Guardia de patio").
 
 ### Planificación ↔ Horario: fuente única
 Cuando hay un horario vigente en la semana de una `Semana`, el Planificador

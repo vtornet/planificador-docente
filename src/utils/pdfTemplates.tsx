@@ -12,7 +12,7 @@ import {
 import type { Horario, Semana, Reunion, Nota, CuadernoDocente, CeldaHorario, Evento } from '../types'
 import { PALETA_ASIGNATURAS } from '../types/constants'
 import { fechasOcurrencias } from './recurrencia'
-import { resolverDiasSemana } from './horarios'
+import { resolverDiasSemana, generarPeriodos } from './horarios'
 
 // Intentar registrar fuentes (opcional, si no existen usa fuentes por defecto)
 try {
@@ -117,19 +117,11 @@ interface HorarioPDFProps {
 // usarse como documento independiente en HorarioPDFDocument.
 export function HorarioPDFPage({ horario, metadata }: HorarioPDFProps) {
   const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes']
-  const config = horario.configHorarios
-
-  // Generar horas del día
-  const horas: string[] = []
-  let horaActual = config.horaInicio
-  for (let i = 0; i < config.numPeriodos; i++) {
-    horas.push(horaActual)
-
-    // Calcular siguiente hora
-    const [h, m] = horaActual.split(':').map(Number)
-    const siguiente = new Date(0, 0, 0, h, m + config.duracionPeriodo)
-    horaActual = siguiente.toTimeString().slice(0, 5)
-  }
+  // `periodos` tiene una fila más que `config.numPeriodos` cuando hay recreo
+  // (misma fila extra que `horario.datos`, ver rejillaVacia en horarios.ts) —
+  // antes esta plantilla generaba las horas a mano sin contar esa fila, así
+  // que a partir del recreo cada hora quedaba desplazada una fila.
+  const periodos = generarPeriodos(horario.configHorarios)
 
   return (
     <Page size="A4" orientation="landscape" style={styles.page}>
@@ -160,7 +152,7 @@ export function HorarioPDFPage({ horario, metadata }: HorarioPDFProps) {
         {horario.datos.map((fila: CeldaHorario[], idx: number) => (
           <View key={idx} style={styles.tableRow}>
             <View style={styles.tableCell}>
-              <Text>{horas[idx]}</Text>
+              <Text>{periodos[idx]?.esRecreo ? 'Recreo' : periodos[idx]?.inicio}</Text>
             </View>
             {fila.map((celda, cidx) => {
               const color = celda.color

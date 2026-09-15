@@ -15,6 +15,7 @@ import {
   aplicarCeldasEnDatos,
   rejillaVacia,
   contenidoParaSemana,
+  generarPeriodos,
 } from '../../utils/horarios'
 import { cn } from '../../utils/cn'
 import { Save, StickyNote, Trash2 } from 'lucide-react'
@@ -64,8 +65,7 @@ export function VistaSemanal({ semana, onClose }: VistaSemanalProps) {
   const construirDiasFinal = () => {
     return semana.dias.map((dia, diaIndex) => ({
       ...dia,
-      periodos: periodosHorarios.map((periodo, periodoIndex) => {
-        if (periodo.esRecreo) return { contenido: '' }
+      periodos: periodosHorarios.map((_periodo, periodoIndex) => {
         const celda = celdaActual(periodoIndex, diaIndex)
         return { contenido: contenidoParaSemana(celda.contenido || '', celda.nota || '') }
       }),
@@ -167,6 +167,7 @@ export function VistaSemanal({ semana, onClose }: VistaSemanalProps) {
       <CeldaHorarioForm
         key={`${periodoIndex}-${diaIndex}`}
         celda={celdaActual(periodoIndex, diaIndex)}
+        esRecreo={periodosHorarios[periodoIndex]?.esRecreo}
         onGuardar={(celdaActualizada) => {
           setCeldas((prev) => ({ ...prev, [`${periodoIndex}-${diaIndex}`]: celdaActualizada }))
           setDirty(true)
@@ -276,13 +277,14 @@ export function VistaSemanal({ semana, onClose }: VistaSemanalProps) {
                     </td>
                     {diasSemana.map((dia, diaIndex) => {
                       // Mismo criterio que en Horarios (HorarioTable.tsx): un día festivo
-                      // o de vacaciones bloquea la edición igual que el recreo — si no, una
-                      // nota escrita aquí quedaría después imposible de editar o borrar desde
-                      // Horarios, que sí bloquea esas celdas.
+                      // o de vacaciones bloquea la edición — una nota escrita aquí quedaría
+                      // después imposible de editar o borrar desde Horarios, que sí bloquea
+                      // esas celdas. El recreo, en cambio, se edita igual que el resto (solo
+                      // sin asignatura/color, ver CeldaHorarioForm.tsx).
                       const esRecreo = periodo.esRecreo
                       const diaNoLectivo = dia.esFestivo || dia.esVacaciones
-                      const noEditable = esRecreo || diaNoLectivo
-                      const celda = esRecreo ? undefined : celdaActual(periodoIndex, diaIndex)
+                      const noEditable = diaNoLectivo
+                      const celda = celdaActual(periodoIndex, diaIndex)
                       const claseColor = celda?.color
                         ? PALETA_ASIGNATURAS.find((c) => c.id === celda.color)?.clase
                         : undefined
@@ -291,7 +293,7 @@ export function VistaSemanal({ semana, onClose }: VistaSemanalProps) {
                         <td
                           key={diaIndex}
                           onClick={() => !noEditable && setCeldaEditando({ periodoIndex, diaIndex })}
-                          title={diaNoLectivo ? 'Día no lectivo, no se puede editar' : esRecreo ? 'Recreo, no se puede editar' : undefined}
+                          title={diaNoLectivo ? 'Día no lectivo, no se puede editar' : undefined}
                           className={cn(
                             'border border-border p-1 align-top min-h-[60px] transition-colors',
                             noEditable
@@ -301,21 +303,21 @@ export function VistaSemanal({ semana, onClose }: VistaSemanalProps) {
                                 : 'cursor-pointer hover:bg-accent/50'
                           )}
                         >
-                          {!esRecreo && (
-                            <div className="p-1 min-h-[50px] overflow-hidden">
-                              <div className="text-sm truncate">
-                                {celda?.contenido || (noEditable ? null : (
-                                  <span className="text-muted-foreground/50 italic">Click para editar</span>
-                                ))}
-                              </div>
-                              {celda?.nota && (
-                                <div className="mt-0.5 flex items-start gap-1 text-xs opacity-80 italic">
-                                  <StickyNote className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                                  <span className="line-clamp-2 break-words whitespace-pre-wrap">{celda.nota}</span>
-                                </div>
-                              )}
+                          <div className="p-1 min-h-[50px] overflow-hidden">
+                            <div className="text-sm truncate">
+                              {celda?.contenido || (noEditable ? null : (
+                                <span className="text-muted-foreground/50 italic">
+                                  {esRecreo ? 'Click para anotar' : 'Click para editar'}
+                                </span>
+                              ))}
                             </div>
-                          )}
+                            {celda?.nota && (
+                              <div className="mt-0.5 flex items-start gap-1 text-xs opacity-80 italic">
+                                <StickyNote className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                                <span className="line-clamp-2 break-words whitespace-pre-wrap">{celda.nota}</span>
+                              </div>
+                            )}
+                          </div>
                         </td>
                       )
                     })}
@@ -350,45 +352,4 @@ export function VistaSemanal({ semana, onClose }: VistaSemanalProps) {
       </Card>
     </div>
   )
-}
-
-function generarPeriodos(config: Horario['configHorarios']) {
-  const periodos: { inicio: string; fin: string; esRecreo?: boolean }[] = []
-  let [hora, minuto] = config.horaInicio.split(':').map(Number)
-
-  for (let i = 0; i < config.numPeriodos; i++) {
-    const inicio = `${String(hora).padStart(2, '0')}:${String(minuto).padStart(
-      2,
-      '0'
-    )}`
-    minuto += config.duracionPeriodo
-    if (minuto >= 60) {
-      hora += Math.floor(minuto / 60)
-      minuto = minuto % 60
-    }
-    const fin = `${String(hora).padStart(2, '0')}:${String(minuto).padStart(
-      2,
-      '0'
-    )}`
-
-    periodos.push({ inicio, fin })
-
-    // Insertar recreo DESPUÉS del periodo especificado
-    if (config.recreo && config.recreo.periodo === i + 1) {
-      const inicioRecreo = fin
-      minuto += config.recreo.duracion
-      if (minuto >= 60) {
-        hora += Math.floor(minuto / 60)
-        minuto = minuto % 60
-      }
-      const finRecreo = `${String(hora).padStart(2, '0')}:${String(minuto).padStart(
-        2,
-        '0'
-      )}`
-
-      periodos.push({ inicio: inicioRecreo, fin: finRecreo, esRecreo: true })
-    }
-  }
-
-  return periodos
 }

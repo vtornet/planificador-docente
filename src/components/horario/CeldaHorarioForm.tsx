@@ -15,6 +15,9 @@ interface CeldaHorarioFormProps {
   celda: CeldaHorario | undefined
   onGuardar: (celda: CeldaHorario) => void
   onCerrar: () => void
+  // El recreo no tiene asignatura ni color: solo anotación libre en texto,
+  // sin desplegable de asignaturas predefinidas.
+  esRecreo?: boolean
 }
 
 // Solo las clases de fondo (bg-... y dark:bg-...) de una entrada de la paleta,
@@ -37,7 +40,7 @@ function claseSwatch(colorId: string): string {
 // OPCIONES" en CLAUDE.md. El llamador debe montarlo con un `key` distinto
 // por celda (ej. `${fila}-${columna}`) para que reinicie su estado al
 // cambiar de celda sin depender de un `useEffect`.
-export function CeldaHorarioForm({ celda, onGuardar, onCerrar }: CeldaHorarioFormProps) {
+export function CeldaHorarioForm({ celda, onGuardar, onCerrar, esRecreo }: CeldaHorarioFormProps) {
   const { cuadernoActual, updateCuaderno } = useCuadernoStore()
   const coloresPersonalizados = cuadernoActual?.configuracion.coloresAsignaturas || {}
 
@@ -50,6 +53,7 @@ export function CeldaHorarioForm({ celda, onGuardar, onCerrar }: CeldaHorarioFor
   )
   const [personalizada, setPersonalizada] = useState(!esPredefinidaInicial ? contenidoInicial : '')
   const [esPersonalizada, setEsPersonalizada] = useState(contenidoInicial !== '' && !esPredefinidaInicial)
+  const [anotacion, setAnotacion] = useState(contenidoInicial)
   const [nota, setNota] = useState(celda?.nota || '')
   const [colorElegido, setColorElegido] = useState('')
 
@@ -77,6 +81,11 @@ export function CeldaHorarioForm({ celda, onGuardar, onCerrar }: CeldaHorarioFor
   }
 
   const handleGuardar = () => {
+    if (esRecreo) {
+      onGuardar({ ...celda, contenido: anotacion.trim(), nota: nota.trim() || undefined, color: undefined })
+      return
+    }
+
     const contenido = esPersonalizada ? nombrePersonalizada : asignatura
     let color: string | undefined
 
@@ -137,64 +146,78 @@ export function CeldaHorarioForm({ celda, onGuardar, onCerrar }: CeldaHorarioFor
   return (
     <>
       <DialogHeader>
-        <DialogTitle>Editar celda</DialogTitle>
+        <DialogTitle>{esRecreo ? 'Recreo' : 'Editar celda'}</DialogTitle>
       </DialogHeader>
       <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-1">Asignatura</label>
-          <select
-            value={asignatura}
-            onChange={(e) => handleChangeAsignatura(e.target.value)}
-            className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
-          >
-            <option value="">Sin asignar</option>
-            {ASIGNATURAS_PREDEFINIDAS.map((a) => (
-              <option key={a} value={a}>
-                {a}
-              </option>
-            ))}
-            <option value={OTRA}>Otra (personalizada)...</option>
-          </select>
-        </div>
-
-        {esPersonalizada && (
+        {esRecreo ? (
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Nombre de la asignatura</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Anotación</label>
             <Input
-              value={personalizada}
-              onChange={(e) => handleChangePersonalizada(e.target.value)}
-              placeholder="Ej: Robótica"
+              value={anotacion}
+              onChange={(e) => setAnotacion(e.target.value)}
+              placeholder="Ej: Guardia de patio, vigilancia de pasillo..."
               autoFocus
             />
           </div>
-        )}
-
-        {esAsignaturaNueva && (
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Color de la asignatura</label>
-            <div className="flex flex-wrap gap-2">
-              {paletaParaElegir.map((color) => (
-                <button
-                  key={color.id}
-                  type="button"
-                  onClick={() => setColorElegido(color.id)}
-                  title={color.id}
-                  className={cn(
-                    'w-8 h-8 rounded-full flex items-center justify-center border-2 transition-transform',
-                    claseSwatch(color.id),
-                    colorElegido === color.id ? 'border-foreground scale-110' : 'border-transparent hover:scale-105'
-                  )}
-                >
-                  {colorElegido === color.id && <Check className="w-4 h-4" />}
-                </button>
-              ))}
+        ) : (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1">Asignatura</label>
+              <select
+                value={asignatura}
+                onChange={(e) => handleChangeAsignatura(e.target.value)}
+                className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="">Sin asignar</option>
+                {ASIGNATURAS_PREDEFINIDAS.map((a) => (
+                  <option key={a} value={a}>
+                    {a}
+                  </option>
+                ))}
+                <option value={OTRA}>Otra (personalizada)...</option>
+              </select>
             </div>
-            {coloresDisponibles.length === 0 && (
-              <p className="text-xs text-muted-foreground mt-1">
-                Ya se han usado todos los colores disponibles, puedes repetir uno.
-              </p>
+
+            {esPersonalizada && (
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">Nombre de la asignatura</label>
+                <Input
+                  value={personalizada}
+                  onChange={(e) => handleChangePersonalizada(e.target.value)}
+                  placeholder="Ej: Robótica"
+                  autoFocus
+                />
+              </div>
             )}
-          </div>
+
+            {esAsignaturaNueva && (
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">Color de la asignatura</label>
+                <div className="flex flex-wrap gap-2">
+                  {paletaParaElegir.map((color) => (
+                    <button
+                      key={color.id}
+                      type="button"
+                      onClick={() => setColorElegido(color.id)}
+                      title={color.id}
+                      className={cn(
+                        'w-8 h-8 rounded-full flex items-center justify-center border-2 transition-transform',
+                        claseSwatch(color.id),
+                        colorElegido === color.id ? 'border-foreground scale-110' : 'border-transparent hover:scale-105'
+                      )}
+                    >
+                      {colorElegido === color.id && <Check className="w-4 h-4" />}
+                    </button>
+                  ))}
+                </div>
+                {coloresDisponibles.length === 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Ya se han usado todos los colores disponibles, puedes repetir uno.
+                  </p>
+                )}
+              </div>
+            )}
+          </>
         )}
 
         <div>
@@ -202,7 +225,7 @@ export function CeldaHorarioForm({ celda, onGuardar, onCerrar }: CeldaHorarioFor
           <Textarea
             value={nota}
             onChange={(e) => setNota(e.target.value)}
-            placeholder="Ej: Traer material de plástica..."
+            placeholder={esRecreo ? 'Ej: Turno rotativo con Marta...' : 'Ej: Traer material de plástica...'}
             rows={3}
           />
         </div>

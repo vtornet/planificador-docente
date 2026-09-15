@@ -19,8 +19,9 @@ import {
   aplicarCeldasEnDatos,
   rejillaVacia,
   contenidoParaSemana,
+  generarPeriodos,
 } from '../../utils/horarios'
-import type { Horario, ConfigHorarios } from '../../types'
+import type { Horario } from '../../types'
 import { cn } from '../../utils/cn'
 import { StickyNote } from 'lucide-react'
 import { CeldaHorarioForm } from '../horario/CeldaHorarioForm'
@@ -95,8 +96,7 @@ export function SemanaEditor({
   const construirDiasFinal = () => {
     return dias.map((dia, diaIndex) => ({
       ...dia,
-      periodos: periodosHorarios.map((periodo, periodoIndex) => {
-        if (periodo.esRecreo) return { contenido: '' }
+      periodos: periodosHorarios.map((_periodo, periodoIndex) => {
         const celda = celdaActual(periodoIndex, diaIndex)
         return { contenido: contenidoParaSemana(celda.contenido || '', celda.nota || '') }
       }),
@@ -165,8 +165,7 @@ export function SemanaEditor({
   const handleCopiarDia = (diaIndex: number) => {
     setCeldas((prev) => {
       const nuevo = { ...prev }
-      periodosHorarios.forEach((periodo, periodoIndex) => {
-        if (periodo.esRecreo) return
+      periodosHorarios.forEach((_periodo, periodoIndex) => {
         const origen = celdaActual(periodoIndex, diaIndex)
         for (let idx = diaIndex + 1; idx < DIAS_SEMANA.length; idx++) {
           // Nunca copiar sobre un día festivo/de vacaciones — misma regla
@@ -213,6 +212,7 @@ export function SemanaEditor({
       <CeldaHorarioForm
         key={`${periodoIndex}-${diaIndex}`}
         celda={celdaActual(periodoIndex, diaIndex)}
+        esRecreo={periodosHorarios[periodoIndex]?.esRecreo}
         onGuardar={(celdaActualizada) => {
           setCeldas((prev) => ({ ...prev, [`${periodoIndex}-${diaIndex}`]: celdaActualizada }))
           setCeldaEditando(null)
@@ -346,13 +346,14 @@ export function SemanaEditor({
                     </td>
                     {DIAS_SEMANA.map((_, diaIndex) => {
                       // Mismo criterio que en Horarios (HorarioTable.tsx): un día festivo
-                      // o de vacaciones bloquea la edición igual que el recreo — si no, una
-                      // nota escrita aquí quedaría después imposible de editar o borrar desde
-                      // Horarios, que sí bloquea esas celdas.
+                      // o de vacaciones bloquea la edición — una nota escrita aquí quedaría
+                      // después imposible de editar o borrar desde Horarios, que sí bloquea
+                      // esas celdas. El recreo, en cambio, se edita igual que el resto (solo
+                      // sin asignatura/color, ver CeldaHorarioForm.tsx).
                       const esRecreo = periodo.esRecreo
                       const diaNoLectivo = dias[diaIndex]?.esFestivo || dias[diaIndex]?.esVacaciones
-                      const noEditable = esRecreo || diaNoLectivo
-                      const celda = esRecreo ? undefined : celdaActual(periodoIndex, diaIndex)
+                      const noEditable = diaNoLectivo
+                      const celda = celdaActual(periodoIndex, diaIndex)
                       const claseColor = celda?.color
                         ? PALETA_ASIGNATURAS.find((c) => c.id === celda.color)?.clase
                         : undefined
@@ -360,7 +361,7 @@ export function SemanaEditor({
                         <td
                           key={diaIndex}
                           onClick={() => !noEditable && setCeldaEditando({ periodoIndex, diaIndex })}
-                          title={diaNoLectivo ? 'Día no lectivo, no se puede editar' : esRecreo ? 'Recreo, no se puede editar' : undefined}
+                          title={diaNoLectivo ? 'Día no lectivo, no se puede editar' : undefined}
                           className={cn(
                             'border border-border p-1 align-top min-h-[60px] transition-colors',
                             noEditable
@@ -370,21 +371,21 @@ export function SemanaEditor({
                                 : 'cursor-pointer hover:bg-accent/50'
                           )}
                         >
-                          {!esRecreo && (
-                            <div className="p-1 min-h-[50px] overflow-hidden">
-                              <div className="text-sm truncate">
-                                {celda?.contenido || (noEditable ? null : (
-                                  <span className="text-muted-foreground/50 italic">Click para editar</span>
-                                ))}
-                              </div>
-                              {celda?.nota && (
-                                <div className="mt-0.5 flex items-start gap-1 text-xs opacity-80 italic">
-                                  <StickyNote className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                                  <span className="line-clamp-2 break-words whitespace-pre-wrap">{celda.nota}</span>
-                                </div>
-                              )}
+                          <div className="p-1 min-h-[50px] overflow-hidden">
+                            <div className="text-sm truncate">
+                              {celda?.contenido || (noEditable ? null : (
+                                <span className="text-muted-foreground/50 italic">
+                                  {esRecreo ? 'Click para anotar' : 'Click para editar'}
+                                </span>
+                              ))}
                             </div>
-                          )}
+                            {celda?.nota && (
+                              <div className="mt-0.5 flex items-start gap-1 text-xs opacity-80 italic">
+                                <StickyNote className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                                <span className="line-clamp-2 break-words whitespace-pre-wrap">{celda.nota}</span>
+                              </div>
+                            )}
+                          </div>
                         </td>
                       )
                     })}
@@ -426,8 +427,7 @@ export function SemanaEditor({
             ) {
               setCeldas((prev) => {
                 const limpio = { ...prev }
-                periodosHorarios.forEach((periodo, periodoIndex) => {
-                  if (periodo.esRecreo) return
+                periodosHorarios.forEach((_periodo, periodoIndex) => {
                   DIAS_SEMANA.forEach((_, diaIndex) => {
                     limpio[`${periodoIndex}-${diaIndex}`] = { contenido: '' }
                   })
@@ -444,63 +444,22 @@ export function SemanaEditor({
   )
 }
 
-function generarPeriodos(config: ConfigHorarios) {
-  const periodos: { inicio: string; fin: string; esRecreo?: boolean }[] = []
-  let [hora, minuto] = config.horaInicio.split(':').map(Number)
-
-  for (let i = 0; i < config.numPeriodos; i++) {
-    const inicio = `${String(hora).padStart(2, '0')}:${String(minuto).padStart(
-      2,
-      '0'
-    )}`
-    minuto += config.duracionPeriodo
-    if (minuto >= 60) {
-      hora += Math.floor(minuto / 60)
-      minuto = minuto % 60
-    }
-    const fin = `${String(hora).padStart(2, '0')}:${String(minuto).padStart(
-      2,
-      '0'
-    )}`
-
-    periodos.push({ inicio, fin })
-
-    // Insertar recreo DESPUÉS del periodo especificado
-    if (config.recreo && config.recreo.periodo === i + 1) {
-      const inicioRecreo = fin
-      minuto += config.recreo.duracion
-      if (minuto >= 60) {
-        hora += Math.floor(minuto / 60)
-        minuto = minuto % 60
-      }
-      const finRecreo = `${String(hora).padStart(2, '0')}:${String(minuto).padStart(
-        2,
-        '0'
-      )}`
-
-      periodos.push({ inicio: inicioRecreo, fin: finRecreo, esRecreo: true })
-    }
-  }
-
-  return periodos
-}
-
 /** Resumen en texto plano de una semana, para dar contexto al asistente de IA (ver useEditorContextStore). */
 function resumenParaAsistente(
   dias: Semana['dias'],
   observaciones: string,
-  periodosHorarios: { inicio: string; fin: string; esRecreo?: boolean }[],
+  periodosHorarios: ReturnType<typeof generarPeriodos>,
   celdaActual: (periodoIndex: number, diaIndex: number) => CeldaHorario
 ): string {
   const lineas: string[] = []
   dias.forEach((_dia, diaIndex) => {
     const contenidos = periodosHorarios
       .map((periodo, periodoIndex) => {
-        if (periodo.esRecreo) return null
         const celda = celdaActual(periodoIndex, diaIndex)
         const texto = contenidoParaSemana(celda.contenido || '', celda.nota || '')
         if (!texto) return null
-        return `${periodo.inicio}: ${texto}`
+        const etiqueta = periodo.esRecreo ? 'Recreo' : periodo.inicio
+        return `${etiqueta}: ${texto}`
       })
       .filter((linea): linea is string => linea !== null)
     if (contenidos.length > 0) {
