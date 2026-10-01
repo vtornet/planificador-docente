@@ -138,7 +138,7 @@ export function HorarioPDFPage({ horario, metadata }: HorarioPDFProps) {
 
       {/* Tabla de horario */}
       <View style={styles.section}>
-        <View style={styles.table}>
+        <View style={styles.table} fixed>
           {/* Header row */}
           <View style={[styles.tableCell, styles.tableHeader]}><Text>Hora</Text></View>
           {dias.map((dia) => (
@@ -150,7 +150,7 @@ export function HorarioPDFPage({ horario, metadata }: HorarioPDFProps) {
 
         {/* Data rows */}
         {horario.datos.map((fila: CeldaHorario[], idx: number) => (
-          <View key={idx} style={styles.tableRow}>
+          <View key={idx} style={styles.tableRow} wrap={false}>
             <View style={styles.tableCell}>
               <Text>{periodos[idx]?.esRecreo ? 'Recreo' : periodos[idx]?.inicio}</Text>
             </View>
